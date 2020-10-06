@@ -1,3 +1,5 @@
+//! The target of an implement command.
+
 use std::fmt::{Debug, Formatter, Result};
 use std::rc::Rc;
 use zamm_yin::concepts::attributes::{Attribute, AttributeTrait};
