@@ -4,5 +4,9 @@ version = "0.0.1"
 authors = ["Amos Jun-yeung Ng <me@amos.ng>"]
 edition = "2018"
 
+[[bin]]
+name = "yang"
+path = "src/main.rs"
+
 [dependencies]
 zamm_yin = "^0.0.1"
