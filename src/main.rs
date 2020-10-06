@@ -1,5 +1,5 @@
+use zamm_yin::concepts::{ArchetypeTrait, FormTrait, Tao};
 use zamm_yin::graph::bind_in_memory_graph;
-use zamm_yin::concepts::{Tao, ArchetypeTrait, FormTrait};
 use zamm_yin::wrappers::CommonNodeTrait;
 
 fn main() {
