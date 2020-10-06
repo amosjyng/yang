@@ -6,9 +6,11 @@ use zamm_yin::graph::bind_in_memory_graph;
 use zamm_yin::graph::{Graph, InjectionGraph};
 use zamm_yin::initialize_type;
 
+mod documentable;
 mod implement;
 mod target;
 
+pub use documentable::Documentable;
 pub use implement::Implement;
 pub use target::Target;
 
