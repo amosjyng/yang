@@ -1,14 +1,32 @@
 //! Command to implement something.
 
+use crate::concepts::Target;
 use std::fmt::{Debug, Formatter, Result};
 use std::rc::Rc;
 use zamm_yin::concepts::{Archetype, ArchetypeTrait, FormTrait, Tao, YIN_MAX_ID};
-use zamm_yin::wrappers::{debug_wrapper, CommonNodeTrait, FinalWrapper};
+use zamm_yin::wrappers::{debug_wrapper, BaseNodeTrait, CommonNodeTrait, FinalWrapper};
 
 /// Represents a command to implement something.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Implement {
     base: Tao,
+}
+
+impl Implement {
+    /// Set another concept as an implementation target.
+    pub fn set_target(&mut self, target: Archetype) {
+        self.essence_mut()
+            .add_outgoing(Target::TYPE_ID, target.essence());
+    }
+
+    /// Retrieve implementation target.
+    pub fn target(&self) -> Option<Archetype> {
+        self.essence()
+            .outgoing_nodes(Target::TYPE_ID)
+            .into_iter()
+            .next()
+            .map(|b| Archetype::from(b))
+    }
 }
 
 impl Debug for Implement {
@@ -79,6 +97,7 @@ impl FormTrait for Implement {
 mod tests {
     use super::*;
     use crate::concepts::initialize_kb;
+    use zamm_yin::concepts::attributes::Owner;
 
     #[test]
     fn check_type_created() {
@@ -112,5 +131,13 @@ mod tests {
         let mut concept = Implement::individuate();
         concept.set_internal_name("A".to_string());
         assert_eq!(concept.internal_name(), Some(Rc::new("A".to_string())));
+    }
+
+    #[test]
+    fn set_and_retrieve_target() {
+        initialize_kb();
+        let mut implement = Implement::individuate();
+        implement.set_target(Owner::archetype());
+        assert_eq!(implement.target(), Some(Owner::archetype()));
     }
 }
