@@ -1,14 +1,18 @@
-use zamm_yin::concepts::{ArchetypeTrait, FormTrait, Tao};
-use zamm_yin::graph::bind_in_memory_graph;
+use zamm_yin::concepts::{ArchetypeTrait, FormTrait};
 use zamm_yin::wrappers::CommonNodeTrait;
 
+mod concepts;
+
+use concepts::{initialize_kb, Implement};
+
+/// The entry-point to this code generation tool.
 fn main() {
     // Initialize the knowledge-base
-    bind_in_memory_graph();
+    initialize_kb();
 
     // Create a new concept
-    let mut concept = Tao::individuate();
-    assert!(concept.has_ancestor(Tao::archetype()));
+    let mut concept = Implement::individuate();
+    assert!(concept.has_ancestor(Implement::archetype()));
 
     // Set a name for the concept
     concept.set_internal_name("Hello, world.".to_string());
