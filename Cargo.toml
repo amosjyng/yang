@@ -16,4 +16,5 @@ name = "yang"
 path = "src/main.rs"
 
 [dependencies]
+clap = "^2.33.3"
 zamm_yin = "^0.0.1"
