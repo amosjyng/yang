@@ -4,10 +4,18 @@
 
 Yang is a rudimentary, experimental code generator. It both depends on [Yin](https://github.com/amosjyng/yin) to manage its internal state, and currently only generates code for Yin.
 
+This crate is named `zamm_yang` for consistency with `zamm_yin`. However, the name for this tool is just `yang` for all intents and purposes within the ZAMM universe.
+
+## Install
+
+```sh
+cargo install yang
+```
+
 ## Usage
 
 ```text
-yang 0.0.1
+yang 0.0.2
 Amos Ng <me@amos.ng>
 Code generator for Yin.
 
@@ -32,12 +40,4 @@ To generate code for the `Target` attribute with an ID offset of 2 from Yin's ma
 
 ```sh
 yang Target --id 2 -d "The target of an implement command."
-```
-
-## Development
-
-This crate is named `zamm_yang` for consistency with `zamm_yin`. However, the name for this tool is just `yang` for all intents and purposes within the ZAMM universe. I recommend building the binary accordingly:
-
-```sh
-cargo run --bin yang
 ```

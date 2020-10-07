@@ -8,7 +8,9 @@ pub use mark_autogen::add_autogeneration_comments;
 
 use crate::concepts::Documentable;
 use crate::concepts::Implement;
+use path_abs::PathAbs;
 use std::fs;
+use std::path::Path;
 use std::rc::Rc;
 use zamm_yin::wrappers::CommonNodeTrait;
 
@@ -171,9 +173,40 @@ pub fn handle_implementation(request: Implement, id: usize) {
     let name = target.internal_name().unwrap();
     let doc = target.documentation();
     let generated_code = code(name.as_str(), doc, id);
-    fs::write(
-        format!("src/concepts/attributes/{}.rs", name.to_lowercase()),
-        generated_code,
-    )
-    .unwrap();
+    let generated_file_relative = format!("src/concepts/attributes/{}.rs", name.to_lowercase());
+    let generated_file_absolute_pathabs = PathAbs::new(Path::new(&generated_file_relative)).expect(
+        format!(
+            "Could not get absolute path for {}",
+            generated_file_relative
+        )
+        .as_str(),
+    );
+    let generated_file_absolute = generated_file_absolute_pathabs.as_path().to_str().expect(
+        format!(
+            "Could not get absolute path str for {}",
+            generated_file_relative
+        )
+        .as_str(),
+    );
+    let generated_file_parent = generated_file_absolute_pathabs.as_path().parent().expect(
+        format!(
+            "Could not get parent directory for {}",
+            generated_file_absolute
+        )
+        .as_str(),
+    );
+    fs::create_dir_all(generated_file_parent).expect(
+        format!(
+            "Could not create intermediate directories for {}",
+            generated_file_absolute
+        )
+        .as_str(),
+    );
+    fs::write(generated_file_absolute, generated_code).expect(
+        format!(
+            "Couldn't output generated code to {}",
+            generated_file_absolute
+        )
+        .as_str(),
+    );
 }

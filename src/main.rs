@@ -17,7 +17,7 @@ use concepts::{initialize_kb, Documentable, Implement};
 /// The entry-point to this code generation tool.
 fn main() {
     let args = clap_app!(yang =>
-        (version: "0.0.1")
+        (version: "0.0.2")
         (author: "Amos Ng <me@amos.ng>")
         (about: "Code generator for Yin.")
         (@arg CONCEPT: +required "Name of concept to generate code for.")
