@@ -3,7 +3,7 @@
 use std::fmt::{Debug, Formatter, Result};
 use std::rc::Rc;
 use zamm_yin::concepts::attributes::{Attribute, AttributeTrait};
-use zamm_yin::concepts::{Archetype, ArchetypeTrait, FormTrait, Tao, YIN_MAX_ID};
+use zamm_yin::concepts::{ArchetypeTrait, FormTrait, Tao, YIN_MAX_ID};
 use zamm_yin::wrappers::{debug_wrapper, CommonNodeTrait, FinalWrapper};
 
 /// The target of an implementation.
@@ -44,14 +44,6 @@ impl ArchetypeTrait<Target> for Target {
     const TYPE_ID: usize = YIN_MAX_ID + 2;
     const TYPE_NAME: &'static str = "Target";
     const PARENT_TYPE_ID: usize = Attribute::TYPE_ID;
-
-    fn archetype() -> Archetype {
-        Archetype::from(Self::TYPE_ID)
-    }
-
-    fn individuate() -> Self {
-        Self::individuate_with_parent(Self::TYPE_ID)
-    }
 
     fn individuate_with_parent(parent_id: usize) -> Self {
         Self {

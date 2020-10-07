@@ -583,9 +583,9 @@ dependencies = [
 
 [[package]]
 name = "zamm_yin"
-version = "0.0.1"
+version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f721d6e786d5f3cd267a4e1128b9d486bb5827e14f98e26f286b7f07a04b1da2"
+checksum = "43031b1979b3a24f0c073f2ffc0326122cdb1d6b4b6acc1c18e8554fd5829417"
 dependencies = [
  "petgraph",
  "rusted_cypher",

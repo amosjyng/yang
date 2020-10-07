@@ -68,14 +68,6 @@ impl ArchetypeTrait<Implement> for Implement {
     const TYPE_NAME: &'static str = "Implement";
     const PARENT_TYPE_ID: usize = Tao::TYPE_ID;
 
-    fn archetype() -> Archetype {
-        Archetype::from(Self::TYPE_ID)
-    }
-
-    fn individuate() -> Self {
-        Self::individuate_with_parent(Self::TYPE_ID)
-    }
-
     fn individuate_with_parent(parent_id: usize) -> Self {
         Self {
             base: Tao::individuate_with_parent(parent_id),
