@@ -2,6 +2,7 @@ use clap::clap_app;
 use zamm_yin::concepts::{ArchetypeTrait, Tao};
 use zamm_yin::wrappers::CommonNodeTrait;
 
+mod codegen;
 mod concepts;
 
 use concepts::{initialize_kb, Documentable, Implement};
