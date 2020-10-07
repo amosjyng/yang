@@ -7,11 +7,12 @@ pub use mark_autogen::add_autogeneration_comments;
 use crate::concepts::Documentable;
 use crate::concepts::Implement;
 use zamm_yin::wrappers::CommonNodeTrait;
+use std::fs;
+use std::rc::Rc;
 
-/// Handle the implementation request for a new attribute archetype
-pub fn handle_implementation(request: Implement, id: usize) -> String {
-    let target = request.target().unwrap();
-    let doc_insert = match target.documentation() {
+/// Generate code for attributes.
+pub fn code(name: &str, doc: Option<Rc<String>>, id: usize) -> String {
+    let doc_insert = match doc {
         Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
         None => String::new(),
     };
@@ -155,9 +156,18 @@ mod tests {{
     }}
 }}
 "##,
-        name = request.target().unwrap().internal_name().unwrap(),
+        name = name,
         doc = doc_insert,
         id = id
     );
     add_autogeneration_comments(&code)
+}
+
+/// Handle the implementation request for a new attribute archetype.
+pub fn handle_implementation(request: Implement, id: usize) {
+    let target = request.target().unwrap();
+    let name = target.internal_name().unwrap();
+    let doc = target.documentation();
+    let generated_code = code(name.as_str(), doc, id);
+    fs::write(format!("src/concepts/{}.rs", name.to_lowercase()), generated_code).unwrap();
 }

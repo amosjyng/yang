@@ -33,11 +33,8 @@ fn main() {
     let mut implement_command = Implement::individuate();
     implement_command.set_target(target);
 
-    println!(
-        "{}",
-        handle_implementation(
-            implement_command,
-            args.value_of("ID").unwrap().parse::<usize>().unwrap()
-        )
+    handle_implementation(
+        implement_command,
+        args.value_of("ID").unwrap().parse::<usize>().unwrap()
     );
 }
