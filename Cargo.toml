@@ -17,6 +17,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap = "^2.33.3"
+textwrap = "^0.12.1"
 zamm_yin = "^0.0.1"
 
 [dev-dependencies]
