@@ -1,5 +1,3 @@
-//! Concept documentation.
-
 use std::rc::Rc;
 use zamm_yin::concepts::{Archetype, FormTrait};
 use zamm_yin::graph::{unwrap_strong, StrongWrapper};

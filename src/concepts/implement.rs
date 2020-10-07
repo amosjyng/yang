@@ -1,5 +1,3 @@
-//! Command to implement something.
-
 use crate::concepts::Target;
 use std::fmt::{Debug, Formatter, Result};
 use std::rc::Rc;

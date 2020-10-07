@@ -1,4 +1,4 @@
-//! Yang is a code generator for Yin.
+//! Yang is a code generator for [Yin](https://crates.io/crates/zamm_yin).
 
 #![warn(missing_docs)]
 
@@ -6,7 +6,9 @@ use clap::clap_app;
 use zamm_yin::concepts::{ArchetypeTrait, Tao};
 use zamm_yin::wrappers::CommonNodeTrait;
 
+/// Code generation utilities.
 mod codegen;
+/// Yang-specific concepts.
 mod concepts;
 
 use codegen::handle_implementation;
