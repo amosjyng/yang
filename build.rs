@@ -3,7 +3,7 @@ use std::path::Path;
 use std::process::Command;
 
 /// The version of the Yang that will be used to generate build files.
-const YANG_DEP_VERSION: &str = "0.0.1";
+const YANG_DEP_VERSION: &str = "0.0.2";
 
 /// Build `yang` using itself.
 fn main() {
