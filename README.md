@@ -7,7 +7,7 @@ Yang is a rudimentary, experimental code generator. It both depends on [Yin](htt
 ## Usage
 
 ```text
-yang 0.0.1
+yang 0.0.2
 Amos Ng <me@amos.ng>
 Code generator for Yin.
 
