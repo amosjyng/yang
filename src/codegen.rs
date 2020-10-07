@@ -8,6 +8,7 @@ pub use mark_autogen::add_autogeneration_comments;
 
 use crate::concepts::Documentable;
 use crate::concepts::Implement;
+use path_abs::PathAbs;
 use std::fs;
 use std::path::Path;
 use std::rc::Rc;
@@ -173,17 +174,16 @@ pub fn handle_implementation(request: Implement, id: usize) {
     let doc = target.documentation();
     let generated_code = code(name.as_str(), doc, id);
     let generated_file_relative = format!("src/concepts/attributes/{}.rs", name.to_lowercase());
-    let generated_file_absolute_pathbuf =
-        Path::new(&generated_file_relative).canonicalize().expect(
-            format!(
-                "Could not get absolute path for {}",
-                generated_file_relative
-            )
-            .as_str(),
-        );
-    let generated_file_absolute = generated_file_absolute_pathbuf.to_str().expect(
+    let generated_file_absolute_pathabs = PathAbs::new(Path::new(&generated_file_relative)).expect(
         format!(
-            "Could not get absolute str path for {}",
+            "Could not get absolute path for {}",
+            generated_file_relative
+        )
+        .as_str(),
+    );
+    let generated_file_absolute = generated_file_absolute_pathabs.as_path().to_str().expect(
+        format!(
+            "Could not get absolute path str for {}",
             generated_file_relative
         )
         .as_str(),
