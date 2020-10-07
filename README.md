@@ -44,6 +44,35 @@ To generate code for the `Target` attribute with an ID offset of 2 from Yin's ma
 yang Target --id 2 -d "The target of an implement command."
 ```
 
+After that, you can use the newly generated `src/concepts/attributes/target.rs` as such:
+
+```rust
+mod concepts {
+    pub mod attributes {
+        pub mod target;
+    }
+}
+
+use concepts::attributes::target::Target;
+use zamm_yin::concepts::attributes::Inherits;
+use zamm_yin::concepts::ArchetypeTrait;
+use zamm_yin::graph::{bind_in_memory_graph, Graph, InjectionGraph};
+use zamm_yin::wrappers::CommonNodeTrait;
+
+fn main() {
+    // Initialize Yin KB with new type
+    bind_in_memory_graph();
+    let mut ig = InjectionGraph::new();
+    zamm_yin::initialize_type!(ig, (Target));
+
+    let mut target = Target::individuate();
+    target.set_internal_name("Hello, world.".to_string());
+    println!("{}", target.internal_name().unwrap());
+}
+```
+
+Make sure to add `src/concepts/attributes/target.rs` to your `.gitignore` afterwards.
+
 ### As a library
 
 If you're using a custom build script, chances are you will want to generate Yin concept files for your project directly rather than passing comamndline options to the `yang` binary. For example, to automatically generate the example file above at build time, first add `yin` and `yang` as build dependencies:
@@ -77,31 +106,4 @@ fn main() {
 }
 ```
 
-After that, you can use the newly generated `src/concepts/attributes/target.rs` as such:
-
-```rust
-mod concepts {
-    pub mod attributes {
-        pub mod target;
-    }
-}
-
-use concepts::attributes::target::Target;
-use zamm_yin::concepts::attributes::Inherits;
-use zamm_yin::concepts::ArchetypeTrait;
-use zamm_yin::graph::{bind_in_memory_graph, Graph, InjectionGraph};
-use zamm_yin::wrappers::CommonNodeTrait;
-
-fn main() {
-    // Initialize Yin KB with new type
-    bind_in_memory_graph();
-    let mut ig = InjectionGraph::new();
-    zamm_yin::initialize_type!(ig, (Target));
-
-    let mut target = Target::individuate();
-    target.set_internal_name("Hello, world.".to_string());
-    println!("{}", target.internal_name().unwrap());
-}
-```
-
-Make sure to add `src/concepts/attributes/target.rs` to your `.gitignore` afterwards.
+Now you can use the newly generated `src/concepts/attributes/target.rs` in the same way as above.
