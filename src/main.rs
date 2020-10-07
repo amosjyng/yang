@@ -1,18 +1,11 @@
 //! Yang is a code generator for [Yin](https://crates.io/crates/zamm_yin).
 
-#![warn(missing_docs)]
-
 use clap::clap_app;
 use zamm_yin::concepts::{ArchetypeTrait, Tao};
 use zamm_yin::wrappers::CommonNodeTrait;
 
-/// Code generation utilities.
-mod codegen;
-/// Yang-specific concepts.
-mod concepts;
-
-use codegen::handle_implementation;
-use concepts::{initialize_kb, Documentable, Implement};
+use zamm_yang::codegen::handle_implementation;
+use zamm_yang::concepts::{initialize_kb, Documentable, Implement};
 
 /// The entry-point to this code generation tool.
 fn main() {
