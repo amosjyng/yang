@@ -9,6 +9,7 @@ pub use mark_autogen::add_autogeneration_comments;
 use crate::concepts::Documentable;
 use crate::concepts::Implement;
 use std::fs;
+use std::path::Path;
 use std::rc::Rc;
 use zamm_yin::wrappers::CommonNodeTrait;
 
@@ -171,9 +172,7 @@ pub fn handle_implementation(request: Implement, id: usize) {
     let name = target.internal_name().unwrap();
     let doc = target.documentation();
     let generated_code = code(name.as_str(), doc, id);
-    fs::write(
-        format!("src/concepts/attributes/{}.rs", name.to_lowercase()),
-        generated_code,
-    )
-    .unwrap();
+    let generated_file = format!("src/concepts/attributes/{}.rs", name.to_lowercase());
+    fs::write(Path::new(&generated_file), generated_code)
+        .expect(format!("Couldn't output generated code to {}", generated_file).as_str());
 }
