@@ -51,7 +51,7 @@ If you're using a custom build script, chances are you will want to generate Yin
 ```toml
 [build-dependencies]
 zamm_yin = "0.0.2"
-zamm_yang = { path = "../yang" }
+zamm_yang = "0.0.3"
 ```
 
 Then, define your `build.rs` as such:
