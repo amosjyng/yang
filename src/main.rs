@@ -35,6 +35,6 @@ fn main() {
 
     handle_implementation(
         implement_command,
-        args.value_of("ID").unwrap().parse::<usize>().unwrap()
+        args.value_of("ID").unwrap().parse::<usize>().unwrap(),
     );
 }

@@ -6,13 +6,13 @@ use zamm_yin::graph::bind_in_memory_graph;
 use zamm_yin::graph::{Graph, InjectionGraph};
 use zamm_yin::initialize_type;
 
+mod attributes;
 mod documentable;
 mod implement;
-mod target;
 
+use attributes::Target;
 pub use documentable::Documentable;
 pub use implement::Implement;
-pub use target::Target;
 
 /// Initialize Yin, including with Yang-specific concepts.
 pub fn initialize_kb() {

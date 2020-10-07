@@ -1,12 +1,10 @@
-//! The target of an implement command.
-
 use std::fmt::{Debug, Formatter, Result};
 use std::rc::Rc;
 use zamm_yin::concepts::attributes::{Attribute, AttributeTrait};
 use zamm_yin::concepts::{ArchetypeTrait, FormTrait, Tao, YIN_MAX_ID};
 use zamm_yin::wrappers::{debug_wrapper, CommonNodeTrait, FinalWrapper};
 
-/// The target of an implementation.
+/// The target of an implement command.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Target {
     attr: Attribute,

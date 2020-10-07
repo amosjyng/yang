@@ -6,9 +6,9 @@ pub use mark_autogen::add_autogeneration_comments;
 
 use crate::concepts::Documentable;
 use crate::concepts::Implement;
-use zamm_yin::wrappers::CommonNodeTrait;
 use std::fs;
 use std::rc::Rc;
+use zamm_yin::wrappers::CommonNodeTrait;
 
 /// Generate code for attributes.
 pub fn code(name: &str, doc: Option<Rc<String>>, id: usize) -> String {
@@ -169,5 +169,9 @@ pub fn handle_implementation(request: Implement, id: usize) {
     let name = target.internal_name().unwrap();
     let doc = target.documentation();
     let generated_code = code(name.as_str(), doc, id);
-    fs::write(format!("src/concepts/{}.rs", name.to_lowercase()), generated_code).unwrap();
+    fs::write(
+        format!("src/concepts/attributes/{}.rs", name.to_lowercase()),
+        generated_code,
+    )
+    .unwrap();
 }
