@@ -172,7 +172,27 @@ pub fn handle_implementation(request: Implement, id: usize) {
     let name = target.internal_name().unwrap();
     let doc = target.documentation();
     let generated_code = code(name.as_str(), doc, id);
-    let generated_file = format!("src/concepts/attributes/{}.rs", name.to_lowercase());
-    fs::write(Path::new(&generated_file), generated_code)
-        .expect(format!("Couldn't output generated code to {}", generated_file).as_str());
+    let generated_file_relative = format!("src/concepts/attributes/{}.rs", name.to_lowercase());
+    let generated_file_absolute_pathbuf =
+        Path::new(&generated_file_relative).canonicalize().expect(
+            format!(
+                "Could not get absolute path for {}",
+                generated_file_relative
+            )
+            .as_str(),
+        );
+    let generated_file_absolute = generated_file_absolute_pathbuf.to_str().expect(
+        format!(
+            "Could not get absolute str path for {}",
+            generated_file_relative
+        )
+        .as_str(),
+    );
+    fs::write(generated_file_absolute, generated_code).expect(
+        format!(
+            "Couldn't output generated code to {}",
+            generated_file_absolute
+        )
+        .as_str(),
+    );
 }
