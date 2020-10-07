@@ -14,7 +14,7 @@ fn main() {
         (author: "Amos Ng <me@amos.ng>")
         (about: "Code generator for Yin.")
         (@arg CONCEPT: +required "Name of concept to generate code for.")
-        (@arg ID: -i --id +takes_value +required "ID of concept.")
+        (@arg ID: -i --id +takes_value +required "ID offset from Yin's max id.")
         (@arg DOC: -d --documentation +takes_value "Documentation string for concept.")
     )
     .get_matches();

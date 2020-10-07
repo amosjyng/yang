@@ -30,7 +30,7 @@ FLAGS:
 
 OPTIONS:
     -d, --documentation <DOC>    Documentation string for concept.
-    -i, --id <ID>                ID of concept.
+    -i, --id <ID>                ID offset from Yin's max id.
 
 ARGS:
     <CONCEPT>    Name of concept to generate code for.
@@ -38,10 +38,10 @@ ARGS:
 
 #### Example
 
-To generate code for the `Target` attribute with an ID offset of 2 from Yin's max id, run:
+To generate code for the `Target` attribute with an ID offset of 1 from Yin's max id, run:
 
 ```sh
-yang Target --id 2 -d "The target of an implement command."
+yang Target --id 1 -d "The target of an implement command."
 ```
 
 After that, you can use the newly generated `src/concepts/attributes/target.rs` as such:
