@@ -188,7 +188,14 @@ pub fn handle_implementation(request: Implement, id: usize) {
         )
         .as_str(),
     );
-    fs::create_dir_all(generated_file_absolute_pathabs.as_path()).expect(
+    let generated_file_parent = generated_file_absolute_pathabs.as_path().parent().expect(
+        format!(
+            "Could not get parent directory for {}",
+            generated_file_absolute
+        )
+        .as_str(),
+    );
+    fs::create_dir_all(generated_file_parent).expect(
         format!(
             "Could not create intermediate directories for {}",
             generated_file_absolute
