@@ -9,7 +9,6 @@ repository = "https://github.com/amosjyng/yang"
 license = "GPL-3.0"
 keywords = ["codegen", "code-generation"]
 categories = ["command-line-utilities", "development-tools"]
-publish = false
 
 [[bin]]
 name = "yang"
