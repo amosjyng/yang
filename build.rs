@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
@@ -41,16 +42,18 @@ fn main() {
         println!("Bintray URL determined to be {}", yang_url);
         println!("Yang executable will be saved locally to {}", yang_binary);
 
-        Command::new("wget")
-            .args(&["-O", yang_binary.as_str(), yang_url.as_str()])
-            .output()
-            .expect(
-                format!(
-                    "Can't download yang version {} from Bintray.",
-                    YANG_DEP_VERSION
-                )
-                .as_str(),
-            );
+        let mut binary_output = fs::File::create(&yang_binary).expect("Cannot create yang file");
+
+        let yang_bytes = reqwest::blocking::get(&yang_url)
+            .expect("Can't download yang from Bintray.")
+            .bytes()
+            .expect("Cannot get yang bytes after download.");
+        binary_output
+            .write(&yang_bytes)
+            .expect("Cannot write yang bytes to binary.");
+        binary_output
+            .flush()
+            .expect("Cannot flush yang bytes after write.");
 
         if fs::metadata(&yang_binary).unwrap().len() == 0 {
             fs::remove_file(&yang_binary).unwrap();
@@ -61,20 +64,16 @@ fn main() {
         }
     }
 
+    // downloaded executable can be run immediately on Windows, so skip this step.
+    #[cfg(target_family = "unix")]
     Command::new("chmod")
         .args(&["+x", yang_binary.as_str()])
         .output()
-        .expect(
-            format!(
-                "Could not add execute permissions to yang binary located at {}",
-                yang_binary
-            )
-            .as_str(),
-        );
+        .expect("Could not add execute permissions to yang binary");
 
     println!("==================== RUNNING YANG ====================");
 
-    let result = Command::new(yang_binary.as_str())
+    let result = Command::new(&yang_binary)
         .args(&[
             "Target",
             "--id",

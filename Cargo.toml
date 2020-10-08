@@ -22,3 +22,6 @@ zamm_yin = "^0.0.2"
 
 [dev-dependencies]
 indoc = "^1.0"
+
+[build-dependencies]
+reqwest = { version = "^0.10.8", features = ["blocking"] }
