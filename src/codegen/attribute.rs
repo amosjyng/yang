@@ -2,7 +2,12 @@ use super::{add_autogeneration_comments, into_docstring};
 use std::rc::Rc;
 
 /// Generate code for attributes.
-pub fn code_attribute(name: &str, doc: Option<Rc<String>>, id: usize) -> String {
+pub fn code_attribute(
+    name: &str,
+    doc: Option<Rc<String>>,
+    id: usize,
+    comment_autogen: bool,
+) -> String {
     let doc_insert = match doc {
         Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
         None => String::new(),
@@ -151,5 +156,25 @@ mod tests {{
         doc = doc_insert,
         id = id
     );
-    add_autogeneration_comments(&code)
+    if comment_autogen {
+        add_autogeneration_comments(&code)
+    } else {
+        code
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::mark_autogen::AUTOGENERATION_MARKER;
+    use super::*;
+
+    #[test]
+    fn test_autogen_comments() {
+        assert!(code_attribute("dummy", None, 3, true).contains(AUTOGENERATION_MARKER));
+    }
+
+    #[test]
+    fn test_autogen_no_comments() {
+        assert!(!code_attribute("dummy", None, 3, false).contains(AUTOGENERATION_MARKER));
+    }
 }

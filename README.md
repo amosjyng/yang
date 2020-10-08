@@ -29,8 +29,11 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-    -d, --documentation <DOC>    Documentation string for concept.
-    -i, --id <ID>                ID offset from Yin's max id.
+    -c, --comment_autogen <COMMENT_AUTOGEN>
+            Whether or not to add an autogeneration comment to each generated    
+            line of code. Defaults to true.
+    -d, --documentation <DOC>                  Documentation string for concept. 
+    -i, --id <ID>                              ID offset from Yin's max id.      
 
 ARGS:
     <CONCEPT>    Name of concept to generate code for.

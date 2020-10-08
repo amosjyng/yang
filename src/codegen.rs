@@ -17,8 +17,8 @@ use std::rc::Rc;
 use zamm_yin::wrappers::CommonNodeTrait;
 
 /// Output code to filename
-fn output_code(name: &str, doc: Option<Rc<String>>, id: usize) {
-    let generated_code = code_attribute(name, doc, id);
+fn output_code(name: &str, doc: Option<Rc<String>>, id: usize, comment_autogen: bool) {
+    let generated_code = code_attribute(name, doc, id, comment_autogen);
     let file_relative = format!("src/concepts/attributes/{}.rs", name.to_lowercase());
     let file_pathabs = PathAbs::new(Path::new(&file_relative))
         .expect(format!("Could not get absolute path for {}", file_relative).as_str());
@@ -39,7 +39,12 @@ fn output_code(name: &str, doc: Option<Rc<String>>, id: usize) {
 }
 
 /// Handle the implementation request for a new attribute archetype.
-pub fn handle_implementation(request: Implement, id: usize) {
+pub fn handle_implementation(request: Implement, id: usize, comment_autogen: bool) {
     let target = request.target().unwrap();
-    output_code(&target.internal_name().unwrap(), target.documentation(), id)
+    output_code(
+        &target.internal_name().unwrap(),
+        target.documentation(),
+        id,
+        comment_autogen,
+    )
 }

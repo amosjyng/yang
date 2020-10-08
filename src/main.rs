@@ -1,23 +1,53 @@
-//! Yang is a code generator for [Yin](https://crates.io/crates/zamm_yin).
-
-use clap::clap_app;
+use clap::{App, Arg};
+use zamm_yang::codegen::handle_implementation;
+use zamm_yang::concepts::{initialize_kb, Documentable, Implement};
 use zamm_yin::concepts::{ArchetypeTrait, Tao};
 use zamm_yin::wrappers::CommonNodeTrait;
 
-use zamm_yang::codegen::handle_implementation;
-use zamm_yang::concepts::{initialize_kb, Documentable, Implement};
-
 /// The entry-point to this code generation tool.
 fn main() {
-    let args = clap_app!(yang =>
-        (version: "0.0.3")
-        (author: "Amos Ng <me@amos.ng>")
-        (about: "Code generator for Yin.")
-        (@arg CONCEPT: +required "Name of concept to generate code for.")
-        (@arg ID: -i --id +takes_value +required "ID offset from Yin's max id.")
-        (@arg DOC: -d --documentation +takes_value "Documentation string for concept.")
-    )
-    .get_matches();
+    // Avoid using clapp_app! macro due to a bug with the short arg name getting assigned only to
+    // 'a'
+    let args = App::new("yang")
+        .version("0.0.3")
+        .author("Amos Ng <me@amos.ng>")
+        .about("Code generator for Yin.")
+        .arg(
+            Arg::with_name("CONCEPT")
+                .value_name("CONCEPT")
+                .help("Name of concept to generate code for.")
+                .required(true)
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("ID")
+                .short("i")
+                .long("id")
+                .value_name("ID")
+                .help("ID offset from Yin's max id.")
+                .required(true)
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("DOC")
+                .short("d")
+                .long("documentation")
+                .value_name("DOC")
+                .help("Documentation string for concept.")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("COMMENT_AUTOGEN")
+                .short("c")
+                .long("comment_autogen")
+                .value_name("COMMENT_AUTOGEN")
+                .help(
+                    "Whether or not to add an autogeneration comment to each generated line of \
+                    code. Defaults to true.",
+                )
+                .takes_value(true),
+        )
+        .get_matches();
 
     initialize_kb();
 
@@ -31,5 +61,9 @@ fn main() {
     handle_implementation(
         implement_command,
         args.value_of("ID").unwrap().parse::<usize>().unwrap(),
+        args.value_of("COMMENT_AUTOGEN")
+            .unwrap_or("true")
+            .parse::<bool>()
+            .unwrap(),
     );
 }

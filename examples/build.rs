@@ -14,5 +14,5 @@ fn main() {
     let mut implement_command = Implement::individuate();
     implement_command.set_target(target);
 
-    handle_implementation(implement_command, 1);
+    handle_implementation(implement_command, 1, true);
 }
