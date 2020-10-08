@@ -6,7 +6,7 @@ use zamm_yin::wrappers::CommonNodeTrait;
 
 /// The entry-point to this code generation tool.
 fn main() {
-    // Avoid using clapp_app! macro due to a bug with the short arg name getting assigned only to 
+    // Avoid using clapp_app! macro due to a bug with the short arg name getting assigned only to
     // 'a'
     let args = App::new("yang")
         .version("0.0.3")

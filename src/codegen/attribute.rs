@@ -162,3 +162,19 @@ mod tests {{
         code
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::mark_autogen::AUTOGENERATION_MARKER;
+    use super::*;
+
+    #[test]
+    fn test_autogen_comments() {
+        assert!(code_attribute("dummy", None, 3, true).contains(AUTOGENERATION_MARKER));
+    }
+
+    #[test]
+    fn test_autogen_no_comments() {
+        assert!(!code_attribute("dummy", None, 3, false).contains(AUTOGENERATION_MARKER));
+    }
+}
