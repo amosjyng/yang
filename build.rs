@@ -3,6 +3,14 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
+/// Which OS we're running on -- not the OS that we're targeting for potential cross-compilation.
+#[cfg(target_os = "linux")]
+const CURRENT_OS: &str = "linux";
+#[cfg(target_os = "macos")]
+const CURRENT_OS: &str = "mac";
+#[cfg(target_os = "windows")]
+const CURRENT_OS: &str = "windows";
+
 /// The version of the Yang that will be used to generate build files.
 const YANG_DEP_VERSION: &str = "0.0.2";
 
@@ -25,8 +33,8 @@ fn main() {
         println!("Yang executable already exists at {}", yang_binary);
     } else {
         let yang_url = format!(
-            "https://bintray.com/amosjyng/zamm/download_file?file_path=yang%2F{}%2Fmac%2Fyang",
-            YANG_DEP_VERSION
+            "https://bintray.com/amosjyng/zamm/download_file?file_path=yang%2F{}%2F{}%2Fyang",
+            YANG_DEP_VERSION, CURRENT_OS
         );
 
         println!("Bintray URL determined to be {}", yang_url);
