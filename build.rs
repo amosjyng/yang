@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
@@ -10,6 +11,12 @@ const CURRENT_OS: &str = "linux";
 const CURRENT_OS: &str = "mac";
 #[cfg(target_os = "windows")]
 const CURRENT_OS: &str = "windows";
+
+/// The filename extension for the yang executable.
+#[cfg(target_family = "unix")]
+const BINARY_EXT: &str = "";
+#[cfg(target_family = "windows")]
+const BINARY_EXT: &str = ".exe";
 
 /// The version of the Yang that will be used to generate build files.
 const YANG_DEP_VERSION: &str = "0.0.2";
@@ -22,29 +29,31 @@ fn main() {
     println!("cargo:rerun-if-changed=src/concepts/attributes/target.rs");
 
     let out_dir = env::var("OUT_DIR").unwrap();
-    let yang_binary = format!("{}/yang-v{}", out_dir, YANG_DEP_VERSION);
+    let yang_binary = format!("{}/yang-v{}{}", out_dir, YANG_DEP_VERSION, BINARY_EXT);
 
     if Path::new(&yang_binary).exists() {
         println!("Yang executable already exists at {}", yang_binary);
     } else {
         let yang_url = format!(
-            "https://bintray.com/amosjyng/zamm/download_file?file_path=yang%2F{}%2F{}%2Fyang",
-            YANG_DEP_VERSION, CURRENT_OS
+            "https://bintray.com/amosjyng/zamm/download_file?file_path=yang%2F{}%2F{}%2Fyang{}",
+            YANG_DEP_VERSION, CURRENT_OS, BINARY_EXT
         );
 
         println!("Bintray URL determined to be {}", yang_url);
         println!("Yang executable will be saved locally to {}", yang_binary);
 
-        Command::new("wget")
-            .args(&["-O", yang_binary.as_str(), yang_url.as_str()])
-            .output()
-            .expect(
-                format!(
-                    "Can't download yang version {} from Bintray.",
-                    YANG_DEP_VERSION
-                )
-                .as_str(),
-            );
+        let mut binary_output = fs::File::create(&yang_binary).expect("Cannot create yang file");
+
+        let yang_bytes = reqwest::blocking::get(&yang_url)
+            .expect("Can't download yang from Bintray.")
+            .bytes()
+            .expect("Cannot get yang bytes after download.");
+        binary_output
+            .write(&yang_bytes)
+            .expect("Cannot write yang bytes to binary.");
+        binary_output
+            .flush()
+            .expect("Cannot flush yang bytes after write.");
 
         if fs::metadata(&yang_binary).unwrap().len() == 0 {
             fs::remove_file(&yang_binary).unwrap();
@@ -55,20 +64,16 @@ fn main() {
         }
     }
 
+    // downloaded executable can be run immediately on Windows, so skip this step.
+    #[cfg(target_family = "unix")]
     Command::new("chmod")
         .args(&["+x", yang_binary.as_str()])
         .output()
-        .expect(
-            format!(
-                "Could not add execute permissions to yang binary located at {}",
-                yang_binary
-            )
-            .as_str(),
-        );
+        .expect("Could not add execute permissions to yang binary");
 
     println!("==================== RUNNING YANG ====================");
 
-    let result = Command::new(yang_binary.as_str())
+    let result = Command::new(&yang_binary)
         .args(&[
             "Target",
             "--id",
