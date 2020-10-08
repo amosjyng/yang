@@ -1,27 +1,20 @@
 //! Yang is a code generator for [Yin](https://crates.io/crates/zamm_yin).
 
-#![warn(missing_docs)]
-
 use clap::clap_app;
 use zamm_yin::concepts::{ArchetypeTrait, Tao};
 use zamm_yin::wrappers::CommonNodeTrait;
 
-/// Code generation utilities.
-mod codegen;
-/// Yang-specific concepts.
-mod concepts;
-
-use codegen::handle_implementation;
-use concepts::{initialize_kb, Documentable, Implement};
+use zamm_yang::codegen::handle_implementation;
+use zamm_yang::concepts::{initialize_kb, Documentable, Implement};
 
 /// The entry-point to this code generation tool.
 fn main() {
     let args = clap_app!(yang =>
-        (version: "0.0.2")
+        (version: "0.0.3")
         (author: "Amos Ng <me@amos.ng>")
         (about: "Code generator for Yin.")
         (@arg CONCEPT: +required "Name of concept to generate code for.")
-        (@arg ID: -i --id +takes_value +required "ID of concept.")
+        (@arg ID: -i --id +takes_value +required "ID offset from Yin's max id.")
         (@arg DOC: -d --documentation +takes_value "Documentation string for concept.")
     )
     .get_matches();

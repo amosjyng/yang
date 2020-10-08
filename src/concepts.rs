@@ -12,7 +12,7 @@ mod documentable;
 mod implement;
 
 use attributes::Target;
-pub use documentable::Documentable;
+pub use documentable::{set_documentation, Documentable};
 pub use implement::Implement;
 
 /// Initialize Yin, including with Yang-specific concepts.
