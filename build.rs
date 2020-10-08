@@ -24,11 +24,6 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let yang_binary = format!("{}/yang-v{}", out_dir, YANG_DEP_VERSION);
 
-    // get rid of any cached results from before
-    if Path::new(&yang_binary).exists() && fs::metadata(&yang_binary).unwrap().len() == 0 {
-        fs::remove_file(&yang_binary).unwrap();
-    }
-
     if Path::new(&yang_binary).exists() {
         println!("Yang executable already exists at {}", yang_binary);
     } else {
