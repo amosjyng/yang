@@ -16,8 +16,9 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let yang_binary = format!("{}/yang-v{}", out_dir, YANG_DEP_VERSION);
 
-    if fs::metadata(&yang_binary).unwrap().len() == 0 {
-        fs::remove_file(&yang_binary).unwrap(); // to get rid of any cached results from before
+    // get rid of any cached results from before
+    if Path::new(&yang_binary).exists() && fs::metadata(&yang_binary).unwrap().len() == 0 {
+        fs::remove_file(&yang_binary).unwrap();
     }
 
     if Path::new(&yang_binary).exists() {
