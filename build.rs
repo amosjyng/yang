@@ -1,4 +1,5 @@
 use std::env;
+use std::fs;
 use std::path::Path;
 use std::process::Command;
 
@@ -14,6 +15,10 @@ fn main() {
 
     let out_dir = env::var("OUT_DIR").unwrap();
     let yang_binary = format!("{}/yang-v{}", out_dir, YANG_DEP_VERSION);
+
+    if fs::metadata(&yang_binary).unwrap().len() == 0 {
+        fs::remove_file(&yang_binary).unwrap(); // to get rid of any cached results from before
+    }
 
     if Path::new(&yang_binary).exists() {
         println!("Yang executable already exists at {}", yang_binary);
@@ -36,6 +41,14 @@ fn main() {
                 )
                 .as_str(),
             );
+
+        if fs::metadata(&yang_binary).unwrap().len() == 0 {
+            fs::remove_file(&yang_binary).unwrap();
+            panic!(
+                "FAILURE: yang version downloaded from {} is empty.",
+                yang_url
+            );
+        }
     }
 
     Command::new("chmod")
@@ -49,7 +62,9 @@ fn main() {
             .as_str(),
         );
 
-    Command::new(yang_binary.as_str())
+    println!("==================== RUNNING YANG ====================");
+
+    let result = Command::new(yang_binary.as_str())
         .args(&[
             "Target",
             "--id",
@@ -65,4 +80,6 @@ fn main() {
             )
             .as_str(),
         );
+
+    print!("{}", std::str::from_utf8(&result.stdout).unwrap());
 }
