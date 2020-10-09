@@ -29,7 +29,14 @@ fn main() {
     println!("cargo:rerun-if-changed=src/concepts/attributes/target.rs");
 
     let out_dir = env::var("OUT_DIR").unwrap();
-    let yang_binary = format!("{}/yang-v{}{}", out_dir, YANG_DEP_VERSION, BINARY_EXT);
+    let yang_binary = match env::var("YANG_BINARY") {
+        Ok(custom_path) => {
+            // custom paths useful when bootstrapping from scratch
+            println!("Custom path for yang binary set to {}", custom_path);
+            custom_path
+        }
+        Err(_) => format!("{}/yang-v{}{}", out_dir, YANG_DEP_VERSION, BINARY_EXT),
+    };
 
     if Path::new(&yang_binary).exists() {
         println!("Yang executable already exists at {}", yang_binary);
