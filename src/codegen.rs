@@ -36,6 +36,7 @@ fn output_code(name: &str, doc: Option<Rc<String>>, id: usize, comment_autogen: 
     );
     fs::write(file_absolute, generated_code)
         .expect(format!("Couldn't output generated code to {}", file_absolute).as_str());
+    println!("Generated {}", file_absolute);
 }
 
 /// Handle the implementation request for a new attribute archetype.
