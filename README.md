@@ -47,7 +47,10 @@ To generate code for the `Target` attribute with an ID offset of 1 from Yin's ma
 yang Target --id 1 -d "The target of an implement command."
 ```
 
-After that, you can use the newly generated `src/concepts/attributes/target.rs` as in the [example](examples/result/main.rs). Make sure to add `src/concepts/attributes/target.rs` to your `.gitignore` afterwards.
+After that, you can use the newly generated `src/concepts/attributes/target.rs` as in the [example](examples/result/main.rs). Make sure to:
+
+ * Add `src/concepts/attributes/target.rs` to your `.gitignore`, if you're going to do this regularly as part of your automatic build
+ * Initialize the new `Target` concept on KB startup
 
 ### As a library
 
@@ -60,3 +63,7 @@ zamm_yang = "0.0.3"
 ```
 
 Then, define your `build.rs` as in the [example](examples/build.rs), and your `main.rs` in the same way as above.
+
+## Development
+
+Note that due to Yang using its autogeneration capabilities on itself, it requires a pre-existing binary of itself in order to build its current version. The `build.rs` script will attempt to download one from Bintray if it isn't found locally. If none of the versions of Bintray are available for your platform, you can bootstrap Yang by building each version consecutively and setting the `YANG_BINARY` environment variable to the location of the newly built `yang` executable.
