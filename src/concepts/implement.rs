@@ -2,7 +2,7 @@ use crate::concepts::Target;
 use std::fmt::{Debug, Formatter, Result};
 use std::rc::Rc;
 use zamm_yin::concepts::{Archetype, ArchetypeTrait, FormTrait, Tao, YIN_MAX_ID};
-use zamm_yin::wrappers::{debug_wrapper, BaseNodeTrait, CommonNodeTrait, FinalWrapper};
+use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, CommonNodeTrait, FinalNode};
 
 /// Represents a command to implement something.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -74,11 +74,11 @@ impl ArchetypeTrait<Implement> for Implement {
 }
 
 impl FormTrait for Implement {
-    fn essence(&self) -> &FinalWrapper {
+    fn essence(&self) -> &FinalNode {
         self.base.essence()
     }
 
-    fn essence_mut(&mut self) -> &mut FinalWrapper {
+    fn essence_mut(&mut self) -> &mut FinalNode {
         self.base.essence_mut()
     }
 }
