@@ -47,6 +47,12 @@ fn main() {
                 )
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("YIN")
+                .short("y")
+                .long("yin")
+                .help("Set to generate code for Yin instead."),
+        )
         .get_matches();
 
     initialize_kb();
@@ -65,5 +71,6 @@ fn main() {
             .unwrap_or("true")
             .parse::<bool>()
             .unwrap(),
+        args.is_present("YIN"),
     );
 }
