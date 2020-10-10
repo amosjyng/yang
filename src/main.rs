@@ -1,4 +1,4 @@
-use clap::{App, Arg, crate_version};
+use clap::{crate_version, App, Arg};
 use zamm_yang::codegen::handle_implementation;
 use zamm_yang::concepts::{initialize_kb, Documentable, Implement};
 use zamm_yin::concepts::{ArchetypeTrait, Tao};
