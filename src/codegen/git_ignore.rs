@@ -1,6 +1,6 @@
+use crate::codegen::track_autogen::{add_to_file, track_autogen};
 use path_abs::{PathAbs, PathInfo, PathOps};
-use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, Result, Write};
+use std::io::Result;
 use std::process::Command;
 
 /// Remove a file from Git
@@ -22,24 +22,9 @@ pub fn git_rm(filepath: &str) {
 pub fn git_ignore(file: &PathAbs) -> Result<()> {
     let filename = file.file_name().unwrap().to_str().unwrap();
     let gitignore = file.with_file_name(".gitignore");
-    let mut already_in_gitignore = false;
-    match File::open(gitignore.as_path()) {
-        Ok(existing_ignore) => {
-            for line in BufReader::new(existing_ignore).lines() {
-                if line.unwrap() == filename {
-                    already_in_gitignore = true;
-                    break;
-                }
-            }
-        }
-        Err(_) => {
-            writeln!(File::create(gitignore.as_path())?, ".gitignore")?;
-        }
-    }
-    if !already_in_gitignore {
-        let mut gitignore_file = OpenOptions::new().append(true).open(gitignore.as_path())?;
-        writeln!(gitignore_file, "{}", filename)
-    } else {
-        Ok(())
-    }
+    // todo: cut down on the number of file reads we're doing here
+    track_autogen(gitignore.as_path().to_str().unwrap().to_owned());
+    add_to_file(&gitignore, ".gitignore")?;
+    track_autogen(file.as_path().to_str().unwrap().to_owned());
+    add_to_file(&gitignore, filename)
 }

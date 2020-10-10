@@ -1,5 +1,6 @@
 use clap::{crate_version, App, Arg};
 use zamm_yang::codegen::handle_implementation;
+use zamm_yang::codegen::track_autogen::save_autogen;
 use zamm_yang::concepts::{initialize_kb, Documentable, Implement};
 use zamm_yin::concepts::{ArchetypeTrait, Tao};
 use zamm_yin::node_wrappers::CommonNodeTrait;
@@ -73,4 +74,6 @@ fn main() {
             .unwrap(),
         args.is_present("YIN"),
     );
+
+    save_autogen();
 }
