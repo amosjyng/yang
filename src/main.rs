@@ -1,5 +1,4 @@
-use clap::{crate_version, App, Arg, ArgMatches, SubCommand};
-use std::process::exit;
+use clap::{crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
 use zamm_yang::codegen::handle_implementation;
 use zamm_yang::codegen::track_autogen::{clean_autogen, save_autogen};
 use zamm_yang::concepts::{initialize_kb, Documentable, Implement};
@@ -41,6 +40,8 @@ fn main() {
         .about("Code generator for Yin.")
         .subcommand(SubCommand::with_name("generate")
         .about("Generate a new concept code file")
+        .setting(AppSettings::ArgRequiredElseHelp)
+        .setting(AppSettings::VersionlessSubcommands)
         .arg(
             Arg::with_name("CONCEPT")
                 .value_name("CONCEPT")
@@ -91,8 +92,5 @@ fn main() {
         generate(generate_args);
     } else if let Some(clean_args) = args.subcommand_matches("clean") {
         clean(clean_args);
-    } else {
-        println!("You must specify a subcommand.");
-        exit(1);
     }
 }
