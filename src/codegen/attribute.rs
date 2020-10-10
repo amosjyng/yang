@@ -1,23 +1,34 @@
-use super::{add_autogeneration_comments, into_docstring};
-use std::rc::Rc;
+use super::{add_autogeneration_comments, into_docstring, OutputOptions};
 
 /// Generate code for attributes.
-pub fn code_attribute(
-    name: &str,
-    doc: Option<Rc<String>>,
-    id: usize,
-    comment_autogen: bool,
-) -> String {
-    let doc_insert = match doc {
+pub fn code_attribute<'a>(options: &OutputOptions<'a>) -> String {
+    let doc_insert = match &options.doc {
         Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
         None => String::new(),
+    };
+    let id = if options.yin {
+        format!("{}", options.id)
+    } else {
+        format!("YIN_MAX_ID + {}", options.id)
+    };
+    let crate_name = if options.yin { "crate" } else { "zamm_yin" };
+    let imports = if options.yin { "" } else { ", YIN_MAX_ID" };
+    let test_imports = if options.yin {
+        "use crate::graph::bind_in_memory_graph;"
+    } else {
+        "use crate::concepts::initialize_kb;"
+    };
+    let init_kb = if options.yin {
+        "bind_in_memory_graph();"
+    } else {
+        "initialize_kb();"
     };
     let code = format!(
         r##"use std::fmt::{{Debug, Formatter, Result}};
 use std::rc::Rc;
-use zamm_yin::concepts::attributes::{{Attribute, AttributeTrait}};
-use zamm_yin::concepts::{{ArchetypeTrait, FormTrait, Tao, YIN_MAX_ID}};
-use zamm_yin::wrappers::{{debug_wrapper, CommonNodeTrait, FinalWrapper}};
+use {crate}::concepts::attributes::{{Attribute, AttributeTrait}};
+use {crate}::concepts::{{ArchetypeTrait, FormTrait, Tao{imports}}};
+use {crate}::node_wrappers::{{debug_wrapper, CommonNodeTrait, FinalNode}};
 {doc}
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct {name} {{
@@ -53,7 +64,7 @@ impl CommonNodeTrait for {name} {{
 }}
 
 impl ArchetypeTrait<{name}> for {name} {{
-    const TYPE_ID: usize = YIN_MAX_ID + {id};
+    const TYPE_ID: usize = {id};
     const TYPE_NAME: &'static str = "{name}";
     const PARENT_TYPE_ID: usize = Attribute::TYPE_ID;
 
@@ -65,11 +76,11 @@ impl ArchetypeTrait<{name}> for {name} {{
 }}
 
 impl FormTrait for {name} {{
-    fn essence(&self) -> &FinalWrapper {{
+    fn essence(&self) -> &FinalNode {{
         self.attr.essence()
     }}
 
-    fn essence_mut(&mut self) -> &mut FinalWrapper {{
+    fn essence_mut(&mut self) -> &mut FinalNode {{
         self.attr.essence_mut()
     }}
 }}
@@ -95,11 +106,11 @@ impl AttributeTrait<{name}> for {name} {{
 #[cfg(test)]
 mod tests {{
     use super::*;
-    use crate::concepts::initialize_kb;
+    {test_imports}
 
     #[test]
     fn check_type_created() {{
-        initialize_kb();
+        {init_kb}
         assert_eq!({name}::archetype().id(), {name}::TYPE_ID);
         assert_eq!(
             {name}::archetype().internal_name(),
@@ -109,7 +120,7 @@ mod tests {{
 
     #[test]
     fn from_node_id() {{
-        initialize_kb();
+        {init_kb}
         let concept = {name}::individuate();
         let concept_copy = {name}::from(concept.id());
         assert_eq!(concept.id(), concept_copy.id());
@@ -117,7 +128,7 @@ mod tests {{
 
     #[test]
     fn create_and_retrieve_node_id() {{
-        initialize_kb();
+        {init_kb}
         let concept1 = {name}::individuate();
         let concept2 = {name}::individuate();
         assert_eq!(concept1.id() + 1, concept2.id());
@@ -125,7 +136,7 @@ mod tests {{
 
     #[test]
     fn create_and_retrieve_node_name() {{
-        initialize_kb();
+        {init_kb}
         let mut concept = {name}::individuate();
         concept.set_internal_name("A".to_string());
         assert_eq!(concept.internal_name(), Some(Rc::new("A".to_string())));
@@ -133,7 +144,7 @@ mod tests {{
 
     #[test]
     fn get_owner() {{
-        initialize_kb();
+        {init_kb}
         let mut instance = {name}::individuate();
         let owner_of_owner = {name}::individuate();
         instance.set_owner(Box::new(&owner_of_owner));
@@ -143,7 +154,7 @@ mod tests {{
 
     #[test]
     fn get_value() {{
-        initialize_kb();
+        {init_kb}
         let mut instance = {name}::individuate();
         let value_of_owner = {name}::individuate();
         instance.set_value(Box::new(&value_of_owner));
@@ -152,11 +163,15 @@ mod tests {{
     }}
 }}
 "##,
-        name = name,
+        crate = crate_name,
+        imports = imports,
+        test_imports = test_imports,
+        init_kb = init_kb,
+        name = options.name,
         doc = doc_insert,
         id = id
     );
-    if comment_autogen {
+    if options.comment_autogen {
         add_autogeneration_comments(&code)
     } else {
         code
@@ -170,11 +185,38 @@ mod tests {
 
     #[test]
     fn test_autogen_comments() {
-        assert!(code_attribute("dummy", None, 3, true).contains(AUTOGENERATION_MARKER));
+        let code = code_attribute(&OutputOptions {
+            name: "dummy",
+            doc: None,
+            id: 3,
+            comment_autogen: true,
+            yin: false,
+        });
+        assert!(code.contains(AUTOGENERATION_MARKER));
+        assert!(code.contains("YIN_MAX_ID"));
     }
 
     #[test]
     fn test_autogen_no_comments() {
-        assert!(!code_attribute("dummy", None, 3, false).contains(AUTOGENERATION_MARKER));
+        assert!(!code_attribute(&OutputOptions {
+            name: "dummy",
+            doc: None,
+            id: 3,
+            comment_autogen: false,
+            yin: false
+        })
+        .contains(AUTOGENERATION_MARKER));
+    }
+
+    #[test]
+    fn test_autogen_yin() {
+        assert!(!code_attribute(&OutputOptions {
+            name: "dummy",
+            doc: None,
+            id: 3,
+            comment_autogen: true,
+            yin: true
+        })
+        .contains("YIN_MAX_ID"));
     }
 }
