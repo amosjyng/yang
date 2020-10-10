@@ -114,28 +114,4 @@ fn main() {
             "The target of an implement command.",
         ],
     );
-
-    run_yang(
-        &yang_binary,
-        &[
-            "Value",
-            "--id",
-            "4",
-            "-d",
-            "The value/target/to-node of an attribute.",
-            "--yin",
-        ],
-    );
-
-    run_yang(
-        &yang_binary,
-        &[
-            "Inherits",
-            "--id",
-            "5",
-            "-d",
-            "Describes the owner as inheriting all attributes of the value.",
-            "--yin",
-        ],
-    );
 }
