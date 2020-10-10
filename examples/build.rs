@@ -1,7 +1,7 @@
 use zamm_yang::codegen::handle_implementation;
 use zamm_yang::concepts::{initialize_kb, set_documentation, Implement};
 use zamm_yin::concepts::{ArchetypeTrait, Tao};
-use zamm_yin::wrappers::CommonNodeTrait;
+use zamm_yin::node_wrappers::CommonNodeTrait;
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");

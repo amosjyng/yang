@@ -13,13 +13,13 @@ use mark_autogen::add_autogeneration_comments;
 use path_abs::PathAbs;
 use std::fs;
 use std::path::Path;
-use std::rc::Rc;
-use zamm_yin::wrappers::CommonNodeTrait;
+use zamm_yin::graph::value_wrappers::unwrap_strong;
+use zamm_yin::node_wrappers::CommonNodeTrait;
 
 /// Configurable options for generating a concept code file.
 pub struct OutputOptions<'a> {
     name: &'a str,
-    doc: Option<Rc<String>>,
+    doc: Option<&'a String>,
     id: usize,
     comment_autogen: bool,
     yin: bool,
@@ -51,9 +51,10 @@ fn output_code<'a>(options: &OutputOptions<'a>) {
 /// Handle the implementation request for a new attribute archetype.
 pub fn handle_implementation(request: Implement, id: usize, comment_autogen: bool, yin: bool) {
     let target = request.target().unwrap();
+
     output_code(&OutputOptions {
         name: &target.internal_name().unwrap(),
-        doc: target.documentation(),
+        doc: unwrap_strong(&target.documentation()),
         id: id,
         comment_autogen: comment_autogen,
         yin: yin,
