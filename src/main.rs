@@ -1,4 +1,4 @@
-use clap::{App, Arg};
+use clap::{App, Arg, crate_version};
 use zamm_yang::codegen::handle_implementation;
 use zamm_yang::concepts::{initialize_kb, Documentable, Implement};
 use zamm_yin::concepts::{ArchetypeTrait, Tao};
@@ -9,7 +9,7 @@ fn main() {
     // Avoid using clapp_app! macro due to a bug with the short arg name getting assigned only to
     // 'a'
     let args = App::new("yang")
-        .version("0.0.3")
+        .version(crate_version!())
         .author("Amos Ng <me@amos.ng>")
         .about("Code generator for Yin.")
         .arg(
