@@ -1,4 +1,5 @@
 use zamm_yang::codegen::handle_implementation;
+use zamm_yang::codegen::track_autogen::save_autogen;
 use zamm_yang::concepts::{initialize_kb, set_documentation, Implement};
 use zamm_yin::concepts::{ArchetypeTrait, Tao};
 use zamm_yin::node_wrappers::CommonNodeTrait;
@@ -15,4 +16,5 @@ fn main() {
     implement_command.set_target(target);
 
     handle_implementation(implement_command, 1, true, false);
+    save_autogen(); // keep track of generated files for later cleaning
 }
