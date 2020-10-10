@@ -4,4 +4,3 @@ before_install:
   - rustup component add rustfmt
 script:
   - cargo test --verbose
-  - cargo fmt -- --check
