@@ -194,6 +194,7 @@ mod tests {
             },
             &CodegenConfig {
                 comment_autogen: true,
+                track_autogen: false,
                 yin: false,
             },
         );
@@ -211,6 +212,7 @@ mod tests {
             },
             &CodegenConfig {
                 comment_autogen: false,
+                track_autogen: false,
                 yin: false,
             }
         )
@@ -227,6 +229,7 @@ mod tests {
             },
             &CodegenConfig {
                 comment_autogen: true,
+                track_autogen: false,
                 yin: true,
             }
         )

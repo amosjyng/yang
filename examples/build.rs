@@ -23,6 +23,7 @@ fn main() {
         implement_command,
         &CodegenConfig {
             comment_autogen: true,
+            track_autogen: false,
             yin: false,
         },
     );
