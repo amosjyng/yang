@@ -2,12 +2,23 @@ use crate::concepts::Target;
 use std::fmt::{Debug, Formatter, Result};
 use std::rc::Rc;
 use zamm_yin::concepts::{Archetype, ArchetypeTrait, FormTrait, Tao, YIN_MAX_ID};
+use zamm_yin::graph::value_wrappers::{unwrap_strong, StrongValue};
 use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, CommonNodeTrait, FinalNode};
 
 /// Represents a command to implement something.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Implement {
     base: Tao,
+}
+
+/// Contains all information needed to generate a concept. Because it's too difficult to store
+/// things in the KB right now, we'll use a custom struct for now.
+#[derive(Clone)]
+pub struct ImplementConfig {
+    /// ID of the concept being implemented.
+    pub id: usize,
+    /// Documentation, if any, for the concept being implemented.
+    pub doc: Option<String>,
 }
 
 impl Implement {
@@ -24,6 +35,18 @@ impl Implement {
             .into_iter()
             .next()
             .map(|b| Archetype::from(b))
+    }
+
+    /// Set the config for this Implement. Note that this cannot be used at the same time with
+    /// Documentable functions, at least for now.
+    pub fn set_config(&mut self, config: ImplementConfig) {
+        self.essence_mut()
+            .set_value(Box::new(StrongValue::new(config)));
+    }
+
+    /// Retrieve the config stored for this Implement.
+    pub fn config(&self) -> Option<ImplementConfig> {
+        unwrap_strong::<ImplementConfig>(&self.essence().value()).map(|c| c.clone())
     }
 }
 

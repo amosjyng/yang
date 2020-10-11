@@ -1,0 +1,6 @@
+- name: Target
+  parent: Attribute
+- parent: Implement
+  target: Target
+  output_id: 2
+  documentation: The target of an implement command.
