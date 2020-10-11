@@ -6,6 +6,8 @@ use zamm_yin::initialize_type;
 
 /// Yang-specific attribute concepts.
 mod attributes;
+/// Callbacks that should be triggered upon certain conditions in Yin being met.
+pub mod callbacks;
 /// Concept documentation.
 mod documentable;
 /// Command to implement something.
