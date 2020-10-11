@@ -8,27 +8,27 @@ fn extract_yaml(markdown: &str) -> String {
     let mut in_yaml_block = false;
     for event in Parser::new(markdown) {
         match event {
-            Event::Start(tag) => match tag {
-                Tag::CodeBlock(kind) => match kind {
-                    CodeBlockKind::Fenced(cow) if cow.to_string().as_str() == "yaml" => {
-                        in_yaml_block = true
+            Event::Start(tag) => {
+                if let Tag::CodeBlock(kind) = tag {
+                    if let CodeBlockKind::Fenced(cow) = kind {
+                        match cow.to_string().as_str() {
+                            "yaml" => in_yaml_block = true,
+                            "yml" => in_yaml_block = true,
+                            _ => (),
+                        }
                     }
-                    CodeBlockKind::Fenced(cow) if cow.to_string().as_str() == "yml" => {
-                        in_yaml_block = true
-                    }
-                    _ => (),
-                },
-                _ => (),
-            },
+                }
+            }
             Event::Text(content) => {
                 if in_yaml_block {
                     code += &content.into_string()
                 }
             }
-            Event::End(tag) => match tag {
-                Tag::CodeBlock(_) => in_yaml_block = false,
-                _ => (),
-            },
+            Event::End(tag) => {
+                if let Tag::CodeBlock(_) = tag {
+                    in_yaml_block = false
+                }
+            }
             other => {
                 if in_yaml_block {
                     dbg!("{}", other);

@@ -10,7 +10,7 @@ pub fn into_docstring(documentation: &str, indent_size: usize) -> String {
     // subtract 4 more from CODE_WIDTH to account for "/// " at the beginning of each line
     let lines = textwrap::fill(documentation, CODE_WIDTH - indent_size - 4);
     let mut comment = String::new();
-    for line in lines.split("\n") {
+    for line in lines.split('\n') {
         comment.push_str(format!("{}/// {}\n", indent, line.trim_end()).as_str());
     }
     comment.trim_end().to_string()

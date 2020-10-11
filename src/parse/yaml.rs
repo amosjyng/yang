@@ -13,9 +13,9 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
     for entry in doc.as_vec().unwrap() {
         let parent = Archetype::try_from(entry["parent"].as_str().unwrap()).unwrap();
         let mut new_concept = Tao::individuate_with_parent(parent.id());
-        entry["name"]
-            .as_str()
-            .map(|name| new_concept.set_internal_name(name.to_owned()));
+        if let Some(name) = entry["name"].as_str() {
+            new_concept.set_internal_name(name.to_owned());
+        }
         if parent == Implement::archetype() {
             let mut implement = Implement::from(new_concept);
             let target_name = entry["target"].as_str().unwrap();
