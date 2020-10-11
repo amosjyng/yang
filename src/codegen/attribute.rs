@@ -25,7 +25,9 @@ pub fn code_attribute(implement: &ImplementConfig, options: &CodegenConfig) -> S
         "initialize_kb();"
     };
     let code = format!(
-        r##"use std::fmt::{{Debug, Formatter, Result}};
+        r##"use std::convert::TryFrom;
+use std::fmt;
+use std::fmt::{{Debug, Formatter}};
 use std::rc::Rc;
 use {crate}::concepts::attributes::{{Attribute, AttributeTrait}};
 use {crate}::concepts::{{ArchetypeTrait, FormTrait, Tao{imports}}};
@@ -37,7 +39,7 @@ pub struct {name} {{
 }}
 
 impl Debug for {name} {{
-    fn fmt(&self, f: &mut Formatter) -> Result {{
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {{
         debug_wrapper("{name}", Box::new(self), f)
     }}
 }}
@@ -47,6 +49,14 @@ impl From<usize> for {name} {{
         Self {{
             attr: Attribute::from(id),
         }}
+    }}
+}}
+
+impl<'a> TryFrom<&'a str> for {name} {{
+    type Error = String;
+
+    fn try_from(name: &'a str) -> Result<Self, Self::Error> {{
+        Attribute::try_from(name).map(|a| Self {{ attr: a }})
     }}
 }}
 
@@ -125,6 +135,15 @@ mod tests {{
         let concept = {name}::individuate();
         let concept_copy = {name}::from(concept.id());
         assert_eq!(concept.id(), concept_copy.id());
+    }}
+
+    #[test]
+    fn from_name() {{
+        {init_kb}
+        let mut concept = {name}::individuate();
+        concept.set_internal_name("A".to_owned());
+        assert_eq!({name}::try_from("A"), Ok(concept));
+        assert!({name}::try_from("B").is_err());
     }}
 
     #[test]
