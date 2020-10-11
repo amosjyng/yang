@@ -21,6 +21,7 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
             let target_name = entry["target"].as_str().unwrap();
             implement.set_target(Archetype::try_from(target_name).unwrap());
             let impl_config = ImplementConfig {
+                name: target_name.to_owned(),
                 id: entry["output_id"].as_i64().unwrap() as usize,
                 doc: entry["documentation"].as_str().map(|s| s.to_owned()),
             };

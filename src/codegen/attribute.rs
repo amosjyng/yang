@@ -1,15 +1,16 @@
-use super::{add_autogeneration_comments, into_docstring, OutputOptions};
+use super::{add_autogeneration_comments, into_docstring, CodegenConfig};
+use crate::concepts::ImplementConfig;
 
 /// Generate code for attributes.
-pub fn code_attribute<'a>(options: &OutputOptions<'a>) -> String {
-    let doc_insert = match &options.doc {
+pub fn code_attribute<'a>(implement: &ImplementConfig, options: &CodegenConfig) -> String {
+    let doc_insert = match &implement.doc {
         Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
         None => String::new(),
     };
     let id = if options.yin {
-        format!("{}", options.id)
+        format!("{}", implement.id)
     } else {
-        format!("YIN_MAX_ID + {}", options.id)
+        format!("YIN_MAX_ID + {}", implement.id)
     };
     let crate_name = if options.yin { "crate" } else { "zamm_yin" };
     let imports = if options.yin { "" } else { ", YIN_MAX_ID" };
@@ -167,7 +168,7 @@ mod tests {{
         imports = imports,
         test_imports = test_imports,
         init_kb = init_kb,
-        name = options.name,
+        name = implement.name,
         doc = doc_insert,
         id = id
     );
@@ -185,38 +186,53 @@ mod tests {
 
     #[test]
     fn test_autogen_comments() {
-        let code = code_attribute(&OutputOptions {
-            name: "dummy",
-            doc: None,
-            id: 3,
-            comment_autogen: true,
-            yin: false,
-        });
+        let code = code_attribute(
+            &ImplementConfig {
+                name: "dummy".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &CodegenConfig {
+                comment_autogen: true,
+                track_autogen: false,
+                yin: false,
+            },
+        );
         assert!(code.contains(AUTOGENERATION_MARKER));
         assert!(code.contains("YIN_MAX_ID"));
     }
 
     #[test]
     fn test_autogen_no_comments() {
-        assert!(!code_attribute(&OutputOptions {
-            name: "dummy",
-            doc: None,
-            id: 3,
-            comment_autogen: false,
-            yin: false
-        })
+        assert!(!code_attribute(
+            &ImplementConfig {
+                name: "dummy".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &CodegenConfig {
+                comment_autogen: false,
+                track_autogen: false,
+                yin: false,
+            }
+        )
         .contains(AUTOGENERATION_MARKER));
     }
 
     #[test]
     fn test_autogen_yin() {
-        assert!(!code_attribute(&OutputOptions {
-            name: "dummy",
-            doc: None,
-            id: 3,
-            comment_autogen: true,
-            yin: true
-        })
+        assert!(!code_attribute(
+            &ImplementConfig {
+                name: "dummy".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &CodegenConfig {
+                comment_autogen: true,
+                track_autogen: false,
+                yin: true,
+            }
+        )
         .contains("YIN_MAX_ID"));
     }
 }

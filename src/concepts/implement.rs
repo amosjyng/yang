@@ -13,8 +13,10 @@ pub struct Implement {
 
 /// Contains all information needed to generate a concept. Because it's too difficult to store
 /// things in the KB right now, we'll use a custom struct for now.
-#[derive(Clone)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ImplementConfig {
+    /// Name of the concept being implemented.
+    pub name: String,
     /// ID of the concept being implemented.
     pub id: usize,
     /// Documentation, if any, for the concept being implemented.
@@ -152,5 +154,24 @@ mod tests {
         let mut implement = Implement::individuate();
         implement.set_target(Owner::archetype());
         assert_eq!(implement.target(), Some(Owner::archetype()));
+    }
+
+    #[test]
+    fn set_and_retrieve_config() {
+        initialize_kb();
+        let mut implement = Implement::individuate();
+        implement.set_config(ImplementConfig {
+            name: "Implement".to_owned(),
+            id: 2,
+            doc: Some("Hi".to_owned()),
+        });
+        assert_eq!(
+            implement.config(),
+            Some(ImplementConfig {
+                name: "Implement".to_owned(),
+                id: 2,
+                doc: Some("Hi".to_owned()),
+            })
+        );
     }
 }
