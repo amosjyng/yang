@@ -129,16 +129,16 @@ mod tests {
 
             ```yaml
             - name: Target
-            parent: Attribute
+              parent: Attribute
             ```
 
             Wait a second... this is just what we have in the yaml.rs test!
 
             ```yml
             - parent: Implement
-            target: Target
-            output_id: 2
-            documentation: Howdy, how ya doing?
+              target: Target
+              output_id: 2
+              documentation: Howdy, how ya doing?
             ```
         "#});
         assert_eq!(concepts.len(), 2);
