@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/amosjyng/yang.svg?branch=main)](https://travis-ci.com/amosjyng/yang)
 
-Yang is a rudimentary, experimental code generator. It both depends on [Yin](https://github.com/amosjyng/yin) to manage its internal state, and currently only generates code for Yin.
+Yang is a rudimentary, experimental code generator. Yang is both used by, and depends on, [Yin](https://crates.io/crates/zamm_yin) for code generation.
 
 This crate is named `zamm_yang` for consistency with `zamm_yin`. However, the name for this tool is just `yang` for all intents and purposes within the ZAMM universe.
 
@@ -36,16 +36,15 @@ SUBCOMMANDS:
 
 #### Example
 
-To generate code for the `Target` attribute with an ID offset of 1 from Yin's max id, run:
+See this project's very own [`yin.yml`](yin.yml) for an example configuration file.
+
+Then, run
 
 ```sh
-yang generate Target --id 1 -d "The target of an implement command."
+yang generate
 ```
 
-After that, you can use the newly generated `src/concepts/attributes/target.rs` as in the [example](examples/result/main.rs). Make sure to:
-
- * Add `src/concepts/attributes/target.rs` to your `.gitignore`, if you're going to do this regularly as part of your automatic build
- * Initialize the new `Target` concept on KB startup
+and you can use the newly generated `src/concepts/attributes/target.rs` as in the [example](examples/result/main.rs). Make sure to initialize the new `Target` concept on KB startup
 
 ### As a library
 
@@ -53,7 +52,7 @@ If you're using a custom build script, chances are you will want to generate Yin
 
 ```toml
 [build-dependencies]
-zamm_yin = "0.0.3"
+zamm_yin = "0.0.4"
 zamm_yang = "0.0.4"
 ```
 
