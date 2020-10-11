@@ -13,7 +13,7 @@ mod implement;
 
 use attributes::Target;
 pub use documentable::{set_documentation, Documentable};
-pub use implement::Implement;
+pub use implement::{Implement, ImplementConfig};
 
 /// Initialize Yin, including with Yang-specific concepts.
 pub fn initialize_kb() {
