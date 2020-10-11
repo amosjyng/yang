@@ -5,8 +5,8 @@ use std::fs::read_to_string;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
 use std::process::exit;
-use zamm_yang::codegen::handle_implementation;
 use zamm_yang::codegen::track_autogen::{clean_autogen, save_autogen};
+use zamm_yang::codegen::{handle_implementation, CodegenConfig};
 use zamm_yang::concepts::initialize_kb;
 use zamm_yang::concepts::Implement;
 use zamm_yang::parse::{parse_md, parse_yaml};
@@ -94,11 +94,14 @@ fn generate(args: &ArgMatches) -> Result<(), Error> {
     for implement_command in Implement::archetype().individuals() {
         handle_implementation(
             Implement::from(implement_command),
-            args.value_of("COMMENT_AUTOGEN")
-                .unwrap_or("true")
-                .parse::<bool>()
-                .unwrap(),
-            args.is_present("YIN"),
+            &CodegenConfig {
+                comment_autogen: args
+                    .value_of("COMMENT_AUTOGEN")
+                    .unwrap_or("true")
+                    .parse::<bool>()
+                    .unwrap(),
+                yin: args.is_present("YIN"),
+            },
         )
     }
 
