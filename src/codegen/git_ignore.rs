@@ -8,13 +8,12 @@ pub fn git_rm(filepath: &str) {
     Command::new("git")
         .args(&["rm", "-f", filepath])
         .output()
-        .expect(
-            format!(
+        .unwrap_or_else(|_| {
+            panic!(
                 "Could not remove file from Git, please do so manually: {}",
                 filepath
             )
-            .as_str(),
-        );
+        });
 }
 
 /// Add a file to gitignore in the same directory. Creates the .gitignore if it doesn't yet exist,

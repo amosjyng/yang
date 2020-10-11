@@ -1,3 +1,5 @@
+#![allow(clippy::all)] // Rc<Box<...>> is due to Yin, can't change here
+
 use std::rc::Rc;
 use zamm_yin::concepts::{Archetype, FormTrait};
 use zamm_yin::graph::value_wrappers::KBValue;
@@ -16,7 +18,7 @@ pub trait Documentable {
 
 impl Documentable for Archetype {
     fn set_documentation(&mut self, doc: &str) {
-        set_documentation(Box::new(self), doc)
+        set_documentation(self, doc)
     }
 
     fn documentation(&self) -> Option<Rc<Box<dyn KBValue>>> {
@@ -25,7 +27,7 @@ impl Documentable for Archetype {
 }
 
 /// Set documentation for this concept.
-pub fn set_documentation(form: Box<&mut dyn FormTrait>, doc: &str) {
+pub fn set_documentation(form: &mut dyn FormTrait, doc: &str) {
     form.essence_mut()
         .set_value(Box::new(StrongValue::new(doc.to_string())));
 }

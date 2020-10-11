@@ -27,7 +27,7 @@ fn find_file(specified_file: Option<&str>) -> Result<PathAbs, Error> {
             } else {
                 Err(Error::new(
                     ErrorKind::NotFound,
-                    format!("Specified input file was not found at {}", path_str).to_string(),
+                    format!("Specified input file was not found at {}", path_str),
                 ))
             }
         }

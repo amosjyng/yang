@@ -2,7 +2,7 @@ use super::{add_autogeneration_comments, into_docstring, CodegenConfig};
 use crate::concepts::ImplementConfig;
 
 /// Generate code for attributes.
-pub fn code_attribute<'a>(implement: &ImplementConfig, options: &CodegenConfig) -> String {
+pub fn code_attribute(implement: &ImplementConfig, options: &CodegenConfig) -> String {
     let doc_insert = match &implement.doc {
         Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
         None => String::new(),

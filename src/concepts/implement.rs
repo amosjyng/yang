@@ -36,7 +36,7 @@ impl Implement {
             .outgoing_nodes(Target::TYPE_ID)
             .into_iter()
             .next()
-            .map(|b| Archetype::from(b))
+            .map(Archetype::from)
     }
 
     /// Set the config for this Implement. Note that this cannot be used at the same time with
@@ -48,7 +48,7 @@ impl Implement {
 
     /// Retrieve the config stored for this Implement.
     pub fn config(&self) -> Option<ImplementConfig> {
-        unwrap_strong::<ImplementConfig>(&self.essence().value()).map(|c| c.clone())
+        unwrap_strong::<ImplementConfig>(&self.essence().value()).cloned()
     }
 }
 
