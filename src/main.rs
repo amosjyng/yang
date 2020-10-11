@@ -57,7 +57,7 @@ fn find_file(specified_file: Option<&str>) -> Result<PathAbs, Error> {
 }
 
 /// Generate code from the input file.
-fn generate(args: &ArgMatches) -> Result<(), Error> {
+fn build(args: &ArgMatches) -> Result<(), Error> {
     let found_input = find_file(args.value_of("INPUT"))?;
     let contents = read_to_string(&found_input)?;
     let extension = found_input
@@ -126,7 +126,7 @@ fn main() {
         .author("Amos Ng <me@amos.ng>")
         .about("Code generator for Yin.")
         .subcommand(
-            SubCommand::with_name("generate").setting(AppSettings::ColoredHelp)
+            SubCommand::with_name("build").setting(AppSettings::ColoredHelp)
             .about("Generate code from an input file. ")
             .arg(
                 Arg::with_name("INPUT")
@@ -169,8 +169,8 @@ fn main() {
 
     initialize_kb();
 
-    if let Some(generate_args) = args.subcommand_matches("generate") {
-        exit(match generate(generate_args) {
+    if let Some(generate_args) = args.subcommand_matches("build") {
+        exit(match build(generate_args) {
             Ok(_) => 0,
             Err(e) => {
                 eprintln!("{}", e);
@@ -179,5 +179,7 @@ fn main() {
         })
     } else if let Some(clean_args) = args.subcommand_matches("clean") {
         clean(clean_args);
+    } else {
+        panic!("Arg not found. Did you reconfigure clap recently?");
     }
 }
