@@ -9,11 +9,11 @@ use zamm_yang::codegen::handle_implementation;
 use zamm_yang::codegen::track_autogen::{clean_autogen, save_autogen};
 use zamm_yang::concepts::initialize_kb;
 use zamm_yang::concepts::Implement;
-use zamm_yang::parse::parse_yaml;
+use zamm_yang::parse::{parse_md, parse_yaml};
 use zamm_yin::concepts::ArchetypeTrait;
 
 /// All supported input filename extensions.
-const SUPPORTED_EXTENSIONS: &[&str] = &["yml", "yaml"];
+const SUPPORTED_EXTENSIONS: &[&str] = &["md", "yml", "yaml"];
 
 /// Find the right input file.
 fn find_file(specified_file: Option<&str>) -> Result<PathAbs, Error> {
@@ -59,7 +59,38 @@ fn find_file(specified_file: Option<&str>) -> Result<PathAbs, Error> {
 /// Generate code from the input file.
 fn generate(args: &ArgMatches) -> Result<(), Error> {
     let found_input = find_file(args.value_of("INPUT"))?;
-    parse_yaml(&read_to_string(found_input)?);
+    let contents = read_to_string(&found_input)?;
+    let extension = found_input
+        .extension()
+        .map(|e| e.to_str().unwrap())
+        .unwrap_or("");
+    let found_parser = match extension {
+        "md" => {
+            parse_md(&contents);
+            true
+        }
+        "yaml" => {
+            parse_yaml(&contents);
+            true
+        }
+        "yml" => {
+            parse_yaml(&contents);
+            true
+        }
+        _ => false,
+    };
+
+    if !found_parser {
+        return Err(Error::new(
+            ErrorKind::NotFound,
+            format!(
+                "The extension \"{}\" is not recognized. Please see the help message for \
+                recognized extension types.",
+                extension
+            ),
+        ));
+    }
+
     for implement_command in Implement::archetype().individuals() {
         handle_implementation(
             Implement::from(implement_command),
@@ -97,8 +128,9 @@ fn main() {
                 Arg::with_name("INPUT")
                     .value_name("INPUT")
                     .help("The input file containing relevant information to generate code for. \
-                    Currently only YAML (extensions .yml or .yaml) is supported. Defaults to \
-                    yin.{yml,yaml}, with each extension tried in that order.")
+                    Currently only Markdown (extension .md) and YAML (extensions .yml or .yaml) \
+                    are supported. If no input file is provided, yang will look for a file named \
+                    `yin` with one of the above extensions, in the current directory.")
                     .takes_value(true),
             )
             .arg(
