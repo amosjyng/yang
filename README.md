@@ -36,7 +36,7 @@ SUBCOMMANDS:
 
 #### Example
 
-See this project's very own [`yin.yml`](yin.yml) for an example configuration file.
+See this project's very own [`yin.md`](yin.md) for an example configuration file.
 
 Then, run
 

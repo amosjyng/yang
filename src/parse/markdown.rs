@@ -40,14 +40,18 @@ fn extract_yaml(markdown: &str) -> String {
 }
 
 /// Extract YAML code blocks from Markdown and then extract concepts from those YAML code blocks.
-pub fn parse_markdown(markdown: &str) -> Vec<Tao> {
+pub fn parse_md(markdown: &str) -> Vec<Tao> {
     parse_yaml(&extract_yaml(markdown))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::concepts::{initialize_kb, Implement};
     use indoc::indoc;
+    use std::rc::Rc;
+    use zamm_yin::concepts::{ArchetypeTrait, FormTrait};
+    use zamm_yin::node_wrappers::CommonNodeTrait;
 
     #[test]
     fn test_yaml_extraction_nothing() {
@@ -114,5 +118,38 @@ mod tests {
               parent: Tao
         "}
         );
+    }
+
+    #[test]
+    fn test_yaml_extraction_full() {
+        initialize_kb();
+
+        let concepts = parse_md(indoc! {r#"
+            # Let's try this
+
+            ```yaml
+            - name: Target
+            parent: Attribute
+            ```
+
+            Wait a second... this is just what we have in the yaml.rs test!
+
+            ```yml
+            - parent: Implement
+            target: Target
+            output_id: 2
+            documentation: Howdy, how ya doing?
+            ```
+        "#});
+        assert_eq!(concepts.len(), 2);
+        let implement = Implement::from(concepts[1]);
+        assert!(implement.has_ancestor(Implement::archetype()));
+        assert_eq!(
+            implement.target().map(|t| t.internal_name()).flatten(),
+            Some(Rc::new("Target".to_owned()))
+        );
+        let cfg = implement.config().unwrap();
+        assert_eq!(cfg.id, 2);
+        assert_eq!(cfg.doc, Some("Howdy, how ya doing?".to_owned()));
     }
 }
