@@ -59,6 +59,10 @@ fn find_file(specified_file: Option<&str>) -> Result<PathAbs, Error> {
 /// Generate code from the input file.
 fn build(args: &ArgMatches) -> Result<(), Error> {
     let found_input = find_file(args.value_of("INPUT"))?;
+    println!(
+        "cargo:rerun-if-changed={}",
+        found_input.as_os_str().to_str().unwrap()
+    );
     let contents = read_to_string(&found_input)?;
     let extension = found_input
         .extension()
