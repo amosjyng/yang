@@ -54,7 +54,7 @@ impl Implement {
 
 impl Debug for Implement {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        debug_wrapper("Implement", Box::new(self), f)
+        debug_wrapper("Implement", self, f)
     }
 }
 
