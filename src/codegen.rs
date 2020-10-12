@@ -32,9 +32,9 @@ pub struct CodegenConfig {
 impl Default for CodegenConfig {
     fn default() -> Self {
         Self {
-        comment_autogen: true,
-        track_autogen: false,
-        yin: false,
+            comment_autogen: true,
+            track_autogen: false,
+            yin: false,
         }
     }
 }
