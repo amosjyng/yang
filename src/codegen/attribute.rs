@@ -40,7 +40,7 @@ pub struct {name} {{
 
 impl Debug for {name} {{
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {{
-        debug_wrapper("{name}", Box::new(self), f)
+        debug_wrapper("{name}", self, f)
     }}
 }}
 
@@ -97,7 +97,7 @@ impl FormTrait for {name} {{
 }}
 
 impl AttributeTrait<{name}> for {name} {{
-    fn set_owner(&mut self, owner: Box<&dyn FormTrait>) {{
+    fn set_owner(&mut self, owner: &dyn FormTrait) {{
         self.attr.set_owner(owner);
     }}
 
@@ -105,7 +105,7 @@ impl AttributeTrait<{name}> for {name} {{
         self.attr.owner()
     }}
 
-    fn set_value(&mut self, value: Box<&dyn FormTrait>) {{
+    fn set_value(&mut self, value: &dyn FormTrait) {{
         self.attr.set_value(value);
     }}
 
@@ -167,7 +167,7 @@ mod tests {{
         {init_kb}
         let mut instance = {name}::individuate();
         let owner_of_owner = {name}::individuate();
-        instance.set_owner(Box::new(&owner_of_owner));
+        instance.set_owner(&owner_of_owner);
         assert_eq!(instance.owner(), Some(owner_of_owner.ego_death()));
         assert_eq!(instance.value(), None);
     }}
@@ -177,7 +177,7 @@ mod tests {{
         {init_kb}
         let mut instance = {name}::individuate();
         let value_of_owner = {name}::individuate();
-        instance.set_value(Box::new(&value_of_owner));
+        instance.set_value(&value_of_owner);
         assert_eq!(instance.owner(), None);
         assert_eq!(instance.value(), Some(value_of_owner.ego_death()));
     }}
