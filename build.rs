@@ -38,6 +38,11 @@ where
             )
         });
 
+    if !result.status.success() {
+        eprint!("{}", std::str::from_utf8(&result.stderr).unwrap());
+        panic!("Yang binary command failed.");
+    }
+
     print!("{}", std::str::from_utf8(&result.stdout).unwrap());
 }
 
