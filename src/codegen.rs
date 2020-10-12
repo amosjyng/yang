@@ -29,6 +29,16 @@ pub struct CodegenConfig {
     pub yin: bool,
 }
 
+impl Default for CodegenConfig {
+    fn default() -> Self {
+        Self {
+        comment_autogen: true,
+        track_autogen: false,
+        yin: false,
+        }
+    }
+}
+
 /// Output code to filename
 pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
     let generated_code = code_attribute(implement, options);
