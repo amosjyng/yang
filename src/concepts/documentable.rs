@@ -1,5 +1,3 @@
-#![allow(clippy::all)] // Rc<Box<...>> is due to Yin, can't change here
-
 use std::rc::Rc;
 use zamm_yin::concepts::{Archetype, FormTrait};
 use zamm_yin::graph::value_wrappers::KBValue;
@@ -8,6 +6,7 @@ use zamm_yin::node_wrappers::BaseNodeTrait;
 
 /// This trait allows documentation to be set and retrieved for a concept. This does not appear to
 /// be usable from external crates.
+#[allow(clippy::redundant_allocation)]
 pub trait Documentable {
     /// Set documentation for this concept.
     fn set_documentation(&mut self, doc: &str);
