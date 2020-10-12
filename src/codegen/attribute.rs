@@ -25,7 +25,9 @@ pub fn code_attribute(implement: &ImplementConfig, options: &CodegenConfig) -> S
         "initialize_kb();"
     };
     let code = format!(
-        r##"use std::fmt::{{Debug, Formatter, Result}};
+        r##"use std::convert::TryFrom;
+use std::fmt;
+use std::fmt::{{Debug, Formatter}};
 use std::rc::Rc;
 use {crate}::concepts::attributes::{{Attribute, AttributeTrait}};
 use {crate}::concepts::{{ArchetypeTrait, FormTrait, Tao{imports}}};
@@ -37,8 +39,8 @@ pub struct {name} {{
 }}
 
 impl Debug for {name} {{
-    fn fmt(&self, f: &mut Formatter) -> Result {{
-        debug_wrapper("{name}", Box::new(self), f)
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {{
+        debug_wrapper("{name}", self, f)
     }}
 }}
 
@@ -47,6 +49,14 @@ impl From<usize> for {name} {{
         Self {{
             attr: Attribute::from(id),
         }}
+    }}
+}}
+
+impl<'a> TryFrom<&'a str> for {name} {{
+    type Error = String;
+
+    fn try_from(name: &'a str) -> Result<Self, Self::Error> {{
+        Attribute::try_from(name).map(|a| Self {{ attr: a }})
     }}
 }}
 
@@ -87,7 +97,7 @@ impl FormTrait for {name} {{
 }}
 
 impl AttributeTrait<{name}> for {name} {{
-    fn set_owner(&mut self, owner: Box<&dyn FormTrait>) {{
+    fn set_owner(&mut self, owner: &dyn FormTrait) {{
         self.attr.set_owner(owner);
     }}
 
@@ -95,7 +105,7 @@ impl AttributeTrait<{name}> for {name} {{
         self.attr.owner()
     }}
 
-    fn set_value(&mut self, value: Box<&dyn FormTrait>) {{
+    fn set_value(&mut self, value: &dyn FormTrait) {{
         self.attr.set_value(value);
     }}
 
@@ -128,6 +138,15 @@ mod tests {{
     }}
 
     #[test]
+    fn from_name() {{
+        {init_kb}
+        let mut concept = {name}::individuate();
+        concept.set_internal_name("A".to_owned());
+        assert_eq!({name}::try_from("A"), Ok(concept));
+        assert!({name}::try_from("B").is_err());
+    }}
+
+    #[test]
     fn create_and_retrieve_node_id() {{
         {init_kb}
         let concept1 = {name}::individuate();
@@ -148,7 +167,7 @@ mod tests {{
         {init_kb}
         let mut instance = {name}::individuate();
         let owner_of_owner = {name}::individuate();
-        instance.set_owner(Box::new(&owner_of_owner));
+        instance.set_owner(&owner_of_owner);
         assert_eq!(instance.owner(), Some(owner_of_owner.ego_death()));
         assert_eq!(instance.value(), None);
     }}
@@ -158,7 +177,7 @@ mod tests {{
         {init_kb}
         let mut instance = {name}::individuate();
         let value_of_owner = {name}::individuate();
-        instance.set_value(Box::new(&value_of_owner));
+        instance.set_value(&value_of_owner);
         assert_eq!(instance.owner(), None);
         assert_eq!(instance.value(), Some(value_of_owner.ego_death()));
     }}
