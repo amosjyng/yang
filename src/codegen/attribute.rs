@@ -1,5 +1,6 @@
-use super::NameTransform;
-use super::{add_autogeneration_comments, into_docstring, CodegenConfig};
+use super::{
+    add_autogeneration_comments, add_fmt_skips, into_docstring, CodegenConfig, NameTransform,
+};
 use crate::concepts::ImplementConfig;
 
 /// Generate code for attributes.
@@ -194,16 +195,18 @@ mod tests {{
         doc = doc_insert,
         id = id
     );
+    let formatted = add_fmt_skips(&code);
     if options.comment_autogen {
-        add_autogeneration_comments(&code)
+        add_autogeneration_comments(&formatted)
     } else {
-        code
+        formatted
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::super::mark_autogen::AUTOGENERATION_MARKER;
+    use super::super::mark_fmt::FMT_SKIP_MARKER;
     use super::*;
 
     #[test]
@@ -256,5 +259,39 @@ mod tests {
             }
         )
         .contains("YIN_MAX_ID"));
+    }
+
+    #[test]
+    fn test_autogen_fmt_skip() {
+        let code = code_attribute(
+            &ImplementConfig {
+                name: "short".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &CodegenConfig {
+                comment_autogen: true,
+                track_autogen: false,
+                yin: false,
+            },
+        );
+        assert!(!code.contains(FMT_SKIP_MARKER));
+    }
+
+    #[test]
+    fn test_autogen_fmt_not_skip() {
+        let code = code_attribute(
+            &ImplementConfig {
+                name: "ReallySuperLongClassNameOhBoy".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &CodegenConfig {
+                comment_autogen: true,
+                track_autogen: false,
+                yin: false,
+            },
+        );
+        assert!(code.contains(FMT_SKIP_MARKER));
     }
 }
