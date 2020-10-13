@@ -1522,7 +1522,7 @@ dependencies = [
 
 [[package]]
 name = "zamm_yang"
-version = "0.0.5"
+version = "0.0.6-beta"
 dependencies = [
  "clap",
  "indoc",
