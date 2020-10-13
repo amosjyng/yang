@@ -1,8 +1,10 @@
+use super::NameTransform;
 use super::{add_autogeneration_comments, into_docstring, CodegenConfig};
 use crate::concepts::ImplementConfig;
 
 /// Generate code for attributes.
 pub fn code_attribute(implement: &ImplementConfig, options: &CodegenConfig) -> String {
+    let name_transform = NameTransform::from_camel_case(&implement.name);
     let doc_insert = match &implement.doc {
         Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
         None => String::new(),
@@ -76,7 +78,7 @@ impl CommonNodeTrait for {name} {{
 
 impl ArchetypeTrait<{name}> for {name} {{
     const TYPE_ID: usize = {id};
-    const TYPE_NAME: &'static str = "{name}";
+    const TYPE_NAME: &'static str = "{internal_name}";
     const PARENT_TYPE_ID: usize = Attribute::TYPE_ID;
 
     fn individuate_with_parent(parent_id: usize) -> Self {{
@@ -187,7 +189,8 @@ mod tests {{
         imports = imports,
         test_imports = test_imports,
         init_kb = init_kb,
-        name = implement.name,
+        name = name_transform.to_camel_case(),
+        internal_name = name_transform.to_kebab_case(),
         doc = doc_insert,
         id = id
     );
