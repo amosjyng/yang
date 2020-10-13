@@ -17,7 +17,7 @@ cargo install yang
 ### As a binary
 
 ```text
-yang 0.0.5
+yang 0.0.6
 Amos Ng <me@amos.ng>
 Code generator for Yin.
 
@@ -52,8 +52,8 @@ If you're using a custom build script, chances are you will want to generate Yin
 
 ```toml
 [build-dependencies]
-zamm_yin = "0.0.5"
-zamm_yang = "0.0.5"
+zamm_yin = "0.0.6"
+zamm_yang = "0.0.6"
 ```
 
 Then, define your `build.rs` as in the [example](examples/build.rs), and your `main.rs` in the same way as above.
