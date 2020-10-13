@@ -11,6 +11,13 @@ Here's what Yang knows: implementations are lower-level concepts that *target* s
   parent: Attribute
 ```
 
+Now wait, what did we say? Archetypes *have* attributes of certain types?
+
+```yaml
+- name: HasAttributeType
+  parent: Tao
+```
+
 ### Implementation
 
 Unlike with Yin, we don't actually want to implement *everything* we know, because everything we know about Yin is already implemented inside her physical body. We only want to implement the things that we learned about Yang here:
@@ -20,4 +27,11 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
   target: Target
   output_id: 2
   documentation: The target of an implement command.
+- parent: Implement
+  target: HasAttributeType
+  output_id: 3
+  documentation: |-
+    Describes instances of an archetype as having certain types of attributes.
+    
+    For example, a string may have a length of 5. But on a more meta level, that means that the string has a length property or length "attribute". That's where this attribute comes in.
 ```
