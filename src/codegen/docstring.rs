@@ -99,10 +99,7 @@ mod tests {
     #[test]
     fn test_docstring_newline() {
         assert_eq!(
-            into_docstring(
-                "A docstring\n\nWith newlines",
-                0
-            ),
+            into_docstring("A docstring\n\nWith newlines", 0),
             r#"/// A docstring
 ///
 /// With newlines"#
