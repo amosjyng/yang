@@ -1,5 +1,7 @@
 use crate::concepts::Target;
-use std::fmt::{Debug, Formatter, Result};
+use std::convert::TryFrom;
+use std::fmt;
+use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 use zamm_yin::concepts::{Archetype, ArchetypeTrait, FormTrait, Tao, YIN_MAX_ID};
 use zamm_yin::graph::value_wrappers::{unwrap_strong, StrongValue};
@@ -43,7 +45,7 @@ impl Implement {
     /// Documentable functions, at least for now.
     pub fn set_config(&mut self, config: ImplementConfig) {
         self.essence_mut()
-            .set_value(Box::new(StrongValue::new(config)));
+            .set_value(Rc::new(StrongValue::new(config)));
     }
 
     /// Retrieve the config stored for this Implement.
@@ -53,7 +55,7 @@ impl Implement {
 }
 
 impl Debug for Implement {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         debug_wrapper("Implement", self, f)
     }
 }
@@ -72,6 +74,14 @@ impl From<Tao> for Implement {
     }
 }
 
+impl<'a> TryFrom<&'a str> for Implement {
+    type Error = String;
+
+    fn try_from(name: &'a str) -> Result<Self, Self::Error> {
+        Tao::try_from(name).map(|a| Self { base: a })
+    }
+}
+
 impl CommonNodeTrait for Implement {
     fn id(&self) -> usize {
         self.base.id()
@@ -86,7 +96,7 @@ impl CommonNodeTrait for Implement {
     }
 }
 
-impl ArchetypeTrait<Implement> for Implement {
+impl<'a> ArchetypeTrait<'a, Implement> for Implement {
     const TYPE_ID: usize = YIN_MAX_ID + 1;
     const TYPE_NAME: &'static str = "Implement";
     const PARENT_TYPE_ID: usize = Tao::TYPE_ID;

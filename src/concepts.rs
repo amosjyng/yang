@@ -7,7 +7,7 @@ mod documentable;
 /// Command to implement something.
 mod implement;
 
-use attributes::{Target, HasAttributeType};
+use attributes::{HasAttributeType, Target};
 pub use documentable::{set_documentation, Documentable};
 pub use implement::{Implement, ImplementConfig};
 use zamm_yin::concepts::attributes::Inherits;
