@@ -76,7 +76,7 @@ impl CommonNodeTrait for {name} {{
     }}
 }}
 
-impl ArchetypeTrait<{name}> for {name} {{
+impl<'a> ArchetypeTrait<'a, {name}> for {name} {{
     const TYPE_ID: usize = {id};
     const TYPE_NAME: &'static str = "{internal_name}";
     const PARENT_TYPE_ID: usize = Attribute::TYPE_ID;
@@ -98,7 +98,7 @@ impl FormTrait for {name} {{
     }}
 }}
 
-impl AttributeTrait<{name}> for {name} {{
+impl<'a> AttributeTrait<'a, {name}> for {name} {{
     fn set_owner(&mut self, owner: &dyn FormTrait) {{
         self.attr.set_owner(owner);
     }}
