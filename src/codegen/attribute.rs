@@ -265,7 +265,7 @@ mod tests {
     }
 
     #[test]
-    fn test_autogen_fmt_skip() {
+    fn test_autogen_fmt_not_skip() {
         let code = code_attribute(
             &ImplementConfig {
                 name: "short".to_owned(),
@@ -283,7 +283,7 @@ mod tests {
     }
 
     #[test]
-    fn test_autogen_fmt_not_skip() {
+    fn test_autogen_fmt_skip() {
         let code = code_attribute(
             &ImplementConfig {
                 name: "ReallySuperLongClassNameOhBoy".to_owned(),
@@ -295,6 +295,24 @@ mod tests {
                 track_autogen: false,
                 yin: false,
                 release: false,
+            },
+        );
+        assert!(code.contains(FMT_SKIP_MARKER));
+    }
+
+    #[test]
+    fn test_autogen_fmt_skip_release() {
+        let code = code_attribute(
+            &ImplementConfig {
+                name: "ReallySuperLongClassNameOhBoy".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &CodegenConfig {
+                comment_autogen: true,
+                track_autogen: false,
+                yin: false,
+                release: true,
             },
         );
         assert!(code.contains(FMT_SKIP_MARKER));
