@@ -112,8 +112,22 @@ where
     std::str::from_utf8(&result.stdout).unwrap().to_owned()
 }
 
-/// Prepare repo state for release
-fn prepare_repo() {
+/// Prepare for release build.
+fn release_pre_build() {
+    if !run_command("git", &["status", "--porcelain"]).is_empty() {
+        eprintln!(
+            "{}",
+            "Git repo dirty, commit changes before releasing."
+                .red()
+                .bold()
+        );
+        exit(1);
+    }
+    clean_autogen();
+}
+
+/// Destructively prepare repo for release after build.
+fn release_post_build() {
     let version = crate_version!();
 
     // switch to new release branch
@@ -141,16 +155,7 @@ fn build(args: &ArgMatches) -> Result<(), Error> {
     };
 
     if build_cfg.release {
-        if !run_command("git", &["status", "--porcelain"]).is_empty() {
-            eprintln!(
-                "{}",
-                "Git repo dirty, commit changes before releasing."
-                    .red()
-                    .bold()
-            );
-            exit(1);
-        }
-        clean_autogen();
+        release_pre_build();
     }
 
     let found_input = find_file(args.value_of("INPUT"))?;
@@ -161,7 +166,9 @@ fn build(args: &ArgMatches) -> Result<(), Error> {
     }
 
     save_autogen();
-    prepare_repo();
+    if build_cfg.release {
+        release_post_build();
+    }
     Ok(())
 }
 
