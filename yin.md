@@ -15,7 +15,7 @@ Now wait, what did we say? Archetypes *have* attributes of certain types?
 
 ```yaml
 - name: HasAttributeType
-  parent: Tao
+  parent: Attribute
 ```
 
 ### Implementation
