@@ -97,7 +97,7 @@ where
     let result = Command::new(command)
         .args(args)
         .output()
-        .unwrap_or_else(|_| panic!("Could not run command {}.", command_str));
+        .unwrap_or_else(|_| panic!("Could not run command: {}", command_str));
 
     if !result.status.success() {
         eprint!("{}", std::str::from_utf8(&result.stderr).unwrap());
