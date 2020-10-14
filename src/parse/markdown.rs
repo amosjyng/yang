@@ -1,4 +1,5 @@
 use super::parse_yaml;
+use crate::codegen::{add_indent, count_indent};
 use pulldown_cmark::{CodeBlockKind, Event, Parser, Tag};
 use zamm_yin::concepts::Tao;
 
@@ -6,6 +7,8 @@ use zamm_yin::concepts::Tao;
 fn extract_yaml(markdown: &str) -> String {
     let mut code = String::new();
     let mut in_yaml_block = false;
+    let mut in_documentation_block = false;
+    let mut doc_indent = 0;
     for event in Parser::new(markdown) {
         match event {
             Event::Start(tag) => {
@@ -21,20 +24,35 @@ fn extract_yaml(markdown: &str) -> String {
             }
             Event::Text(content) => {
                 if in_yaml_block {
-                    code += &content.into_string()
+                    let trimmed = content.trim_end();
+                    if trimmed.ends_with("|-") {
+                        in_documentation_block = true;
+                        let (existing_indent, _) =
+                            count_indent(trimmed.split('\n').last().unwrap());
+                        doc_indent = existing_indent + 2; // +2 for YAML quote indent
+                    }
+                    code += &content.into_string();
+                } else if in_documentation_block {
+                    code += &add_indent(doc_indent, &content);
+                    code += "\n";
                 }
             }
-            Event::End(tag) => {
-                if let Tag::CodeBlock(_) = tag {
-                    in_yaml_block = false
+            Event::End(tag) => match tag {
+                Tag::CodeBlock(_) => in_yaml_block = false,
+                Tag::BlockQuote => in_documentation_block = false,
+                Tag::Paragraph => {
+                    if in_documentation_block {
+                        code += "\n";
+                    }
                 }
-            }
-            other => {
-                if in_yaml_block {
-                    dbg!("{}", other);
-                }
-            }
+                _ => (),
+            },
+            _ => (),
         }
+    }
+    if code.ends_with("\n\n") {
+        // happens if input code already contains trailing newline
+        code.pop();
     }
     code
 }
@@ -121,6 +139,86 @@ mod tests {
     }
 
     #[test]
+    fn test_yaml_extraction_multiline_string() {
+        assert_eq!(
+            extract_yaml(indoc! {r#"
+            # O rly?
+
+            ```yml
+            - name: Yang
+              documentation: |-
+                Like, here's one line.
+
+                And now here's another.
+            ```
+        "#}),
+            indoc! {"
+            - name: Yang
+              documentation: |-
+                Like, here's one line.
+
+                And now here's another.
+        "}
+        );
+    }
+
+    #[test]
+    fn test_yaml_extraction_multiline_string_as_quote() {
+        assert_eq!(
+            extract_yaml(indoc! {r#"
+            # O rly?
+
+            ```yml
+            - name: Yang
+              documentation: |-
+            ```
+
+            > Like, here's one line.
+            > Part of the same line.
+            >
+            > And now here's another.
+        "#}),
+            indoc! {"
+            - name: Yang
+              documentation: |-
+                Like, here's one line.
+                Part of the same line.
+
+                And now here's another.
+        "}
+        );
+    }
+
+    #[test]
+    fn test_yaml_extraction_regular_text_after_quote() {
+        assert_eq!(
+            extract_yaml(indoc! {r#"
+            # O rly?
+
+            ```yml
+            - name: Yang
+              documentation: |-
+            ```
+
+            > Like, here's one line.
+            > Part of the same line.
+            >
+            > And now here's another.
+
+            Regular text, please ignore.
+        "#}),
+            indoc! {"
+            - name: Yang
+              documentation: |-
+                Like, here's one line.
+                Part of the same line.
+
+                And now here's another.
+        "}
+        );
+    }
+
+    #[test]
     fn test_yaml_extraction_full() {
         initialize_kb();
 
@@ -138,7 +236,10 @@ mod tests {
             - parent: Implement
               target: Target
               output_id: 2
-              documentation: Howdy, how ya doing?
+              documentation: |-
+                Howdy, how ya doing?
+
+                I'm doing fine, you?
             ```
         "#});
         assert_eq!(concepts.len(), 2);
@@ -150,6 +251,17 @@ mod tests {
         );
         let cfg = implement.config().unwrap();
         assert_eq!(cfg.id, 2);
-        assert_eq!(cfg.doc, Some("Howdy, how ya doing?".to_owned()));
+        assert_eq!(
+            cfg.doc,
+            Some(
+                indoc! {"
+            Howdy, how ya doing?
+            
+            I'm doing fine, you?
+            "}
+                .trim_end()
+                .to_owned()
+            )
+        );
     }
 }

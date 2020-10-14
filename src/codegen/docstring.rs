@@ -7,7 +7,11 @@ pub fn into_docstring(documentation: &str, indent_size: usize) -> String {
     let lines = textwrap::fill(documentation, CODE_WIDTH - indent_size - 4);
     let mut comment = String::new();
     for line in lines.split('\n') {
-        comment.push_str(format!("{}/// {}\n", indent, line.trim_end()).as_str());
+        if line.is_empty() {
+            comment.push_str("///\n"); // no space after triple slash
+        } else {
+            comment.push_str(format!("{}/// {}\n", indent, line.trim_end()).as_str());
+        }
     }
     comment.trim_end().to_string()
 }
@@ -89,6 +93,16 @@ mod tests {
         /// Aliquam erat volutpat. Ut quis maximus erat. Curabitur a velit
         /// convallis, suscipit lectus non, interdum ex. In hac habitasse platea
         /// dictumst."#
+        );
+    }
+
+    #[test]
+    fn test_docstring_newline() {
+        assert_eq!(
+            into_docstring("A docstring\n\nWith newlines", 0),
+            r#"/// A docstring
+///
+/// With newlines"#
         );
     }
 }

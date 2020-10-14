@@ -196,7 +196,7 @@ mod tests {{
         id = id
     );
     let formatted = add_fmt_skips(&code);
-    if options.comment_autogen {
+    if options.comment_autogen && !options.release {
         add_autogeneration_comments(&formatted)
     } else {
         formatted
@@ -221,6 +221,7 @@ mod tests {
                 comment_autogen: true,
                 track_autogen: false,
                 yin: false,
+                release: false,
             },
         );
         assert!(code.contains(AUTOGENERATION_MARKER));
@@ -239,6 +240,7 @@ mod tests {
                 comment_autogen: false,
                 track_autogen: false,
                 yin: false,
+                release: false,
             }
         )
         .contains(AUTOGENERATION_MARKER));
@@ -256,13 +258,14 @@ mod tests {
                 comment_autogen: true,
                 track_autogen: false,
                 yin: true,
+                release: false,
             }
         )
         .contains("YIN_MAX_ID"));
     }
 
     #[test]
-    fn test_autogen_fmt_skip() {
+    fn test_autogen_fmt_not_skip() {
         let code = code_attribute(
             &ImplementConfig {
                 name: "short".to_owned(),
@@ -273,13 +276,14 @@ mod tests {
                 comment_autogen: true,
                 track_autogen: false,
                 yin: false,
+                release: false,
             },
         );
         assert!(!code.contains(FMT_SKIP_MARKER));
     }
 
     #[test]
-    fn test_autogen_fmt_not_skip() {
+    fn test_autogen_fmt_skip() {
         let code = code_attribute(
             &ImplementConfig {
                 name: "ReallySuperLongClassNameOhBoy".to_owned(),
@@ -290,6 +294,25 @@ mod tests {
                 comment_autogen: true,
                 track_autogen: false,
                 yin: false,
+                release: false,
+            },
+        );
+        assert!(code.contains(FMT_SKIP_MARKER));
+    }
+
+    #[test]
+    fn test_autogen_fmt_skip_release() {
+        let code = code_attribute(
+            &ImplementConfig {
+                name: "ReallySuperLongClassNameOhBoy".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &CodegenConfig {
+                comment_autogen: true,
+                track_autogen: false,
+                yin: false,
+                release: true,
             },
         );
         assert!(code.contains(FMT_SKIP_MARKER));
