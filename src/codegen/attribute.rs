@@ -196,7 +196,7 @@ mod tests {{
         id = id
     );
     let formatted = add_fmt_skips(&code);
-    if options.comment_autogen {
+    if options.comment_autogen && !options.release {
         add_autogeneration_comments(&formatted)
     } else {
         formatted
@@ -221,6 +221,7 @@ mod tests {
                 comment_autogen: true,
                 track_autogen: false,
                 yin: false,
+                release: false,
             },
         );
         assert!(code.contains(AUTOGENERATION_MARKER));
@@ -239,6 +240,7 @@ mod tests {
                 comment_autogen: false,
                 track_autogen: false,
                 yin: false,
+                release: false,
             }
         )
         .contains(AUTOGENERATION_MARKER));
@@ -256,6 +258,7 @@ mod tests {
                 comment_autogen: true,
                 track_autogen: false,
                 yin: true,
+                release: false,
             }
         )
         .contains("YIN_MAX_ID"));
@@ -273,6 +276,7 @@ mod tests {
                 comment_autogen: true,
                 track_autogen: false,
                 yin: false,
+                release: false,
             },
         );
         assert!(!code.contains(FMT_SKIP_MARKER));
@@ -290,6 +294,7 @@ mod tests {
                 comment_autogen: true,
                 track_autogen: false,
                 yin: false,
+                release: false,
             },
         );
         assert!(code.contains(FMT_SKIP_MARKER));
