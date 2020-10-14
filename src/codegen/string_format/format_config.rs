@@ -54,8 +54,8 @@ impl FormatConfig {
             init_kb: init_kb.to_owned(),
             name: name_transform.to_camel_case(),
             internal_name: name_transform.to_kebab_case(),
-            doc: doc,
-            id: id,
+            doc,
+            id,
         }
     }
 }
