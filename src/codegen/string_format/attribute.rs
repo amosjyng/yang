@@ -1,4 +1,4 @@
-use crate::codegen::FormatConfig;
+use super::FormatConfig;
 
 /// Generate code for attributes.
 pub fn code_attribute(cfg: &FormatConfig) -> String {

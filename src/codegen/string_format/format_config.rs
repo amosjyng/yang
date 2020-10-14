@@ -1,5 +1,5 @@
-use super::docstring::into_docstring;
-use super::{CodegenConfig, ImplementConfig, NameTransform};
+use crate::codegen::docstring::into_docstring;
+use crate::codegen::{CodegenConfig, ImplementConfig, NameTransform};
 
 /// Config values at the time of string generation.
 pub struct FormatConfig {
