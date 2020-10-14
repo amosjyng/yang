@@ -11,8 +11,8 @@ fn extract_yaml(markdown: &str) -> String {
     let mut doc_indent = 0;
     for event in Parser::new(markdown) {
         match event {
-            Event::Start(tag) => match tag {
-                Tag::CodeBlock(kind) => {
+            Event::Start(tag) => {
+                if let Tag::CodeBlock(kind) = tag {
                     if let CodeBlockKind::Fenced(cow) = kind {
                         match cow.to_string().as_str() {
                             "yaml" => in_yaml_block = true,
@@ -21,19 +21,14 @@ fn extract_yaml(markdown: &str) -> String {
                         }
                     }
                 }
-                start => {
-                    dbg!(start);
-                }
-            },
+            }
             Event::Text(content) => {
-                dbg!(&content);
                 if in_yaml_block {
                     let trimmed = content.trim_end();
                     if trimmed.ends_with("|-") {
                         in_documentation_block = true;
                         let (existing_indent, _) =
                             count_indent(trimmed.split('\n').last().unwrap());
-                        dbg!(existing_indent);
                         doc_indent = existing_indent + 2; // +2 for YAML quote indent
                     }
                     code += &content.into_string();
@@ -50,13 +45,9 @@ fn extract_yaml(markdown: &str) -> String {
                         code += "\n";
                     }
                 }
-                end => {
-                    dbg!(end);
-                }
+                _ => (),
             },
-            event => {
-                dbg!(event);
-            }
+            _ => (),
         }
     }
     if code.ends_with("\n\n") {
