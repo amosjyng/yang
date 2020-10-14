@@ -131,7 +131,7 @@ fn release_pre_build() {
 fn local_project_version() -> Result<String, Error> {
     let build_contents = read_to_string("Cargo.toml")?;
     let build_cfg = build_contents.parse::<Value>().unwrap();
-    Ok(build_cfg["version"].as_str().unwrap().to_owned())
+    Ok(build_cfg["package"]["version"].as_str().unwrap().to_owned())
 }
 
 /// Destructively prepare repo for release after build.
