@@ -1,4 +1,5 @@
 use clap::{crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
+use colored::*;
 use itertools::Itertools;
 use path_abs::{PathAbs, PathInfo};
 use std::env;
@@ -100,8 +101,12 @@ where
         .unwrap_or_else(|_| panic!("Could not run command: {}", command_str));
 
     if !result.status.success() {
+        eprintln!(
+            "{}",
+            format!("Command failed: {}", command_str).red().bold()
+        );
         eprint!("{}", std::str::from_utf8(&result.stderr).unwrap());
-        panic!("Command failed: {}", command_str);
+        exit(1);
     }
 
     std::str::from_utf8(&result.stdout).unwrap().to_owned()
@@ -137,7 +142,12 @@ fn build(args: &ArgMatches) -> Result<(), Error> {
 
     if build_cfg.release {
         if !run_command("git", &["status", "--porcelain"]).is_empty() {
-            eprintln!("Git repo dirty, commit changes before releasing.");
+            eprintln!(
+                "{}",
+                "Git repo dirty, commit changes before releasing."
+                    .red()
+                    .bold()
+            );
             exit(1);
         }
         clean_autogen();
