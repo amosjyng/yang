@@ -1,16 +1,17 @@
 use clap::{crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
 use path_abs::{PathAbs, PathInfo};
 use std::env;
+use std::ffi::OsStr;
 use std::fs::read_to_string;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
-use std::process::exit;
+use std::process::{exit, Command};
 use zamm_yang::codegen::track_autogen::{clean_autogen, save_autogen};
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::concepts::callbacks::handle_implementation;
 use zamm_yang::concepts::{initialize_kb, Implement};
 use zamm_yang::parse::{parse_md, parse_yaml};
-use zamm_yin::concepts::ArchetypeTrait;
+use zamm_yin::concepts::{ArchetypeTrait, Tao};
 
 /// All supported input filename extensions.
 const SUPPORTED_EXTENSIONS: &[&str] = &["md", "yml", "yaml"];
@@ -56,9 +57,7 @@ fn find_file(specified_file: Option<&str>) -> Result<PathAbs, Error> {
     }
 }
 
-/// Generate code from the input file.
-fn build(args: &ArgMatches) -> Result<(), Error> {
-    let found_input = find_file(args.value_of("INPUT"))?;
+fn parse_input(found_input: PathAbs) -> Result<Vec<Tao>, Error> {
     println!(
         "cargo:rerun-if-changed={}",
         found_input.as_os_str().to_str().unwrap()
@@ -68,49 +67,84 @@ fn build(args: &ArgMatches) -> Result<(), Error> {
         .extension()
         .map(|e| e.to_str().unwrap())
         .unwrap_or("");
-    let found_parser = match extension {
-        "md" => {
-            parse_md(&contents);
-            true
-        }
-        "yaml" => {
-            parse_yaml(&contents);
-            true
-        }
-        "yml" => {
-            parse_yaml(&contents);
-            true
-        }
-        _ => false,
-    };
-
-    if !found_parser {
-        return Err(Error::new(
+    match extension {
+        "md" => Ok(parse_md(&contents)),
+        "yaml" => Ok(parse_yaml(&contents)),
+        "yml" => Ok(parse_yaml(&contents)),
+        _ => Err(Error::new(
             ErrorKind::NotFound,
             format!(
                 "The extension \"{}\" is not recognized. Please see the help message for \
-                recognized extension types.",
+                    recognized extension types.",
                 extension
             ),
-        ));
+        )),
+    }
+}
+
+fn run_command<I, S>(command: &str, args: I) -> String
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let result = Command::new(command)
+        .args(args)
+        .output()
+        .unwrap_or_else(|_| panic!("Could not run command {}.", command));
+
+    if !result.status.success() {
+        eprint!("{}", std::str::from_utf8(&result.stderr).unwrap());
+        panic!("Command {} failed.", command);
     }
 
+    std::str::from_utf8(&result.stdout).unwrap().to_owned()
+}
+
+/// Prepare repo state for release
+fn prepare_repo() {
+    let version = crate_version!();
+
+    // switch to new release branch
+    let release_branch = format!("release/v{}", version);
+    run_command("git", &["checkout", "-b", release_branch.as_str()]);
+    // remove build.rs because it won't be useful on docs.rs anyways
+    run_command("git", &["rm", "-f", "build.rs"]);
+    // commit everything
+    run_command("git", &["add", "."]);
+    let commit_message = format!("Creating release v{}", version);
+    run_command("git", &["commit", "-m", commit_message.as_str()]);
+}
+
+/// Generate code from the input file.
+fn build(args: &ArgMatches) -> Result<(), Error> {
+    let build_cfg = &CodegenConfig {
+        comment_autogen: args
+            .value_of("COMMENT_AUTOGEN")
+            .unwrap_or("true")
+            .parse::<bool>()
+            .unwrap(),
+        track_autogen: args.is_present("TRACK_AUTOGEN"),
+        yin: args.is_present("YIN"),
+        release: args.is_present("RELEASE"),
+    };
+
+    if build_cfg.release {
+        if !run_command("git", &["status", "--porcelain"]).is_empty() {
+            eprintln!("Git repo dirty, commit changes before releasing.");
+            exit(1);
+        }
+        clean_autogen();
+    }
+
+    let found_input = find_file(args.value_of("INPUT"))?;
+    parse_input(found_input)?;
+
     for implement_command in Implement::archetype().individuals() {
-        handle_implementation(
-            Implement::from(implement_command),
-            &CodegenConfig {
-                comment_autogen: args
-                    .value_of("COMMENT_AUTOGEN")
-                    .unwrap_or("true")
-                    .parse::<bool>()
-                    .unwrap(),
-                track_autogen: args.is_present("TRACK_AUTOGEN"),
-                yin: args.is_present("YIN"),
-            },
-        )
+        handle_implementation(Implement::from(implement_command), build_cfg)
     }
 
     save_autogen();
+    prepare_repo();
     Ok(())
 }
 
@@ -163,6 +197,12 @@ fn main() {
                     .short("y")
                     .long("yin")
                     .help("Set to generate code for Yin instead.")
+            )
+            .arg(
+                Arg::with_name("RELEASE")
+                    .short("r")
+                    .long("release")
+                    .help("Prepare repo for a Cargo release.")
             )
         )
         .subcommand(SubCommand::with_name("clean")

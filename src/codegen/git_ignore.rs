@@ -24,6 +24,5 @@ pub fn git_ignore(file: &PathAbs) -> Result<()> {
     // todo: cut down on the number of file reads we're doing here
     track_autogen(gitignore.as_path().to_str().unwrap().to_owned());
     add_to_file(&gitignore, ".gitignore")?;
-    track_autogen(file.as_path().to_str().unwrap().to_owned());
     add_to_file(&gitignore, filename)
 }
