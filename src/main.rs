@@ -8,6 +8,7 @@ use std::fs::read_to_string;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
 use std::process::{exit, Command};
+use toml::Value;
 use zamm_yang::codegen::track_autogen::{clean_autogen, save_autogen};
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::concepts::callbacks::handle_implementation;
@@ -126,9 +127,16 @@ fn release_pre_build() {
     clean_autogen();
 }
 
+/// Get version of the project in the current directory
+fn local_project_version() -> Result<String, Error> {
+    let build_contents = read_to_string("build.rs")?;
+    let build_cfg = build_contents.parse::<Value>().unwrap();
+    Ok(build_cfg["version"].as_str().unwrap().to_owned())
+}
+
 /// Destructively prepare repo for release after build.
-fn release_post_build() {
-    let version = crate_version!();
+fn release_post_build() -> Result<(), Error> {
+    let version = local_project_version()?;
 
     // switch to new release branch
     let release_branch = format!("release/v{}", version);
@@ -139,6 +147,8 @@ fn release_post_build() {
     run_command("git", &["add", "."]);
     let commit_message = format!("Creating release v{}", version);
     run_command("git", &["commit", "-m", commit_message.as_str()]);
+
+    Ok(())
 }
 
 /// Generate code from the input file.
@@ -167,7 +177,7 @@ fn build(args: &ArgMatches) -> Result<(), Error> {
 
     save_autogen();
     if build_cfg.release {
-        release_post_build();
+        release_post_build()?;
     }
     Ok(())
 }
