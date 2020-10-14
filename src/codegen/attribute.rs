@@ -1,30 +1,7 @@
-use super::{into_docstring, CodegenConfig, NameTransform};
-use crate::concepts::ImplementConfig;
+use super::FormatConfig;
 
 /// Generate code for attributes.
-pub fn code_attribute(implement: &ImplementConfig, options: &CodegenConfig) -> String {
-    let name_transform = NameTransform::from_camel_case(&implement.name);
-    let doc_insert = match &implement.doc {
-        Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
-        None => String::new(),
-    };
-    let id = if options.yin {
-        format!("{}", implement.id)
-    } else {
-        format!("YIN_MAX_ID + {}", implement.id)
-    };
-    let crate_name = if options.yin { "crate" } else { "zamm_yin" };
-    let imports = if options.yin { "" } else { ", YIN_MAX_ID" };
-    let test_imports = if options.yin {
-        "use crate::graph::bind_in_memory_graph;"
-    } else {
-        "use crate::concepts::initialize_kb;"
-    };
-    let init_kb = if options.yin {
-        "bind_in_memory_graph();"
-    } else {
-        "initialize_kb();"
-    };
+pub fn code_attribute(cfg: &FormatConfig) -> String {
     format!(
         r##"use std::convert::TryFrom;
 use std::fmt;
@@ -184,13 +161,13 @@ mod tests {{
     }}
 }}
 "##,
-        crate = crate_name,
-        imports = imports,
-        test_imports = test_imports,
-        init_kb = init_kb,
-        name = name_transform.to_camel_case(),
-        internal_name = name_transform.to_kebab_case(),
-        doc = doc_insert,
-        id = id
+        crate = cfg.crate_name,
+        imports = cfg.imports,
+        test_imports = cfg.test_imports,
+        init_kb = cfg.init_kb,
+        name = cfg.name,
+        internal_name = cfg.internal_name,
+        doc = cfg.doc,
+        id = cfg.id,
     )
 }
