@@ -91,4 +91,46 @@ mod tests {
         assert_eq!(cfg.id, 2);
         assert_eq!(cfg.doc, Some("Howdy, how ya doing?".to_owned()));
     }
+
+    #[test]
+    fn test_parse_multiline_string() {
+        initialize_kb();
+
+        let concepts = parse_yaml(indoc! {"
+            - name: Target
+              parent: Attribute
+            - parent: Implement
+              target: Target
+              output_id: 2
+              documentation: |-
+                So much to do.
+                So little time.
+        "});
+        let implement = Implement::from(concepts[1]);
+        let cfg = implement.config().unwrap();
+        assert_eq!(cfg.doc, Some("So much to do.\nSo little time.".to_owned()));
+    }
+
+    #[test]
+    fn test_parse_multiline_string_multiple_breaks() {
+        initialize_kb();
+
+        let concepts = parse_yaml(indoc! {"
+            - name: Target
+              parent: Attribute
+            - parent: Implement
+              target: Target
+              output_id: 2
+              documentation: |-
+                So much to do.
+
+                So little time.
+        "});
+        let implement = Implement::from(concepts[1]);
+        let cfg = implement.config().unwrap();
+        assert_eq!(
+            cfg.doc,
+            Some("So much to do.\n\nSo little time.".to_owned())
+        );
+    }
 }

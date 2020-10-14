@@ -1,4 +1,4 @@
-use super::{count_indent, CODE_WIDTH};
+use super::{add_indent, count_indent, CODE_WIDTH};
 
 /// Marker for getting rustfmt to skip over this line.
 pub const FMT_SKIP_MARKER: &str = "#[rustfmt::skip]";
@@ -9,8 +9,7 @@ fn add_fmt_skip(line: &str) -> String {
         line.to_owned()
     } else {
         let (indent_size, _) = count_indent(line);
-        let indent = " ".repeat(indent_size);
-        format!("{}{}\n{}", indent, FMT_SKIP_MARKER, line)
+        format!("{}\n{}", add_indent(indent_size, FMT_SKIP_MARKER), line)
     }
 }
 

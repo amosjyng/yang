@@ -21,6 +21,11 @@ pub fn count_indent(line: &str) -> (usize, Option<char>) {
     (count, non_whitespace)
 }
 
+/// Indent a line by a certain number of spaces.
+pub fn add_indent(indent_size: usize, line: &str) -> String {
+    " ".repeat(indent_size) + line
+}
+
 /// Adds an autogeneration comment to this line of code, if applicable. Returns the commented line
 /// as well as whether or not the line was a comment.
 fn add_comment(line: &str, comment: &str, previous_was_comment: bool) -> (String, bool) {
@@ -36,7 +41,7 @@ fn add_comment(line: &str, comment: &str, previous_was_comment: bool) -> (String
         }
         Some('/') => line.to_string(), // no need to comment on a comment
         Some(_) => {
-            let comment_line = " ".repeat(indent_size) + comment;
+            let comment_line = add_indent(indent_size, comment);
             format!("{}\n{}", comment_line, line)
         }
         None => line.to_string(), // no need to comment on whitespace
