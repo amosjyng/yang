@@ -1,4 +1,5 @@
 use clap::{crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
+use itertools::Itertools;
 use path_abs::{PathAbs, PathInfo};
 use std::env;
 use std::ffi::OsStr;
@@ -84,17 +85,23 @@ fn parse_input(found_input: PathAbs) -> Result<Vec<Tao>, Error> {
 
 fn run_command<I, S>(command: &str, args: I) -> String
 where
-    I: IntoIterator<Item = S>,
-    S: AsRef<OsStr>,
+    I: IntoIterator<Item = S> + Clone,
+    S: AsRef<OsStr> + std::fmt::Display,
 {
+    let command_str = format!(
+        "{} {}",
+        command,
+        &args.clone().into_iter().map(|s| s.to_string()).format(" ")
+    );
+
     let result = Command::new(command)
         .args(args)
         .output()
-        .unwrap_or_else(|_| panic!("Could not run command {}.", command));
+        .unwrap_or_else(|_| panic!("Could not run command {}.", command_str));
 
     if !result.status.success() {
         eprint!("{}", std::str::from_utf8(&result.stderr).unwrap());
-        panic!("Command {} failed.", command);
+        panic!("Command failed: {}", command_str);
     }
 
     std::str::from_utf8(&result.stdout).unwrap().to_owned()
