@@ -63,9 +63,21 @@ impl Default for CodegenConfig {
     }
 }
 
+/// Do post-processing on generated code. Includes marking lines with autogeneration comments, or
+/// marking lines as requiring formatting skips.
+fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
+    let formatted = add_fmt_skips(&code);
+    if options.comment_autogen && !options.release {
+        add_autogeneration_comments(&formatted)
+    } else {
+        formatted
+    }
+}
+
 /// Output code to filename
 pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
-    let generated_code = code_attribute(implement, options);
+    let initial_code = code_attribute(implement, options);
+    let generated_code = post_process_generation(&initial_code, options);
     let file_relative = format!(
         "src/concepts/attributes/{}.rs",
         NameTransform::from_camel_case(&implement.name).to_snake_case()
@@ -98,5 +110,133 @@ pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
         println!("cargo:rerun-if-changed={}", file_relative);
     } else {
         println!("Generated {}", file_relative);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::codegen::mark_autogen::AUTOGENERATION_MARKER;
+    use crate::codegen::mark_fmt::FMT_SKIP_MARKER;
+
+    #[test]
+    fn test_post_process_comments() {
+        let codegen_cfg = CodegenConfig {
+            comment_autogen: true,
+            track_autogen: false,
+            yin: false,
+            release: false,
+        };
+        let code = code_attribute(
+            &ImplementConfig {
+                name: "dummy".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &codegen_cfg,
+        );
+        let result = post_process_generation(&code, &codegen_cfg);
+        assert!(result.contains(AUTOGENERATION_MARKER));
+        assert!(result.contains("YIN_MAX_ID"));
+    }
+
+    #[test]
+    fn test_post_process_no_comments() {
+        let codegen_cfg = CodegenConfig {
+            comment_autogen: false,
+            track_autogen: false,
+            yin: false,
+            release: false,
+        };
+        let code = code_attribute(
+            &ImplementConfig {
+                name: "dummy".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &codegen_cfg,
+        );
+        let result = post_process_generation(&code, &codegen_cfg);
+        assert!(!result.contains(AUTOGENERATION_MARKER));
+    }
+
+    #[test]
+    fn test_post_process_yin() {
+        let codegen_cfg = CodegenConfig {
+            comment_autogen: true,
+            track_autogen: false,
+            yin: true,
+            release: false,
+        };
+        let code = code_attribute(
+            &ImplementConfig {
+                name: "dummy".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &codegen_cfg,
+        );
+        let result = post_process_generation(&code, &codegen_cfg);
+        assert!(!result.contains("YIN_MAX_ID"));
+    }
+
+    #[test]
+    fn test_post_process_fmt_not_skip() {
+        let codegen_cfg = CodegenConfig {
+            comment_autogen: true,
+            track_autogen: false,
+            yin: false,
+            release: false,
+        };
+        let code = code_attribute(
+            &ImplementConfig {
+                name: "short".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &codegen_cfg,
+        );
+        let result = post_process_generation(&code, &codegen_cfg);
+        assert!(!result.contains(FMT_SKIP_MARKER));
+    }
+
+    #[test]
+    fn test_post_process_fmt_skip() {
+        let codegen_cfg = CodegenConfig {
+            comment_autogen: true,
+            track_autogen: false,
+            yin: false,
+            release: false,
+        };
+        let code = code_attribute(
+            &ImplementConfig {
+                name: "ReallySuperLongClassNameOhBoy".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &codegen_cfg,
+        );
+        let result = post_process_generation(&code, &codegen_cfg);
+        assert!(result.contains(FMT_SKIP_MARKER));
+    }
+
+    #[test]
+    fn test_post_process_fmt_skip_release() {
+        let codegen_cfg = CodegenConfig {
+            comment_autogen: true,
+            track_autogen: false,
+            yin: false,
+            release: true,
+        };
+        let code = code_attribute(
+            &ImplementConfig {
+                name: "ReallySuperLongClassNameOhBoy".to_owned(),
+                doc: None,
+                id: 3,
+            },
+            &codegen_cfg,
+        );
+        let result = post_process_generation(&code, &codegen_cfg);
+        assert!(result.contains(FMT_SKIP_MARKER));
     }
 }

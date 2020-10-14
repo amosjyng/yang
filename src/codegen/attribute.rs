@@ -1,6 +1,4 @@
-use super::{
-    add_autogeneration_comments, add_fmt_skips, into_docstring, CodegenConfig, NameTransform,
-};
+use super::{into_docstring, CodegenConfig, NameTransform};
 use crate::concepts::ImplementConfig;
 
 /// Generate code for attributes.
@@ -27,7 +25,7 @@ pub fn code_attribute(implement: &ImplementConfig, options: &CodegenConfig) -> S
     } else {
         "initialize_kb();"
     };
-    let code = format!(
+    format!(
         r##"use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{{Debug, Formatter}};
@@ -194,127 +192,5 @@ mod tests {{
         internal_name = name_transform.to_kebab_case(),
         doc = doc_insert,
         id = id
-    );
-    let formatted = add_fmt_skips(&code);
-    if options.comment_autogen && !options.release {
-        add_autogeneration_comments(&formatted)
-    } else {
-        formatted
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::super::mark_autogen::AUTOGENERATION_MARKER;
-    use super::super::mark_fmt::FMT_SKIP_MARKER;
-    use super::*;
-
-    #[test]
-    fn test_autogen_comments() {
-        let code = code_attribute(
-            &ImplementConfig {
-                name: "dummy".to_owned(),
-                doc: None,
-                id: 3,
-            },
-            &CodegenConfig {
-                comment_autogen: true,
-                track_autogen: false,
-                yin: false,
-                release: false,
-            },
-        );
-        assert!(code.contains(AUTOGENERATION_MARKER));
-        assert!(code.contains("YIN_MAX_ID"));
-    }
-
-    #[test]
-    fn test_autogen_no_comments() {
-        assert!(!code_attribute(
-            &ImplementConfig {
-                name: "dummy".to_owned(),
-                doc: None,
-                id: 3,
-            },
-            &CodegenConfig {
-                comment_autogen: false,
-                track_autogen: false,
-                yin: false,
-                release: false,
-            }
-        )
-        .contains(AUTOGENERATION_MARKER));
-    }
-
-    #[test]
-    fn test_autogen_yin() {
-        assert!(!code_attribute(
-            &ImplementConfig {
-                name: "dummy".to_owned(),
-                doc: None,
-                id: 3,
-            },
-            &CodegenConfig {
-                comment_autogen: true,
-                track_autogen: false,
-                yin: true,
-                release: false,
-            }
-        )
-        .contains("YIN_MAX_ID"));
-    }
-
-    #[test]
-    fn test_autogen_fmt_not_skip() {
-        let code = code_attribute(
-            &ImplementConfig {
-                name: "short".to_owned(),
-                doc: None,
-                id: 3,
-            },
-            &CodegenConfig {
-                comment_autogen: true,
-                track_autogen: false,
-                yin: false,
-                release: false,
-            },
-        );
-        assert!(!code.contains(FMT_SKIP_MARKER));
-    }
-
-    #[test]
-    fn test_autogen_fmt_skip() {
-        let code = code_attribute(
-            &ImplementConfig {
-                name: "ReallySuperLongClassNameOhBoy".to_owned(),
-                doc: None,
-                id: 3,
-            },
-            &CodegenConfig {
-                comment_autogen: true,
-                track_autogen: false,
-                yin: false,
-                release: false,
-            },
-        );
-        assert!(code.contains(FMT_SKIP_MARKER));
-    }
-
-    #[test]
-    fn test_autogen_fmt_skip_release() {
-        let code = code_attribute(
-            &ImplementConfig {
-                name: "ReallySuperLongClassNameOhBoy".to_owned(),
-                doc: None,
-                id: 3,
-            },
-            &CodegenConfig {
-                comment_autogen: true,
-                track_autogen: false,
-                yin: false,
-                release: true,
-            },
-        );
-        assert!(code.contains(FMT_SKIP_MARKER));
-    }
+    )
 }
