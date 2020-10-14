@@ -129,7 +129,7 @@ fn release_pre_build() {
 
 /// Get version of the project in the current directory
 fn local_project_version() -> Result<String, Error> {
-    let build_contents = read_to_string("build.rs")?;
+    let build_contents = read_to_string("Cargo.toml")?;
     let build_cfg = build_contents.parse::<Value>().unwrap();
     Ok(build_cfg["version"].as_str().unwrap().to_owned())
 }
