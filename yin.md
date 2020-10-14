@@ -26,12 +26,18 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 - parent: Implement
   target: Target
   output_id: 2
-  documentation: The target of an implement command.
+  documentation: |-
+```
+
+> The target of an implement command.
+
+```yaml
 - parent: Implement
   target: HasAttributeType
   output_id: 3
   documentation: |-
-    Describes instances of an archetype as having certain types of attributes.
-    
-    For example, a string may have a length of 5. But on a more meta level, that means that the string has a length property or length "attribute". That's where this attribute comes in.
 ```
+
+> Describes instances of an archetype as having certain types of attributes.
+>
+> For example, a string may have a length of 5. But on a more meta level, that means that the string has a length property or length "attribute". That's where this attribute comes in.
