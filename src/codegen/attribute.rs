@@ -161,7 +161,7 @@ mod tests {{
     }}
 }}
 "##,
-        crate = cfg.crate_name,
+        crate = cfg.yin_crate,
         imports = cfg.imports,
         test_imports = cfg.test_imports,
         init_kb = cfg.init_kb,

@@ -4,7 +4,7 @@ use super::{CodegenConfig, ImplementConfig, NameTransform};
 /// Config values at the time of string generation.
 pub struct FormatConfig {
     /// Name to use for the yin crate.
-    pub crate_name: String,
+    pub yin_crate: String,
     /// Main file imports.
     pub imports: String,
     /// Test imports.
@@ -24,7 +24,7 @@ pub struct FormatConfig {
 impl FormatConfig {
     /// Extract format values from input configs.
     pub fn from_cfgs(implement: &ImplementConfig, options: &CodegenConfig) -> Self {
-        let crate_name = if options.yin { "crate" } else { "zamm_yin" };
+        let yin_crate = if options.yin { "crate" } else { "zamm_yin" };
         let imports = if options.yin { "" } else { ", YIN_MAX_ID" };
         let test_imports = if options.yin {
             "use crate::graph::bind_in_memory_graph;"
@@ -48,7 +48,7 @@ impl FormatConfig {
         };
 
         Self {
-            crate_name: crate_name.to_owned(),
+            yin_crate: yin_crate.to_owned(),
             imports: imports.to_owned(),
             test_imports: test_imports.to_owned(),
             init_kb: init_kb.to_owned(),
