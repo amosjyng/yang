@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/amosjyng/yang.svg?branch=main)](https://travis-ci.com/amosjyng/yang)
 
-Yang is a rudimentary, experimental code generator. Yang is both used by, and depends on, [Yin](https://crates.io/crates/zamm_yin) for code generation.
+Yang is a rudimentary, experimental code generator. Yang is both used by, and depends on, [Yin](https://crates.io/crates/zamm_yin) for code generation. See [`yin.md`](yin.md) for an in-depth description of its internals.
 
 This crate is named `zamm_yang` for consistency with `zamm_yin`. However, the name for this tool is just `yang` for all intents and purposes within the ZAMM universe.
 
@@ -36,9 +36,7 @@ SUBCOMMANDS:
 
 #### Example
 
-See this project's very own [`yin.md`](yin.md) for an example configuration file.
-
-Then, run
+See this project's very own [`yin.md`](yin.md) for an example configuration file. Run
 
 ```sh
 yang generate
