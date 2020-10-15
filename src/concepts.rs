@@ -1,5 +1,5 @@
 /// Yang-specific attribute concepts.
-mod attributes;
+pub mod attributes;
 /// Callbacks that should be triggered upon certain conditions in Yin being met.
 pub mod callbacks;
 /// Concept documentation.
