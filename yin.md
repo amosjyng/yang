@@ -11,14 +11,7 @@ Here's what Yang knows: implementations are lower-level concepts that *target* s
   parent: Attribute
 ```
 
-Now wait, what did we say? Archetypes *have* attributes of certain types?
-
-```yaml
-- name: HasAttributeType
-  parent: Attribute
-```
-
-For example, take the "data" archetype, perhaps roughly analogous to the linguistic concept of a "noun." What do we generally start out describing as nouns? Physical objects in the physical world.
+Take the "data" archetype, perhaps roughly analogous to the linguistic concept of a "noun." What do we generally start out describing as nouns? Physical objects in the physical world.
 
 Now, not every noun corresponds directly to something physical. We have words that refer to mental states, for example. But even emotions appear to ultimately be an emergent phenomenon of lower-level physics. Even the [is-ought problem](https://en.wikipedia.org/wiki/Is%E2%80%93ought_problem) or [fact-value distinction](https://en.wikipedia.org/wiki/Fact%E2%80%93value_distinction) are, in a sense, not quite as dichotomous as they might seem: all "ought" opinions that have ever existed are encoded in some "is," whether that encoding takes the form of neural patterns, ink on a parchment, or sound waves propagating through the air. This doesn't mean that the general distinction between "is" and "ought" isn't worth making, or that nouns should be done away with. All abstractions are [leaky](https://blog.codinghorror.com/all-abstractions-are-failed-abstractions/), but [some are useful](https://en.wikipedia.org/wiki/All_models_are_wrong).
 
@@ -46,19 +39,8 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 
 ```yaml
 - parent: Implement
-  target: HasAttributeType
-  output_id: 3
-  documentation: |-
-```
-
-> Describes instances of an archetype as having certain types of attributes.
->
-> For example, a string may have a length of 5. But on a more meta level, that means that the string has a length property or length "attribute". That's where this attribute comes in.
-
-```yaml
-- parent: Implement
   target: Data
-  output_id: 4
+  output_id: 3
   documentation: |-
 ```
 

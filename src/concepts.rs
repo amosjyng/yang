@@ -7,7 +7,7 @@ mod documentable;
 /// Command to implement something.
 mod implement;
 
-use attributes::{HasAttributeType, Target};
+use attributes::Target;
 pub use documentable::{set_documentation, Documentable};
 pub use implement::{Implement, ImplementConfig};
 use zamm_yin::concepts::attributes::Inherits;
@@ -20,5 +20,5 @@ use zamm_yin::initialize_type;
 pub fn initialize_kb() {
     bind_in_memory_graph();
     let mut ig = InjectionGraph::new();
-    initialize_type!(ig, (Implement, Target, HasAttributeType));
+    initialize_type!(ig, (Implement, Target));
 }
