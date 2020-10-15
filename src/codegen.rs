@@ -1,9 +1,11 @@
 /// Format codegen.
 mod string_format {
-    /// Generate code for attribute files.
+    /// Generate code for attribute concepts.
     pub mod attribute;
     /// Config values at the time of string generation.
     pub mod format_config;
+    /// Generate code for generic Tao concepts.
+    pub mod tao;
 
     pub use format_config::FormatConfig;
 }
@@ -32,6 +34,7 @@ use path_abs::PathAbs;
 use std::fs;
 use std::path::Path;
 use string_format::attribute::code_attribute;
+use string_format::tao::code_tao;
 use string_format::FormatConfig;
 use track_autogen::track_autogen;
 
@@ -84,10 +87,20 @@ fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
 /// Output code to filename
 pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
     let format_cfg = FormatConfig::from_cfgs(implement, options);
-    let initial_code = code_attribute(&format_cfg);
+    let initial_code = if implement.parent_name == "Attribute" {
+        code_attribute(&format_cfg)
+    } else {
+        code_tao(&format_cfg)
+    };
     let generated_code = post_process_generation(&initial_code, options);
+    let folder = if implement.parent_name == "Attribute" {
+        "src/concepts/attributes"
+    } else {
+        "src/concepts"
+    };
     let file_relative = format!(
-        "src/concepts/attributes/{}.rs",
+        "{}/{}.rs",
+        folder,
         NameTransform::from_camel_case(&implement.name).to_snake_case()
     );
     let file_pathabs = PathAbs::new(Path::new(&file_relative))
@@ -138,6 +151,7 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "dummy".to_owned(),
+                parent_name: "doh".to_owned(),
                 doc: None,
                 id: 3,
             },
@@ -159,6 +173,7 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "dummy".to_owned(),
+                parent_name: "doh".to_owned(),
                 doc: None,
                 id: 3,
             },
@@ -179,6 +194,7 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "dummy".to_owned(),
+                parent_name: "doh".to_owned(),
                 doc: None,
                 id: 3,
             },
@@ -199,6 +215,7 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "short".to_owned(),
+                parent_name: "doh".to_owned(),
                 doc: None,
                 id: 3,
             },
@@ -219,6 +236,7 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "ReallySuperLongClassNameOhBoy".to_owned(),
+                parent_name: "doh".to_owned(),
                 doc: None,
                 id: 3,
             },
@@ -239,6 +257,7 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "ReallySuperLongClassNameOhBoy".to_owned(),
+                parent_name: "doh".to_owned(),
                 doc: None,
                 id: 3,
             },

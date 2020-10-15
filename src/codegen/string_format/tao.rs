@@ -1,13 +1,12 @@
 use super::FormatConfig;
 
-/// Generate code for attributes.
-pub fn code_attribute(cfg: &FormatConfig) -> String {
+/// Generate code for a Tao concept config.
+pub fn code_tao(cfg: &FormatConfig) -> String {
     format!(
         r##"use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{{Debug, Formatter}};
 use std::rc::Rc;
-use {crate}::concepts::attributes::{{Attribute, AttributeTrait}};
 use {crate}::concepts::{{ArchetypeTrait, FormTrait, Tao{imports}}};
 use {crate}::node_wrappers::{{debug_wrapper, CommonNodeTrait, FinalNode}};
 {doc}
@@ -74,24 +73,6 @@ impl FormTrait for {name} {{
     }}
 }}
 
-impl<'a> AttributeTrait<'a, {name}> for {name} {{
-    fn set_owner(&mut self, owner: &dyn FormTrait) {{
-        self.base.set_owner(owner);
-    }}
-
-    fn owner(&self) -> Option<Tao> {{
-        self.base.owner()
-    }}
-
-    fn set_value(&mut self, value: &dyn FormTrait) {{
-        self.base.set_value(value);
-    }}
-
-    fn value(&self) -> Option<Tao> {{
-        self.base.value()
-    }}
-}}
-
 #[cfg(test)]
 mod tests {{
     use super::*;
@@ -138,26 +119,6 @@ mod tests {{
         let mut concept = {name}::individuate();
         concept.set_internal_name("A".to_string());
         assert_eq!(concept.internal_name(), Some(Rc::new("A".to_string())));
-    }}
-
-    #[test]
-    fn get_owner() {{
-        {init_kb}
-        let mut instance = {name}::individuate();
-        let owner_of_owner = {name}::individuate();
-        instance.set_owner(&owner_of_owner);
-        assert_eq!(instance.owner(), Some(owner_of_owner.ego_death()));
-        assert_eq!(instance.value(), None);
-    }}
-
-    #[test]
-    fn get_value() {{
-        {init_kb}
-        let mut instance = {name}::individuate();
-        let value_of_owner = {name}::individuate();
-        instance.set_value(&value_of_owner);
-        assert_eq!(instance.owner(), None);
-        assert_eq!(instance.value(), Some(value_of_owner.ego_death()));
     }}
 }}
 "##,

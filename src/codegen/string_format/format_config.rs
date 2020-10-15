@@ -15,6 +15,8 @@ pub struct FormatConfig {
     pub name: String,
     /// Name of the concept.
     pub internal_name: String,
+    /// Name of the parent class.
+    pub parent_name: String,
     /// Rustdoc for the class.
     pub doc: String,
     /// ID of the concept.
@@ -37,6 +39,7 @@ impl FormatConfig {
             "initialize_kb();"
         };
         let name_transform = NameTransform::from_camel_case(&implement.name);
+        let parent_name = implement.parent_name.clone();
         let doc = match &implement.doc {
             Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
             None => String::new(),
@@ -53,6 +56,7 @@ impl FormatConfig {
             test_imports: test_imports.to_owned(),
             init_kb: init_kb.to_owned(),
             name: name_transform.to_camel_case(),
+            parent_name,
             internal_name: name_transform.to_kebab_case(),
             doc,
             id,
