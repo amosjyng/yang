@@ -1,6 +1,9 @@
 use crate::codegen::add_indent;
 use itertools::Itertools;
 
+/// Fragment for an entire code file.
+mod file;
+
 /// Number of spaces Rust is usually indented by.
 const RUST_INDENTATION: usize = 4;
 
