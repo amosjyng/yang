@@ -13,12 +13,12 @@ trait CodeFragment {
 }
 
 /// Code fragment that cannot be broken down any further.
-struct AtomicCodeFragment {
+struct AtomicFragment {
     imports: Vec<String>,
     atom: String,
 }
 
-impl CodeFragment for AtomicCodeFragment {
+impl CodeFragment for AtomicFragment {
     fn body(&self) -> String {
         self.atom.clone()
     }
@@ -32,12 +32,12 @@ impl CodeFragment for AtomicCodeFragment {
 ///
 /// Think: function bodies (you can always append extra lines), class bodies (you can always append
 /// extra functions), etc.
-struct AppendedCodeFragment {
+struct AppendedFragment {
     appendages: Vec<Box<dyn CodeFragment>>,
     block_separator: String,
 }
 
-impl AppendedCodeFragment {
+impl AppendedFragment {
     pub fn new_with_separator(block_separator: &str) -> Self {
         Self {
             appendages: Vec::new(),
@@ -51,7 +51,7 @@ impl AppendedCodeFragment {
     }
 }
 
-impl Default for AppendedCodeFragment {
+impl Default for AppendedFragment {
     fn default() -> Self {
         Self {
             appendages: Vec::default(),
@@ -60,7 +60,7 @@ impl Default for AppendedCodeFragment {
     }
 }
 
-impl CodeFragment for AppendedCodeFragment {
+impl CodeFragment for AppendedFragment {
     fn body(&self) -> String {
         (&self.appendages)
             .into_iter()
@@ -86,20 +86,20 @@ impl CodeFragment for AppendedCodeFragment {
 ///
 /// Preamble (e.g. function return value) can introduce new imports, so that's why this has its own
 /// imports.
-struct NestedCodeFragment {
+struct NestedFragment {
     imports: Vec<String>,
     preamble: String,
     nesting: Option<Box<dyn CodeFragment>>,
     postamble: String,
 }
 
-impl NestedCodeFragment {
+impl NestedFragment {
     pub fn set_nesting(&mut self, nesting: Box<dyn CodeFragment>) {
         self.nesting = Some(nesting);
     }
 }
 
-impl CodeFragment for NestedCodeFragment {
+impl CodeFragment for NestedFragment {
     fn body(&self) -> String {
         let mut result = self.preamble.clone() + "\n";
         self.nesting.as_ref().map(|n| {
@@ -126,7 +126,7 @@ mod tests {
 
     #[test]
     fn test_atom() {
-        let line = AtomicCodeFragment {
+        let line = AtomicFragment {
             imports: vec!["foreign_crate::sub::ForeignStruct".to_owned()],
             atom: "let mut f = ForeignStruct {};".to_owned(),
         };
@@ -139,15 +139,15 @@ mod tests {
 
     #[test]
     fn test_append() {
-        let line1 = AtomicCodeFragment {
+        let line1 = AtomicFragment {
             imports: vec!["foreign_crate::sub::ForeignStruct".to_owned()],
             atom: "let mut f = ForeignStruct {};".to_owned(),
         };
-        let line2 = AtomicCodeFragment {
+        let line2 = AtomicFragment {
             imports: vec!["foreign_crate::FooBarTrait".to_owned()],
             atom: "f.foo_bar()".to_owned(),
         };
-        let mut appended = AppendedCodeFragment::new_with_separator("\n");
+        let mut appended = AppendedFragment::new_with_separator("\n");
         appended.append(Box::new(line1));
         appended.append(Box::new(line2));
         assert_eq!(
@@ -169,18 +169,18 @@ mod tests {
 
     #[test]
     fn test_nest() {
-        let line1 = AtomicCodeFragment {
+        let line1 = AtomicFragment {
             imports: vec!["foreign_crate::sub::ForeignStruct".to_owned()],
             atom: "let mut f = ForeignStruct {};".to_owned(),
         };
-        let line2 = AtomicCodeFragment {
+        let line2 = AtomicFragment {
             imports: vec!["foreign_crate::FooBarTrait".to_owned()],
             atom: "f.foo_bar()".to_owned(),
         };
-        let mut appended = AppendedCodeFragment::new_with_separator("\n");
+        let mut appended = AppendedFragment::new_with_separator("\n");
         appended.append(Box::new(line1));
         appended.append(Box::new(line2));
-        let mut nested = NestedCodeFragment {
+        let mut nested = NestedFragment {
             imports: vec!["std::official::RustStruct".to_owned()],
             preamble: "fn new_rust_struct() -> RustStruct {".to_owned(),
             nesting: None,
@@ -209,7 +209,7 @@ mod tests {
 
     #[test]
     fn test_empty_nest() {
-        let nested = NestedCodeFragment {
+        let nested = NestedFragment {
             imports: vec!["std::official::RustStruct".to_owned()],
             preamble: "RustStruct {".to_owned(),
             nesting: None,
