@@ -1574,9 +1574,9 @@ dependencies = [
 
 [[package]]
 name = "zamm_yin"
-version = "0.0.6"
+version = "0.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c77586e300a29d3f88fbf3b5826fee41a9945f427fc2c12a93e897c595e409cf"
+checksum = "faef757e80b59971e48fc8322c511029e1ed0a6a0eb95d6a4ecbcdb4d0c1a7b6"
 dependencies = [
  "petgraph",
  "reqwest",
