@@ -4,10 +4,13 @@ mod string_format {
     pub mod attribute;
     /// Config values at the time of string generation.
     pub mod format_config;
+    /// Import-related code generation.
+    pub mod imports;
     /// Generate code for generic Tao concepts.
     pub mod tao;
 
     pub use format_config::FormatConfig;
+    pub use imports::sort_imports;
 }
 /// Format documentation as rustdoc.
 mod docstring;

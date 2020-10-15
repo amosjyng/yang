@@ -7,10 +7,6 @@ pub struct FormatConfig {
     pub yin_crate: String,
     /// Main file imports.
     pub imports: String,
-    /// Test imports.
-    pub test_imports: String,
-    /// KB initialization function.
-    pub init_kb: String,
     /// Name of the class.
     pub name: String,
     /// Name of the concept.
@@ -28,16 +24,6 @@ impl FormatConfig {
     pub fn from_cfgs(implement: &ImplementConfig, options: &CodegenConfig) -> Self {
         let yin_crate = if options.yin { "crate" } else { "zamm_yin" };
         let imports = if options.yin { "" } else { ", YIN_MAX_ID" };
-        let test_imports = if options.yin {
-            "use crate::graph::bind_in_memory_graph;"
-        } else {
-            "use crate::concepts::initialize_kb;"
-        };
-        let init_kb = if options.yin {
-            "bind_in_memory_graph();"
-        } else {
-            "initialize_kb();"
-        };
         let name_transform = NameTransform::from_camel_case(&implement.name);
         let parent_name = implement.parent_name.clone();
         let doc = match &implement.doc {
@@ -53,8 +39,6 @@ impl FormatConfig {
         Self {
             yin_crate: yin_crate.to_owned(),
             imports: imports.to_owned(),
-            test_imports: test_imports.to_owned(),
-            init_kb: init_kb.to_owned(),
             name: name_transform.to_camel_case(),
             parent_name,
             internal_name: name_transform.to_kebab_case(),
