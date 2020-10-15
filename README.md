@@ -17,7 +17,7 @@ cargo install yang
 ### As a binary
 
 ```text
-yang 0.0.7
+yang 0.0.8
 Amos Ng <me@amos.ng>
 Code generator for Yin.
 
