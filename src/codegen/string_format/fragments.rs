@@ -38,7 +38,7 @@ struct AppendedCodeFragment {
 }
 
 impl AppendedCodeFragment {
-    fn new_with_separator(block_separator: &str) -> Self {
+    pub fn new_with_separator(block_separator: &str) -> Self {
         Self {
             appendages: Vec::new(),
             block_separator: block_separator.to_owned(),
@@ -46,7 +46,7 @@ impl AppendedCodeFragment {
     }
 
     /// Append other code fragment into this one.
-    fn append(&mut self, other: Box<dyn CodeFragment>) {
+    pub fn append(&mut self, other: Box<dyn CodeFragment>) {
         self.appendages.push(other);
     }
 }
@@ -89,22 +89,32 @@ impl CodeFragment for AppendedCodeFragment {
 struct NestedCodeFragment {
     imports: Vec<String>,
     preamble: String,
-    nesting: Box<dyn CodeFragment>,
+    nesting: Option<Box<dyn CodeFragment>>,
     postamble: String,
+}
+
+impl NestedCodeFragment {
+    pub fn set_nesting(&mut self, nesting: Box<dyn CodeFragment>) {
+        self.nesting = Some(nesting);
+    }
 }
 
 impl CodeFragment for NestedCodeFragment {
     fn body(&self) -> String {
         let mut result = self.preamble.clone() + "\n";
-        for line in self.nesting.body().split('\n') {
-            result += &(add_indent(RUST_INDENTATION, line) + "\n");
-        }
+        self.nesting.as_ref().map(|n| {
+            for line in n.body().split('\n') {
+                result += &(add_indent(RUST_INDENTATION, line) + "\n");
+            }
+        });
         result + &self.postamble
     }
 
     fn imports(&self) -> Vec<String> {
         let mut imports = self.imports.clone();
-        imports.append(&mut self.nesting.imports());
+        self.nesting
+            .as_ref()
+            .map(|n| imports.append(&mut n.imports()));
         imports
     }
 }
@@ -170,12 +180,13 @@ mod tests {
         let mut appended = AppendedCodeFragment::new_with_separator("\n");
         appended.append(Box::new(line1));
         appended.append(Box::new(line2));
-        let nested = NestedCodeFragment {
+        let mut nested = NestedCodeFragment {
             imports: vec!["std::official::RustStruct".to_owned()],
             preamble: "fn new_rust_struct() -> RustStruct {".to_owned(),
-            nesting: Box::new(appended),
+            nesting: None,
             postamble: "}".to_owned(),
         };
+        nested.set_nesting(Box::new(appended));
         assert_eq!(
             nested.imports(),
             vec![
@@ -190,6 +201,28 @@ mod tests {
                 fn new_rust_struct() -> RustStruct {
                     let mut f = ForeignStruct {};
                     f.foo_bar()
+                }
+            "}
+            .trim()
+        );
+    }
+
+    #[test]
+    fn test_empty_nest() {
+        let nested = NestedCodeFragment {
+            imports: vec!["std::official::RustStruct".to_owned()],
+            preamble: "RustStruct {".to_owned(),
+            nesting: None,
+            postamble: "}".to_owned(),
+        };
+        assert_eq!(
+            nested.imports(),
+            vec!["std::official::RustStruct".to_owned(),]
+        );
+        assert_eq!(
+            nested.body(),
+            indoc! {"
+                RustStruct {
                 }
             "}
             .trim()
