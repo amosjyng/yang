@@ -84,15 +84,20 @@ fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
     }
 }
 
-/// Output code to filename
-pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
+/// Generate the final version of code, to be output to a file as-is.
+fn code(implement: &ImplementConfig, options: &CodegenConfig) -> String {
     let format_cfg = FormatConfig::from_cfgs(implement, options);
     let initial_code = if implement.parent_name == "Attribute" {
         code_attribute(&format_cfg)
     } else {
         code_tao(&format_cfg)
     };
-    let generated_code = post_process_generation(&initial_code, options);
+    post_process_generation(&initial_code, options)
+}
+
+/// Output code to filename
+pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
+    let generated_code = code(implement, options);
     let folder = if implement.parent_name == "Attribute" {
         "src/concepts/attributes"
     } else {
@@ -265,5 +270,33 @@ mod tests {
         ));
         let result = post_process_generation(&code, &codegen_cfg);
         assert!(result.contains(FMT_SKIP_MARKER));
+    }
+
+    #[test]
+    fn integration_test_attribute_generation() {
+        assert!(code(
+            &ImplementConfig {
+                name: "Target".to_owned(),
+                parent_name: "Attribute".to_owned(),
+                id: 1,
+                doc: Some("The target of an implement command.".to_owned()),
+            },
+            &CodegenConfig::default()
+        )
+        .contains("Attribute"));
+    }
+
+    #[test]
+    fn integration_test_non_attribute_generation() {
+        assert!(!code(
+            &ImplementConfig {
+                name: "Data".to_owned(),
+                parent_name: "Tao".to_owned(),
+                id: 1,
+                doc: None,
+            },
+            &CodegenConfig::default()
+        )
+        .contains("Attribute"));
     }
 }
