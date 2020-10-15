@@ -4,10 +4,13 @@ mod string_format {
     pub mod attribute;
     /// Config values at the time of string generation.
     pub mod format_config;
+    /// Import-related code generation.
+    pub mod imports;
     /// Generate code for generic Tao concepts.
     pub mod tao;
 
     pub use format_config::FormatConfig;
+    pub use imports::sort_imports;
 }
 /// Format documentation as rustdoc.
 mod docstring;
@@ -87,6 +90,7 @@ fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
 /// Generate the final version of code, to be output to a file as-is.
 fn code(implement: &ImplementConfig, options: &CodegenConfig) -> String {
     let format_cfg = FormatConfig::from_cfgs(implement, options);
+    // todo: get attribute parents once Yin supports that
     let initial_code = if implement.parent_name == "Attribute" {
         code_attribute(&format_cfg)
     } else {

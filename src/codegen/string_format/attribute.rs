@@ -1,15 +1,20 @@
-use super::FormatConfig;
+use super::{sort_imports, FormatConfig};
 
 /// Generate code for attributes.
 pub fn code_attribute(cfg: &FormatConfig) -> String {
-    format!(
-        r##"use std::convert::TryFrom;
+    let imports = sort_imports(&format!(
+        "use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{{Debug, Formatter}};
 use std::rc::Rc;
 use {crate}::concepts::attributes::{{Attribute, AttributeTrait}};
 use {crate}::concepts::{{ArchetypeTrait, FormTrait, Tao{imports}}};
-use {crate}::node_wrappers::{{debug_wrapper, CommonNodeTrait, FinalNode}};
+use {crate}::node_wrappers::{{debug_wrapper, CommonNodeTrait, FinalNode}};",
+        crate = cfg.yin_crate,
+        imports = cfg.imports,
+    ));
+    format!(
+        r##"{imports}
 {doc}
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct {name} {{
@@ -95,11 +100,11 @@ impl<'a> AttributeTrait<'a, {name}> for {name} {{
 #[cfg(test)]
 mod tests {{
     use super::*;
-    {test_imports}
+    use crate::concepts::initialize_kb;
 
     #[test]
     fn check_type_created() {{
-        {init_kb}
+        initialize_kb();
         assert_eq!({name}::archetype().id(), {name}::TYPE_ID);
         assert_eq!(
             {name}::archetype().internal_name(),
@@ -109,7 +114,7 @@ mod tests {{
 
     #[test]
     fn from_node_id() {{
-        {init_kb}
+        initialize_kb();
         let concept = {name}::individuate();
         let concept_copy = {name}::from(concept.id());
         assert_eq!(concept.id(), concept_copy.id());
@@ -117,7 +122,7 @@ mod tests {{
 
     #[test]
     fn from_name() {{
-        {init_kb}
+        initialize_kb();
         let mut concept = {name}::individuate();
         concept.set_internal_name("A".to_owned());
         assert_eq!({name}::try_from("A"), Ok(concept));
@@ -126,7 +131,7 @@ mod tests {{
 
     #[test]
     fn create_and_retrieve_node_id() {{
-        {init_kb}
+        initialize_kb();
         let concept1 = {name}::individuate();
         let concept2 = {name}::individuate();
         assert_eq!(concept1.id() + 1, concept2.id());
@@ -134,7 +139,7 @@ mod tests {{
 
     #[test]
     fn create_and_retrieve_node_name() {{
-        {init_kb}
+        initialize_kb();
         let mut concept = {name}::individuate();
         concept.set_internal_name("A".to_string());
         assert_eq!(concept.internal_name(), Some(Rc::new("A".to_string())));
@@ -142,7 +147,7 @@ mod tests {{
 
     #[test]
     fn get_owner() {{
-        {init_kb}
+        initialize_kb();
         let mut instance = {name}::individuate();
         let owner_of_owner = {name}::individuate();
         instance.set_owner(&owner_of_owner);
@@ -152,7 +157,7 @@ mod tests {{
 
     #[test]
     fn get_value() {{
-        {init_kb}
+        initialize_kb();
         let mut instance = {name}::individuate();
         let value_of_owner = {name}::individuate();
         instance.set_value(&value_of_owner);
@@ -161,10 +166,7 @@ mod tests {{
     }}
 }}
 "##,
-        crate = cfg.yin_crate,
-        imports = cfg.imports,
-        test_imports = cfg.test_imports,
-        init_kb = cfg.init_kb,
+        imports = imports,
         name = cfg.name,
         internal_name = cfg.internal_name,
         parent = cfg.parent_name,
