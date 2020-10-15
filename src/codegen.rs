@@ -4,6 +4,8 @@ mod string_format {
     pub mod attribute;
     /// Config values at the time of string generation.
     pub mod format_config;
+    /// Intermediate code fragments produced during code generation.
+    mod fragments;
     /// Import-related code generation.
     pub mod imports;
     /// Generate code for generic Tao concepts.
