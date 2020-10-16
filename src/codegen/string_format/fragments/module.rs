@@ -45,8 +45,7 @@ impl CodeFragment for ModuleFragment {
                 #[cfg(test)]
                 mod {name} {{",
                 name = self.name,
-            }
-            .to_owned(),
+            },
             nesting: Some(Rc::new(RefCell::new(internals))),
             postamble: "}".to_owned(),
         };

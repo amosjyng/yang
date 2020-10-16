@@ -16,7 +16,7 @@ pub use module::ModuleFragment;
 const RUST_INDENTATION: usize = 4;
 
 /// Serialize imports into a string.
-pub fn imports_as_str(imports: &Vec<String>) -> String {
+pub fn imports_as_str(imports: &[String]) -> String {
     // this doesn't need to take into account self.tests because tests don't contribute to file
     // imports
     let mut result = String::new();
@@ -90,7 +90,7 @@ impl Default for AppendedFragment {
 impl CodeFragment for AppendedFragment {
     fn body(&self) -> String {
         (&self.appendages)
-            .into_iter()
+            .iter()
             .map(|cf| cf.borrow().body())
             .format(&self.block_separator)
             .to_string()
@@ -134,19 +134,19 @@ impl NestedFragment {
 impl CodeFragment for NestedFragment {
     fn body(&self) -> String {
         let mut result = self.preamble.trim().to_owned() + "\n";
-        self.nesting.as_ref().map(|n| {
+        if let Some(n) = self.nesting.as_ref() {
             for line in n.borrow().body().trim().split('\n') {
                 result += &(add_indent(RUST_INDENTATION, line) + "\n");
             }
-        });
-        result + &self.postamble.trim()
+        }
+        result + self.postamble.trim()
     }
 
     fn imports(&self) -> Vec<String> {
         let mut imports = self.imports.clone();
-        self.nesting
-            .as_ref()
-            .map(|n| imports.append(&mut n.borrow().imports()));
+        if let Some(n) = self.nesting .as_ref() {
+            imports.append(&mut n.borrow().imports());
+        }
         imports
     }
 }

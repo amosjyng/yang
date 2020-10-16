@@ -25,7 +25,9 @@ impl FileFragment {
     pub fn generate_code(&self) -> String {
         let mut combined = AppendedFragment::default();
         combined.append(self.contents.clone());
-        self.tests.as_ref().map(|t| combined.append(t.clone()));
+        if let Some(t) = self.tests.as_ref() {
+            combined.append(t.clone());
+        }
 
         format!(
             "{}\n\n{}\n",
