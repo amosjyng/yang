@@ -287,13 +287,13 @@ mod tests {
 
     #[test]
     fn folder_path_tao() {
-        assert_eq!(folder_path(&vec!["Tao".to_owned()]), "src/concept");
+        assert_eq!(folder_path(&["Tao".to_owned()]), "src/concept");
     }
 
     #[test]
     fn folder_path_attributes() {
         assert_eq!(
-            folder_path(&vec!["Tao".to_owned(), "Attribute".to_owned()]),
+            folder_path(&["Tao".to_owned(), "Attribute".to_owned()]),
             "src/concept/attribute"
         );
     }
@@ -301,11 +301,7 @@ mod tests {
     #[test]
     fn folder_path_nested() {
         assert_eq!(
-            folder_path(&vec![
-                "Tao".to_owned(),
-                "Data".to_owned(),
-                "String".to_owned()
-            ]),
+            folder_path(&["Tao".to_owned(), "Data".to_owned(), "String".to_owned()]),
             "src/concept/data/string"
         );
     }
