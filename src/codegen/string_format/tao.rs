@@ -24,7 +24,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
         ],
         atom: formatdoc! {r#"
             {doc}
-            #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+            #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
             pub struct {name} {{
                 base: {parent},
             }}
