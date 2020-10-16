@@ -115,13 +115,14 @@ fn folder_path(ancestry: &[&str]) -> String {
 /// Output code to filename
 pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
     let generated_code = code(implement, options);
+    let snake_name = NameTransform::from_camel_case(&implement.name).to_snake_case();
     let mut ancestry = implement
         .ancestry
         .iter()
         .map(|s| s.as_str())
         .collect::<Vec<&str>>();
     if implement.own_submodule {
-        ancestry.push(implement.name.as_str());
+        ancestry.push(snake_name.as_str());
     }
     let folder = folder_path(&ancestry);
     // append _archetype to filename to avoid 
@@ -129,7 +130,7 @@ pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
     let file_relative = format!(
         "{}/{}_archetype.rs",
         folder,
-        NameTransform::from_camel_case(&implement.name).to_snake_case()
+        snake_name
     );
     let file_pathabs = PathAbs::new(Path::new(&file_relative))
         .unwrap_or_else(|_| panic!("Could not get absolute path for {}", file_relative));
