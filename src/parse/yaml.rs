@@ -26,14 +26,20 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
                 .iter()
                 .map(|a| (*a.internal_name().unwrap()).clone())
                 .collect();
+            // todo: use children() instead of individuals(), and filter by type, once Yin has that
+            // functionality
+            let own_submodule = !target
+                .individuals()
+                .iter()
+                .filter(|i| **i != target.ego_death()) // todo: remove once Yin bug fixed
+                .next()
+                .is_none();
             let impl_config = ImplementConfig {
                 name: target_name.to_owned(),
                 ancestry,
                 id: entry["output_id"].as_i64().unwrap() as usize,
                 doc: entry["documentation"].as_str().map(|s| s.to_owned()),
-                // todo: use children() instead of individuals(), and filter by type, once Yin has
-                // that functionality
-                own_submodule: !target.individuals().is_empty(),
+                own_submodule,
             };
             implement.set_config(impl_config);
         }
