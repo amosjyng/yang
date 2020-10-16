@@ -25,7 +25,7 @@ impl FormatConfig {
         let yin_crate = if options.yin { "crate" } else { "zamm_yin" };
         let imports = if options.yin { "" } else { ", YIN_MAX_ID" };
         let name_transform = NameTransform::from_camel_case(&implement.name);
-        let parent_name = implement.parent_name.clone();
+        let parent_name = implement.parent_name().to_string();
         let doc = match &implement.doc {
             Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
             None => String::new(),

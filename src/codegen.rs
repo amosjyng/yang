@@ -92,7 +92,7 @@ fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
 /// Generate the final version of code, to be output to a file as-is.
 fn code(implement: &ImplementConfig, options: &CodegenConfig) -> String {
     let format_cfg = FormatConfig::from_cfgs(implement, options);
-    let initial_code = if implement.parent_name == "Attribute" {
+    let initial_code = if implement.parent_name() == "Attribute" {
         code_attribute(&format_cfg)
     } else {
         code_tao(&format_cfg)
@@ -100,14 +100,22 @@ fn code(implement: &ImplementConfig, options: &CodegenConfig) -> String {
     post_process_generation(&initial_code, options)
 }
 
+fn folder_path(ancestry: &[String]) -> String {
+    let mut folder = "src/concept".to_owned();
+    let mut ancestors = ancestry.iter();
+    ancestors.next(); // first one is always Tao
+    for ancestor in ancestors {
+        folder += "/";
+        // this means that paths will now feature singular instead of plural nouns
+        folder += ancestor;
+    }
+    folder.to_ascii_lowercase()
+}
+
 /// Output code to filename
 pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
     let generated_code = code(implement, options);
-    let folder = if implement.parent_name == "Attribute" {
-        "src/concepts/attributes"
-    } else {
-        "src/concepts"
-    };
+    let folder = folder_path(&implement.ancestry);
     let file_relative = format!(
         "{}/{}.rs",
         folder,
@@ -161,7 +169,7 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "dummy".to_owned(),
-                parent_name: "doh".to_owned(),
+                ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
             },
@@ -183,7 +191,7 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "dummy".to_owned(),
-                parent_name: "doh".to_owned(),
+                ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
             },
@@ -204,7 +212,7 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "dummy".to_owned(),
-                parent_name: "doh".to_owned(),
+                ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
             },
@@ -225,7 +233,7 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "short".to_owned(),
-                parent_name: "doh".to_owned(),
+                ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
             },
@@ -246,7 +254,7 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "ReallySuperLongClassNameOhBoy".to_owned(),
-                parent_name: "doh".to_owned(),
+                ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
             },
@@ -267,7 +275,7 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "ReallySuperLongClassNameOhBoy".to_owned(),
-                parent_name: "doh".to_owned(),
+                ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
             },
@@ -278,11 +286,36 @@ mod tests {
     }
 
     #[test]
+    fn folder_path_tao() {
+        assert_eq!(folder_path(&vec!["Tao".to_owned()]), "src/concept");
+    }
+
+    #[test]
+    fn folder_path_attributes() {
+        assert_eq!(
+            folder_path(&vec!["Tao".to_owned(), "Attribute".to_owned()]),
+            "src/concept/attribute"
+        );
+    }
+
+    #[test]
+    fn folder_path_nested() {
+        assert_eq!(
+            folder_path(&vec![
+                "Tao".to_owned(),
+                "Data".to_owned(),
+                "String".to_owned()
+            ]),
+            "src/concept/data/string"
+        );
+    }
+
+    #[test]
     fn integration_test_attribute_generation() {
         assert!(code(
             &ImplementConfig {
                 name: "Target".to_owned(),
-                parent_name: "Attribute".to_owned(),
+                ancestry: vec!["Attribute".to_owned()],
                 id: 1,
                 doc: Some("The target of an implement command.".to_owned()),
             },
@@ -296,7 +329,7 @@ mod tests {
         assert!(!code(
             &ImplementConfig {
                 name: "Data".to_owned(),
-                parent_name: "Tao".to_owned(),
+                ancestry: vec!["Tao".to_owned()],
                 id: 1,
                 doc: None,
             },
