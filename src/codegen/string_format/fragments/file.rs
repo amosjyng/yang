@@ -1,4 +1,5 @@
-use super::{imports_as_str, AppendedFragment, CodeFragment};
+use super::{AppendedFragment, CodeFragment};
+use crate::codegen::string_format::imports::imports_as_str;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -31,7 +32,13 @@ impl FileFragment {
 
         format!(
             "{}\n\n{}\n",
-            imports_as_str(&combined.imports()),
+            imports_as_str(
+                &combined
+                    .imports()
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<&str>>()
+            ),
             combined.body()
         )
     }

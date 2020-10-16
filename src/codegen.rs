@@ -92,7 +92,7 @@ fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
 /// Generate the final version of code, to be output to a file as-is.
 fn code(implement: &ImplementConfig, options: &CodegenConfig) -> String {
     let format_cfg = FormatConfig::from_cfgs(implement, options);
-    let initial_code = if implement.parent_name == "Attribute" {
+    let initial_code = if implement.parent_name() == "Attribute" {
         code_attribute(&format_cfg)
     } else {
         code_tao(&format_cfg)
@@ -100,19 +100,34 @@ fn code(implement: &ImplementConfig, options: &CodegenConfig) -> String {
     post_process_generation(&initial_code, options)
 }
 
+fn folder_path(ancestry: &[&str]) -> String {
+    let mut folder = "src/concept".to_owned();
+    let mut ancestors = ancestry.iter();
+    ancestors.next(); // first one is always Tao
+    for ancestor in ancestors {
+        folder += "/";
+        // this means that paths will now feature singular instead of plural nouns
+        folder += ancestor;
+    }
+    folder.to_ascii_lowercase()
+}
+
 /// Output code to filename
 pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
     let generated_code = code(implement, options);
-    let folder = if implement.parent_name == "Attribute" {
-        "src/concepts/attributes"
-    } else {
-        "src/concepts"
-    };
-    let file_relative = format!(
-        "{}/{}.rs",
-        folder,
-        NameTransform::from_camel_case(&implement.name).to_snake_case()
-    );
+    let snake_name = NameTransform::from_camel_case(&implement.name).to_snake_case();
+    let mut ancestry = implement
+        .ancestry
+        .iter()
+        .map(|s| s.as_str())
+        .collect::<Vec<&str>>();
+    if implement.own_submodule {
+        ancestry.push(snake_name.as_str());
+    }
+    let folder = folder_path(&ancestry);
+    // append _archetype to filename to avoid
+    // https://rust-lang.github.io/rust-clippy/master/index.html#module_inception
+    let file_relative = format!("{}/{}_archetype.rs", folder, snake_name);
     let file_pathabs = PathAbs::new(Path::new(&file_relative))
         .unwrap_or_else(|_| panic!("Could not get absolute path for {}", file_relative));
     let file_absolute = file_pathabs.as_path().to_str().unwrap();
@@ -153,17 +168,18 @@ mod tests {
     #[test]
     fn test_post_process_comments() {
         let codegen_cfg = CodegenConfig {
-            comment_autogen: true,
+            comment_autogen: true, // relevant for test
             track_autogen: false,
-            yin: false,
-            release: false,
+            yin: false,     // relevant for test
+            release: false, // relevant for test
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "dummy".to_owned(),
-                parent_name: "doh".to_owned(),
+                ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
+                own_submodule: false,
             },
             &codegen_cfg,
         ));
@@ -175,7 +191,7 @@ mod tests {
     #[test]
     fn test_post_process_no_comments() {
         let codegen_cfg = CodegenConfig {
-            comment_autogen: false,
+            comment_autogen: false, // relevant for test
             track_autogen: false,
             yin: false,
             release: false,
@@ -183,9 +199,10 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "dummy".to_owned(),
-                parent_name: "doh".to_owned(),
+                ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
+                own_submodule: false,
             },
             &codegen_cfg,
         ));
@@ -198,15 +215,16 @@ mod tests {
         let codegen_cfg = CodegenConfig {
             comment_autogen: true,
             track_autogen: false,
-            yin: true,
+            yin: true, // relevant for test
             release: false,
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "dummy".to_owned(),
-                parent_name: "doh".to_owned(),
+                ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
+                own_submodule: false,
             },
             &codegen_cfg,
         ));
@@ -225,14 +243,15 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "short".to_owned(),
-                parent_name: "doh".to_owned(),
+                ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
+                own_submodule: false,
             },
             &codegen_cfg,
         ));
         let result = post_process_generation(&code, &codegen_cfg);
-        assert!(!result.contains(FMT_SKIP_MARKER));
+        assert!(!result.contains(FMT_SKIP_MARKER)); // relevant for test
     }
 
     #[test]
@@ -241,14 +260,15 @@ mod tests {
             comment_autogen: true,
             track_autogen: false,
             yin: false,
-            release: false,
+            release: false, // relevant for test
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
-                name: "ReallySuperLongClassNameOhBoy".to_owned(),
-                parent_name: "doh".to_owned(),
+                name: "ReallySuperLongClassNameOhBoy".to_owned(), // relevant for test
+                ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
+                own_submodule: false,
             },
             &codegen_cfg,
         ));
@@ -262,14 +282,15 @@ mod tests {
             comment_autogen: true,
             track_autogen: false,
             yin: false,
-            release: true,
+            release: true, // relevant for test
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
-                name: "ReallySuperLongClassNameOhBoy".to_owned(),
-                parent_name: "doh".to_owned(),
+                name: "ReallySuperLongClassNameOhBoy".to_owned(), // relevant for test
+                ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
+                own_submodule: false,
             },
             &codegen_cfg,
         ));
@@ -278,13 +299,32 @@ mod tests {
     }
 
     #[test]
+    fn folder_path_tao() {
+        assert_eq!(folder_path(&["Tao"]), "src/concept");
+    }
+
+    #[test]
+    fn folder_path_attributes() {
+        assert_eq!(folder_path(&["Tao", "Attribute"]), "src/concept/attribute");
+    }
+
+    #[test]
+    fn folder_path_nested() {
+        assert_eq!(
+            folder_path(&["Tao", "Data", "String"]),
+            "src/concept/data/string"
+        );
+    }
+
+    #[test]
     fn integration_test_attribute_generation() {
         assert!(code(
             &ImplementConfig {
                 name: "Target".to_owned(),
-                parent_name: "Attribute".to_owned(),
+                ancestry: vec!["Attribute".to_owned()], // relevant for test
                 id: 1,
                 doc: Some("The target of an implement command.".to_owned()),
+                own_submodule: false,
             },
             &CodegenConfig::default()
         )
@@ -296,9 +336,10 @@ mod tests {
         assert!(!code(
             &ImplementConfig {
                 name: "Data".to_owned(),
-                parent_name: "Tao".to_owned(),
+                ancestry: vec!["Tao".to_owned()], // relevant for test
                 id: 1,
                 doc: None,
+                own_submodule: false,
             },
             &CodegenConfig::default()
         )

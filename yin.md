@@ -24,6 +24,13 @@ The same can be said for the bits in Yin and Yang's world. Everything is ultimat
 
 In a sense, it's all about framing. Every series of bits forms a number, but unless you're Gödel and you're trying to establish an equivalence between a mathematical proof and an integer, reasoning about "a series of bits" is going to be quite different from reasoning about "a number."
 
+One type of data is a "string":
+
+```yaml
+- name: StringConcept
+  parent: Data
+```
+
 ### Implementation
 
 Unlike with Yin, we don't actually want to implement *everything* we know, because everything we know about Yin is already implemented inside her physical body. We only want to implement the things that we learned about Yang here:
@@ -45,3 +52,12 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 ```
 
 > Structures that can ultimately be compiled down to bits.
+
+```yaml
+- parent: Implement
+  target: StringConcept
+  output_id: 4
+  documentation: |-
+```
+
+> The concept of a string of characters.

@@ -16,9 +16,10 @@ fn main() {
     implement_command.set_target(target);
     implement_command.set_config(ImplementConfig {
         name: "Target".to_owned(),
-        parent_name: "Attribute".to_owned(),
+        ancestry: vec!["Attribute".to_owned()],
         id: 1,
         doc: Some("The target of an implement command.".to_owned()),
+        own_submodule: false,
     });
 
     handle_implementation(implement_command, &CodegenConfig::default());

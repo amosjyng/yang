@@ -6,25 +6,31 @@ use std::rc::Rc;
 
 /// Get the Tao body fragment.
 pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
+    let mut imports = vec![
+        "std::convert::TryFrom".to_owned(),
+        "std::fmt".to_owned(),
+        "std::fmt::Debug".to_owned(),
+        "std::fmt::Formatter".to_owned(),
+        "std::rc::Rc".to_owned(),
+        format!("{}::concepts::ArchetypeTrait", cfg.yin_crate),
+        format!("{}::concepts::FormTrait", cfg.yin_crate),
+        format!("{}::node_wrappers::debug_wrapper", cfg.yin_crate),
+        format!("{}::node_wrappers::CommonNodeTrait", cfg.yin_crate),
+        format!("{}::node_wrappers::FinalNode", cfg.yin_crate),
+    ];
+    if let Some(import) = &cfg.imports {
+        imports.push(import.clone());
+    }
+    if cfg.parent_name == "Tao" {
+        imports.push(format!("{}::concepts::Tao", cfg.yin_crate));
+    } else {
+        imports.push(format!("super::{}", cfg.parent_name));
+    }
     AtomicFragment {
-        imports: vec![
-            "std::convert::TryFrom".to_owned(),
-            "std::fmt".to_owned(),
-            "std::fmt::{Debug, Formatter}".to_owned(),
-            "std::rc::Rc".to_owned(),
-            format!(
-                "{crate}::concepts::{{ArchetypeTrait, FormTrait, Tao{imports}}}",
-                crate = cfg.yin_crate,
-                imports = cfg.imports
-            ),
-            format!(
-                "{crate}::node_wrappers::{{debug_wrapper, CommonNodeTrait, FinalNode}}",
-                crate = cfg.yin_crate
-            ),
-        ],
+        imports,
         atom: formatdoc! {r#"
             {doc}
-            #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+            #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
             pub struct {name} {{
                 base: {parent},
             }}
