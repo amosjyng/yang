@@ -28,12 +28,10 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
                 .collect();
             // todo: use children() instead of individuals(), and filter by type, once Yin has that
             // functionality
-            let own_submodule = !target
+            let own_submodule = target
                 .individuals()
                 .iter()
-                .filter(|i| **i != target.ego_death()) // todo: remove once Yin bug fixed
-                .next()
-                .is_none();
+                .any(|i| *i != target.ego_death()); // todo: remove once Yin bug fixed
             let impl_config = ImplementConfig {
                 name: target_name.to_owned(),
                 ancestry,
