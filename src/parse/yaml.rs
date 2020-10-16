@@ -31,6 +31,9 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
                 ancestry,
                 id: entry["output_id"].as_i64().unwrap() as usize,
                 doc: entry["documentation"].as_str().map(|s| s.to_owned()),
+                // todo: use children() instead of individuals(), and filter by type, once Yin has
+                // that functionality
+                own_submodule: !target.individuals().is_empty(),
             };
             implement.set_config(impl_config);
         }

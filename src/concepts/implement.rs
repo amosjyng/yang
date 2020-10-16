@@ -25,6 +25,8 @@ pub struct ImplementConfig {
     pub id: usize,
     /// Documentation, if any, for the concept being implemented.
     pub doc: Option<String>,
+    /// Whether this belongs in its own folder, as a submodule for descendant concepts.
+    pub own_submodule: bool,
 }
 
 impl ImplementConfig {
@@ -184,6 +186,7 @@ mod tests {
             ancestry: vec!["Tao".to_owned()],
             id: 2,
             doc: Some("Hi".to_owned()),
+            own_submodule: true,
         });
         assert_eq!(
             implement.config(),
@@ -192,6 +195,7 @@ mod tests {
                 ancestry: vec!["Tao".to_owned()],
                 id: 2,
                 doc: Some("Hi".to_owned()),
+                own_submodule: true,
             })
         );
     }

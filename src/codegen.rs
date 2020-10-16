@@ -100,7 +100,7 @@ fn code(implement: &ImplementConfig, options: &CodegenConfig) -> String {
     post_process_generation(&initial_code, options)
 }
 
-fn folder_path(ancestry: &[String]) -> String {
+fn folder_path(ancestry: &[&str]) -> String {
     let mut folder = "src/concept".to_owned();
     let mut ancestors = ancestry.iter();
     ancestors.next(); // first one is always Tao
@@ -115,7 +115,15 @@ fn folder_path(ancestry: &[String]) -> String {
 /// Output code to filename
 pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
     let generated_code = code(implement, options);
-    let folder = folder_path(&implement.ancestry);
+    let mut ancestry = implement
+        .ancestry
+        .iter()
+        .map(|s| s.as_str())
+        .collect::<Vec<&str>>();
+    if implement.own_submodule {
+        ancestry.push(implement.name.as_str());
+    }
+    let folder = folder_path(&ancestry);
     let file_relative = format!(
         "{}/{}.rs",
         folder,
@@ -161,10 +169,10 @@ mod tests {
     #[test]
     fn test_post_process_comments() {
         let codegen_cfg = CodegenConfig {
-            comment_autogen: true,
+            comment_autogen: true, // relevant for test
             track_autogen: false,
-            yin: false,
-            release: false,
+            yin: false,     // relevant for test
+            release: false, // relevant for test
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
@@ -172,6 +180,7 @@ mod tests {
                 ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
+                own_submodule: false,
             },
             &codegen_cfg,
         ));
@@ -183,7 +192,7 @@ mod tests {
     #[test]
     fn test_post_process_no_comments() {
         let codegen_cfg = CodegenConfig {
-            comment_autogen: false,
+            comment_autogen: false, // relevant for test
             track_autogen: false,
             yin: false,
             release: false,
@@ -194,6 +203,7 @@ mod tests {
                 ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
+                own_submodule: false,
             },
             &codegen_cfg,
         ));
@@ -206,7 +216,7 @@ mod tests {
         let codegen_cfg = CodegenConfig {
             comment_autogen: true,
             track_autogen: false,
-            yin: true,
+            yin: true, // relevant for test
             release: false,
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
@@ -215,6 +225,7 @@ mod tests {
                 ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
+                own_submodule: false,
             },
             &codegen_cfg,
         ));
@@ -236,11 +247,12 @@ mod tests {
                 ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
+                own_submodule: false,
             },
             &codegen_cfg,
         ));
         let result = post_process_generation(&code, &codegen_cfg);
-        assert!(!result.contains(FMT_SKIP_MARKER));
+        assert!(!result.contains(FMT_SKIP_MARKER)); // relevant for test
     }
 
     #[test]
@@ -249,14 +261,15 @@ mod tests {
             comment_autogen: true,
             track_autogen: false,
             yin: false,
-            release: false,
+            release: false, // relevant for test
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
-                name: "ReallySuperLongClassNameOhBoy".to_owned(),
+                name: "ReallySuperLongClassNameOhBoy".to_owned(), // relevant for test
                 ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
+                own_submodule: false,
             },
             &codegen_cfg,
         ));
@@ -270,14 +283,15 @@ mod tests {
             comment_autogen: true,
             track_autogen: false,
             yin: false,
-            release: true,
+            release: true, // relevant for test
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
-                name: "ReallySuperLongClassNameOhBoy".to_owned(),
+                name: "ReallySuperLongClassNameOhBoy".to_owned(), // relevant for test
                 ancestry: vec!["doh".to_owned()],
                 doc: None,
                 id: 3,
+                own_submodule: false,
             },
             &codegen_cfg,
         ));
@@ -287,21 +301,18 @@ mod tests {
 
     #[test]
     fn folder_path_tao() {
-        assert_eq!(folder_path(&["Tao".to_owned()]), "src/concept");
+        assert_eq!(folder_path(&["Tao"]), "src/concept");
     }
 
     #[test]
     fn folder_path_attributes() {
-        assert_eq!(
-            folder_path(&["Tao".to_owned(), "Attribute".to_owned()]),
-            "src/concept/attribute"
-        );
+        assert_eq!(folder_path(&["Tao", "Attribute"]), "src/concept/attribute");
     }
 
     #[test]
     fn folder_path_nested() {
         assert_eq!(
-            folder_path(&["Tao".to_owned(), "Data".to_owned(), "String".to_owned()]),
+            folder_path(&["Tao", "Data", "String"]),
             "src/concept/data/string"
         );
     }
@@ -311,9 +322,10 @@ mod tests {
         assert!(code(
             &ImplementConfig {
                 name: "Target".to_owned(),
-                ancestry: vec!["Attribute".to_owned()],
+                ancestry: vec!["Attribute".to_owned()], // relevant for test
                 id: 1,
                 doc: Some("The target of an implement command.".to_owned()),
+                own_submodule: false,
             },
             &CodegenConfig::default()
         )
@@ -325,9 +337,10 @@ mod tests {
         assert!(!code(
             &ImplementConfig {
                 name: "Data".to_owned(),
-                ancestry: vec!["Tao".to_owned()],
+                ancestry: vec!["Tao".to_owned()], // relevant for test
                 id: 1,
                 doc: None,
+                own_submodule: false,
             },
             &CodegenConfig::default()
         )
