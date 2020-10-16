@@ -1,9 +1,11 @@
 /// Format codegen.
-mod string_format {
+pub mod string_format {
     /// Generate code for attribute concepts.
     pub mod attribute;
     /// Config values at the time of string generation.
     pub mod format_config;
+    /// Intermediate code fragments produced during code generation.
+    pub mod fragments;
     /// Import-related code generation.
     pub mod imports;
     /// Generate code for generic Tao concepts.
