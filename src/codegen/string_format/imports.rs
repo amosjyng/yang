@@ -28,7 +28,7 @@ fn group_imports(imports: &[&str]) -> Vec<String> {
         let name = path.pop().unwrap();
         groups
             .entry(path.iter().format("::").to_string())
-            .or_insert(Vec::new())
+            .or_insert_with(Vec::new)
             .push(name);
     }
 
@@ -36,7 +36,7 @@ fn group_imports(imports: &[&str]) -> Vec<String> {
     for (path, names) in &groups {
         let import = if names.len() > 1 {
             let mut sorted_names = names.clone();
-            sorted_names.sort();
+            sorted_names.sort_unstable();
             format!(
                 "{}::{{{}}}",
                 path,
