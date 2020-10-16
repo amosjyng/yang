@@ -124,8 +124,10 @@ pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
         ancestry.push(implement.name.as_str());
     }
     let folder = folder_path(&ancestry);
+    // append _archetype to filename to avoid 
+    // https://rust-lang.github.io/rust-clippy/master/index.html#module_inception
     let file_relative = format!(
-        "{}/{}.rs",
+        "{}/{}_archetype.rs",
         folder,
         NameTransform::from_camel_case(&implement.name).to_snake_case()
     );
