@@ -6,7 +6,7 @@ pub struct FormatConfig {
     /// Name to use for the yin crate.
     pub yin_crate: String,
     /// Main file imports.
-    pub imports: String,
+    pub imports: Option<String>,
     /// Name of the class.
     pub name: String,
     /// Name of the concept.
@@ -23,7 +23,7 @@ impl FormatConfig {
     /// Extract format values from input configs.
     pub fn from_cfgs(implement: &ImplementConfig, options: &CodegenConfig) -> Self {
         let yin_crate = if options.yin { "crate" } else { "zamm_yin" };
-        let imports = if options.yin { "" } else { ", YIN_MAX_ID" };
+        let imports = if options.yin { None } else { Some("zamm_yin::concepts::YIN_MAX_ID".to_owned()) };
         let name_transform = NameTransform::from_camel_case(&implement.name);
         let parent_name = implement.parent_name().to_string();
         let doc = match &implement.doc {
@@ -38,7 +38,7 @@ impl FormatConfig {
 
         Self {
             yin_crate: yin_crate.to_owned(),
-            imports: imports.to_owned(),
+            imports,
             name: name_transform.to_camel_case(),
             parent_name,
             internal_name: name_transform.to_kebab_case(),
