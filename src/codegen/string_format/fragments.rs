@@ -1,5 +1,7 @@
 use crate::codegen::add_indent;
 use itertools::Itertools;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 /// Fragment for an entire code file.
 mod file;
@@ -36,7 +38,7 @@ impl CodeFragment for AtomicFragment {
 /// Think: function bodies (you can always append extra lines), class bodies (you can always append
 /// extra functions), etc.
 struct AppendedFragment {
-    appendages: Vec<Box<dyn CodeFragment>>,
+    appendages: Vec<Rc<RefCell<dyn CodeFragment>>>,
     block_separator: String,
 }
 
@@ -49,7 +51,7 @@ impl AppendedFragment {
     }
 
     /// Append other code fragment into this one.
-    pub fn append(&mut self, other: Box<dyn CodeFragment>) {
+    pub fn append(&mut self, other: Rc<RefCell<dyn CodeFragment>>) {
         self.appendages.push(other);
     }
 }
@@ -67,7 +69,7 @@ impl CodeFragment for AppendedFragment {
     fn body(&self) -> String {
         (&self.appendages)
             .into_iter()
-            .map(|cf| cf.body())
+            .map(|cf| cf.borrow().body())
             .format(&self.block_separator)
             .to_string()
     }
@@ -75,7 +77,7 @@ impl CodeFragment for AppendedFragment {
     fn imports(&self) -> Vec<String> {
         let mut imports = Vec::new();
         for appendage in &self.appendages {
-            imports.append(&mut appendage.imports());
+            imports.append(&mut appendage.borrow().imports());
         }
         imports
     }
@@ -92,12 +94,12 @@ impl CodeFragment for AppendedFragment {
 struct NestedFragment {
     imports: Vec<String>,
     preamble: String,
-    nesting: Option<Box<dyn CodeFragment>>,
+    nesting: Option<Rc<RefCell<dyn CodeFragment>>>,
     postamble: String,
 }
 
 impl NestedFragment {
-    pub fn set_nesting(&mut self, nesting: Box<dyn CodeFragment>) {
+    pub fn set_nesting(&mut self, nesting: Rc<RefCell<dyn CodeFragment>>) {
         self.nesting = Some(nesting);
     }
 }
@@ -106,7 +108,7 @@ impl CodeFragment for NestedFragment {
     fn body(&self) -> String {
         let mut result = self.preamble.clone() + "\n";
         self.nesting.as_ref().map(|n| {
-            for line in n.body().split('\n') {
+            for line in n.borrow().body().split('\n') {
                 result += &(add_indent(RUST_INDENTATION, line) + "\n");
             }
         });
@@ -117,7 +119,7 @@ impl CodeFragment for NestedFragment {
         let mut imports = self.imports.clone();
         self.nesting
             .as_ref()
-            .map(|n| imports.append(&mut n.imports()));
+            .map(|n| imports.append(&mut n.borrow().imports()));
         imports
     }
 }
@@ -151,8 +153,8 @@ mod tests {
             atom: "f.foo_bar()".to_owned(),
         };
         let mut appended = AppendedFragment::new_with_separator("\n");
-        appended.append(Box::new(line1));
-        appended.append(Box::new(line2));
+        appended.append(Rc::new(RefCell::new(line1)));
+        appended.append(Rc::new(RefCell::new(line2)));
         assert_eq!(
             appended.imports(),
             vec![
@@ -181,15 +183,15 @@ mod tests {
             atom: "f.foo_bar()".to_owned(),
         };
         let mut appended = AppendedFragment::new_with_separator("\n");
-        appended.append(Box::new(line1));
-        appended.append(Box::new(line2));
+        appended.append(Rc::new(RefCell::new(line1)));
+        appended.append(Rc::new(RefCell::new(line2)));
         let mut nested = NestedFragment {
             imports: vec!["std::official::RustStruct".to_owned()],
             preamble: "fn new_rust_struct() -> RustStruct {".to_owned(),
             nesting: None,
             postamble: "}".to_owned(),
         };
-        nested.set_nesting(Box::new(appended));
+        nested.set_nesting(Rc::new(RefCell::new(appended)));
         assert_eq!(
             nested.imports(),
             vec![
