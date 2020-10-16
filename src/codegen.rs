@@ -125,13 +125,9 @@ pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
         ancestry.push(snake_name.as_str());
     }
     let folder = folder_path(&ancestry);
-    // append _archetype to filename to avoid 
+    // append _archetype to filename to avoid
     // https://rust-lang.github.io/rust-clippy/master/index.html#module_inception
-    let file_relative = format!(
-        "{}/{}_archetype.rs",
-        folder,
-        snake_name
-    );
+    let file_relative = format!("{}/{}_archetype.rs", folder, snake_name);
     let file_pathabs = PathAbs::new(Path::new(&file_relative))
         .unwrap_or_else(|_| panic!("Could not get absolute path for {}", file_relative));
     let file_absolute = file_pathabs.as_path().to_str().unwrap();
