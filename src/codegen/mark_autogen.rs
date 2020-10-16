@@ -23,7 +23,11 @@ pub fn count_indent(line: &str) -> (usize, Option<char>) {
 
 /// Indent a line by a certain number of spaces.
 pub fn add_indent(indent_size: usize, line: &str) -> String {
-    " ".repeat(indent_size) + line
+    if line.is_empty() {
+        line.to_owned() // don't generate indented empty lines
+    } else {
+        " ".repeat(indent_size) + line
+    }
 }
 
 /// Adds an autogeneration comment to this line of code, if applicable. Returns the commented line
@@ -104,6 +108,21 @@ mod tests {
     fn count_mixed_indent() {
         // but why would you do that?!
         assert_eq!(count_indent("   \t  fn main() {"), (9, Some('f')));
+    }
+
+    #[test]
+    fn test_add_no_indent() {
+        assert_eq!(add_indent(0, "hello"), "hello".to_owned());
+    }
+
+    #[test]
+    fn test_add_indent() {
+        assert_eq!(add_indent(4, "hello"), "    hello".to_owned());
+    }
+
+    #[test]
+    fn test_add_indent_empty() {
+        assert_eq!(add_indent(4, ""), "".to_owned());
     }
 
     #[test]

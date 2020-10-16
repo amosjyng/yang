@@ -1,16 +1,33 @@
 use crate::codegen::add_indent;
+use crate::codegen::string_format::sort_imports;
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Fragment for an entire code file.
 mod file;
+/// Fragment for a module declaration.
+mod module;
+
+pub use file::FileFragment;
+pub use module::ModuleFragment;
 
 /// Number of spaces Rust is usually indented by.
 const RUST_INDENTATION: usize = 4;
 
+/// Serialize imports into a string.
+pub fn imports_as_str(imports: &Vec<String>) -> String {
+    // this doesn't need to take into account self.tests because tests don't contribute to file
+    // imports
+    let mut result = String::new();
+    for import in imports {
+        result += &format!("use {};\n", import);
+    }
+    sort_imports(&result).trim().to_owned()
+}
+
 /// Represents a fragment of code that can be appended to or nested with other code fragements.
-trait CodeFragment {
+pub trait CodeFragment {
     /// Retrieve all imports used by this fragment.
     fn imports(&self) -> Vec<String>;
     /// Retrieve main body of code in this fragment.
@@ -18,14 +35,16 @@ trait CodeFragment {
 }
 
 /// Code fragment that cannot be broken down any further.
-struct AtomicFragment {
-    imports: Vec<String>,
-    atom: String,
+pub struct AtomicFragment {
+    /// Imports for the fragment.
+    pub imports: Vec<String>,
+    /// Body of the fragment.
+    pub atom: String,
 }
 
 impl CodeFragment for AtomicFragment {
     fn body(&self) -> String {
-        self.atom.clone()
+        self.atom.trim().to_string()
     }
 
     fn imports(&self) -> Vec<String> {
@@ -37,12 +56,15 @@ impl CodeFragment for AtomicFragment {
 ///
 /// Think: function bodies (you can always append extra lines), class bodies (you can always append
 /// extra functions), etc.
-struct AppendedFragment {
-    appendages: Vec<Rc<RefCell<dyn CodeFragment>>>,
-    block_separator: String,
+pub struct AppendedFragment {
+    /// Component fragments that make up this appended fragment.
+    pub appendages: Vec<Rc<RefCell<dyn CodeFragment>>>,
+    /// Separator between fragments when generating the body for this fragment.
+    pub block_separator: String,
 }
 
 impl AppendedFragment {
+    /// Create a new fragment with a custom separator between components.
     pub fn new_with_separator(block_separator: &str) -> Self {
         Self {
             appendages: Vec::new(),
@@ -91,14 +113,19 @@ impl CodeFragment for AppendedFragment {
 ///
 /// Preamble (e.g. function return value) can introduce new imports, so that's why this has its own
 /// imports.
-struct NestedFragment {
-    imports: Vec<String>,
-    preamble: String,
-    nesting: Option<Rc<RefCell<dyn CodeFragment>>>,
-    postamble: String,
+pub struct NestedFragment {
+    /// Imports for this fragment.
+    pub imports: Vec<String>,
+    /// Declaration for this fragment (e.g. function signature, class signature, etc).
+    pub preamble: String,
+    /// Content that actually defines this fragment.
+    pub nesting: Option<Rc<RefCell<dyn CodeFragment>>>,
+    /// Closing for this fragment during generation. Usually just a closing bracket.
+    pub postamble: String,
 }
 
 impl NestedFragment {
+    /// Nest another fragment inside of this one.
     pub fn set_nesting(&mut self, nesting: Rc<RefCell<dyn CodeFragment>>) {
         self.nesting = Some(nesting);
     }
@@ -106,13 +133,13 @@ impl NestedFragment {
 
 impl CodeFragment for NestedFragment {
     fn body(&self) -> String {
-        let mut result = self.preamble.clone() + "\n";
+        let mut result = self.preamble.trim().to_owned() + "\n";
         self.nesting.as_ref().map(|n| {
-            for line in n.borrow().body().split('\n') {
+            for line in n.borrow().body().trim().split('\n') {
                 result += &(add_indent(RUST_INDENTATION, line) + "\n");
             }
         });
-        result + &self.postamble
+        result + &self.postamble.trim()
     }
 
     fn imports(&self) -> Vec<String> {

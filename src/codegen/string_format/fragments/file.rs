@@ -1,11 +1,11 @@
-use super::{AppendedFragment, CodeFragment};
-use crate::codegen::string_format::sort_imports;
+use super::{imports_as_str, AppendedFragment, CodeFragment};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-/// Fragment for an entire code file.
+/// Fragment for an entire code file. Doesn't actually implement `CodeFragment` because this is
+/// supposed to be top-level and not nested or appended to anything else.
 #[derive(Default)]
-struct FileFragment {
+pub struct FileFragment {
     contents: Rc<RefCell<AppendedFragment>>,
     tests: Option<Rc<RefCell<dyn CodeFragment>>>,
 }
@@ -16,19 +16,9 @@ impl FileFragment {
         self.contents.borrow_mut().append(fragment);
     }
 
+    /// Set the test module for this file.
     pub fn set_tests(&mut self, tests: Rc<RefCell<dyn CodeFragment>>) {
         self.tests = Some(tests);
-    }
-
-    /// Retrieve imports as strings.
-    fn imports_as_str(&self) -> String {
-        // this doesn't need to take into account self.tests because tests don't contribute to file
-        // imports
-        let mut result = String::new();
-        for import in &self.contents.borrow().imports() {
-            result += &format!("use {};\n", import);
-        }
-        sort_imports(&result)
     }
 
     /// Get the code for this fragment.
@@ -39,15 +29,15 @@ impl FileFragment {
 
         format!(
             "{}\n\n{}\n",
-            self.imports_as_str(),
-            self.contents.borrow().body()
+            imports_as_str(&combined.imports()),
+            combined.body()
         )
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::super::AtomicFragment;
+    use super::super::{AtomicFragment, ModuleFragment};
     use super::*;
     use indoc::indoc;
 
@@ -65,25 +55,20 @@ mod tests {
             .trim()
             .to_string(),
         })));
-        file.append(Rc::new(RefCell::new(AtomicFragment {
+        let mut test_mod = ModuleFragment::new_test_module();
+        test_mod.append(Rc::new(RefCell::new(AtomicFragment {
             imports: Vec::new(),
             atom: indoc! {"
-                #[cfg(test)]
-                mod tests {
-                    use super::*;
-
-                    #[test]
-                    fn test_big() {
-                        Big {
-                            a: Something {},
-                            b: OrTheOther {},
-                        }
+                #[test]
+                fn test_big() {
+                    Big {
+                        a: Something {},
+                        b: OrTheOther {},
                     }
-                }
-            "}
-            .trim()
+                }"}
             .to_string(),
         })));
+        file.set_tests(Rc::new(RefCell::new(test_mod)));
 
         assert_eq!(
             file.generate_code(),

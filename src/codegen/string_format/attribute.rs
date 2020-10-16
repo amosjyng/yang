@@ -1,176 +1,72 @@
-use super::{sort_imports, FormatConfig};
-
-/// Generate code for attributes.
-pub fn code_attribute(cfg: &FormatConfig) -> String {
-    let imports = sort_imports(&format!(
-        "use std::convert::TryFrom;
-use std::fmt;
-use std::fmt::{{Debug, Formatter}};
+use super::fragments::{AtomicFragment, FileFragment};
+use super::tao::{tao_fragment, tao_test_fragment};
+use super::FormatConfig;
+use indoc::formatdoc;
+use std::cell::RefCell;
 use std::rc::Rc;
-use {crate}::concepts::attributes::{{Attribute, AttributeTrait}};
-use {crate}::concepts::{{ArchetypeTrait, FormTrait, Tao{imports}}};
-use {crate}::node_wrappers::{{debug_wrapper, CommonNodeTrait, FinalNode}};",
-        crate = cfg.yin_crate,
-        imports = cfg.imports,
-    ));
-    format!(
-        r##"{imports}
-{doc}
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct {name} {{
-    base: {parent},
-}}
 
-impl Debug for {name} {{
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {{
-        debug_wrapper("{name}", self, f)
-    }}
-}}
+/// Get the attribute body fragment.
+pub fn attribute_fragment(cfg: &FormatConfig) -> AtomicFragment {
+    AtomicFragment {
+        imports: vec![format!(
+            "{crate}::concepts::attributes::{{Attribute, AttributeTrait}}",
+            crate = cfg.yin_crate
+        )],
+        atom: formatdoc! {r#"
+            impl<'a> AttributeTrait<'a, {name}> for {name} {{
+                fn set_owner(&mut self, owner: &dyn FormTrait) {{
+                    self.base.set_owner(owner);
+                }}
 
-impl From<usize> for {name} {{
-    fn from(id: usize) -> Self {{
-        Self {{
-            base: {parent}::from(id),
-        }}
-    }}
-}}
+                fn owner(&self) -> Option<Tao> {{
+                    self.base.owner()
+                }}
 
-impl<'a> TryFrom<&'a str> for {name} {{
-    type Error = String;
+                fn set_value(&mut self, value: &dyn FormTrait) {{
+                    self.base.set_value(value);
+                }}
 
-    fn try_from(name: &'a str) -> Result<Self, Self::Error> {{
-        {parent}::try_from(name).map(|a| Self {{ base: a }})
-    }}
-}}
+                fn value(&self) -> Option<Tao> {{
+                    self.base.value()
+                }}
+            }}"#, name = cfg.name},
+    }
+}
 
-impl CommonNodeTrait for {name} {{
-    fn id(&self) -> usize {{
-        self.base.id()
-    }}
+/// Get the attribute test fragment.
+pub fn attribute_test_fragment(cfg: &FormatConfig) -> AtomicFragment {
+    AtomicFragment {
+        imports: Vec::new(),
+        atom: formatdoc! {r#"
+            #[test]
+            fn get_owner() {{
+                initialize_kb();
+                let mut instance = {name}::individuate();
+                let owner_of_owner = {name}::individuate();
+                instance.set_owner(&owner_of_owner);
+                assert_eq!(instance.owner(), Some(owner_of_owner.ego_death()));
+                assert_eq!(instance.value(), None);
+            }}
+        
+            #[test]
+            fn get_value() {{
+                initialize_kb();
+                let mut instance = {name}::individuate();
+                let value_of_owner = {name}::individuate();
+                instance.set_value(&value_of_owner);
+                assert_eq!(instance.owner(), None);
+                assert_eq!(instance.value(), Some(value_of_owner.ego_death()));
+            }}"#, name = cfg.name},
+    }
+}
 
-    fn set_internal_name(&mut self, name: String) {{
-        self.base.set_internal_name(name);
-    }}
-
-    fn internal_name(&self) -> Option<Rc<String>> {{
-        self.base.internal_name()
-    }}
-}}
-
-impl<'a> ArchetypeTrait<'a, {name}> for {name} {{
-    const TYPE_ID: usize = {id};
-    const TYPE_NAME: &'static str = "{internal_name}";
-    const PARENT_TYPE_ID: usize = {parent}::TYPE_ID;
-
-    fn individuate_with_parent(parent_id: usize) -> Self {{
-        Self {{
-            base: {parent}::individuate_with_parent(parent_id),
-        }}
-    }}
-}}
-
-impl FormTrait for {name} {{
-    fn essence(&self) -> &FinalNode {{
-        self.base.essence()
-    }}
-
-    fn essence_mut(&mut self) -> &mut FinalNode {{
-        self.base.essence_mut()
-    }}
-}}
-
-impl<'a> AttributeTrait<'a, {name}> for {name} {{
-    fn set_owner(&mut self, owner: &dyn FormTrait) {{
-        self.base.set_owner(owner);
-    }}
-
-    fn owner(&self) -> Option<Tao> {{
-        self.base.owner()
-    }}
-
-    fn set_value(&mut self, value: &dyn FormTrait) {{
-        self.base.set_value(value);
-    }}
-
-    fn value(&self) -> Option<Tao> {{
-        self.base.value()
-    }}
-}}
-
-#[cfg(test)]
-mod tests {{
-    use super::*;
-    use crate::concepts::initialize_kb;
-
-    #[test]
-    fn check_type_created() {{
-        initialize_kb();
-        assert_eq!({name}::archetype().id(), {name}::TYPE_ID);
-        assert_eq!(
-            {name}::archetype().internal_name(),
-            Some(Rc::new({name}::TYPE_NAME.to_string()))
-        );
-    }}
-
-    #[test]
-    fn from_node_id() {{
-        initialize_kb();
-        let concept = {name}::individuate();
-        let concept_copy = {name}::from(concept.id());
-        assert_eq!(concept.id(), concept_copy.id());
-    }}
-
-    #[test]
-    fn from_name() {{
-        initialize_kb();
-        let mut concept = {name}::individuate();
-        concept.set_internal_name("A".to_owned());
-        assert_eq!({name}::try_from("A"), Ok(concept));
-        assert!({name}::try_from("B").is_err());
-    }}
-
-    #[test]
-    fn create_and_retrieve_node_id() {{
-        initialize_kb();
-        let concept1 = {name}::individuate();
-        let concept2 = {name}::individuate();
-        assert_eq!(concept1.id() + 1, concept2.id());
-    }}
-
-    #[test]
-    fn create_and_retrieve_node_name() {{
-        initialize_kb();
-        let mut concept = {name}::individuate();
-        concept.set_internal_name("A".to_string());
-        assert_eq!(concept.internal_name(), Some(Rc::new("A".to_string())));
-    }}
-
-    #[test]
-    fn get_owner() {{
-        initialize_kb();
-        let mut instance = {name}::individuate();
-        let owner_of_owner = {name}::individuate();
-        instance.set_owner(&owner_of_owner);
-        assert_eq!(instance.owner(), Some(owner_of_owner.ego_death()));
-        assert_eq!(instance.value(), None);
-    }}
-
-    #[test]
-    fn get_value() {{
-        initialize_kb();
-        let mut instance = {name}::individuate();
-        let value_of_owner = {name}::individuate();
-        instance.set_value(&value_of_owner);
-        assert_eq!(instance.owner(), None);
-        assert_eq!(instance.value(), Some(value_of_owner.ego_death()));
-    }}
-}}
-"##,
-        imports = imports,
-        name = cfg.name,
-        internal_name = cfg.internal_name,
-        parent = cfg.parent_name,
-        doc = cfg.doc,
-        id = cfg.id,
-    )
+/// Generate code for an Attribute config.
+pub fn code_attribute(cfg: &FormatConfig) -> String {
+    let mut file = FileFragment::default();
+    file.append(Rc::new(RefCell::new(tao_fragment(cfg))));
+    file.append(Rc::new(RefCell::new(attribute_fragment(cfg))));
+    let mut test_frag = tao_test_fragment(cfg);
+    test_frag.append(Rc::new(RefCell::new(attribute_test_fragment(cfg))));
+    file.set_tests(Rc::new(RefCell::new(test_frag)));
+    file.generate_code()
 }
