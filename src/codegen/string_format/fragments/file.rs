@@ -31,7 +31,13 @@ impl FileFragment {
 
         format!(
             "{}\n\n{}\n",
-            imports_as_str(&combined.imports()),
+            imports_as_str(
+                &combined
+                    .imports()
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<&str>>()
+            ),
             combined.body()
         )
     }

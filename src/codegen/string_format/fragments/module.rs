@@ -33,7 +33,8 @@ impl CodeFragment for ModuleFragment {
     fn body(&self) -> String {
         let mut imports = self.content.borrow().imports();
         imports.push("super::*".to_owned());
-        let imports_str = imports_as_str(&imports);
+        let imports_str =
+            imports_as_str(&imports.iter().map(|s| s.as_str()).collect::<Vec<&str>>());
         let internal_code = format!("{}\n\n{}\n", imports_str, self.content.borrow().body());
         let internals = AtomicFragment {
             imports: Vec::new(),
