@@ -35,12 +35,17 @@ fn group_imports(imports: &[&str]) -> Vec<String> {
     let mut final_imports = Vec::new();
     for (path, names) in &groups {
         let import = if names.len() > 1 {
-            let mut sorted_names = names.clone();
-            sorted_names.sort_unstable();
+            let (mut lower, mut upper): (Vec<&str>, Vec<&str>) = names
+                .iter()
+                .partition(|n| n.chars().next().unwrap().is_lowercase());
+            // do them separately because we want lowercase imports to come first, but the default
+            // string sort would sort the uppercase ones first
+            lower.sort_unstable();
+            upper.sort_unstable();
             format!(
                 "{}::{{{}}}",
                 path,
-                sorted_names.iter().format(", ").to_string()
+                lower.iter().chain(upper.iter()).format(", ").to_string()
             )
         } else {
             format!("{}::{}", path, names.first().unwrap())
@@ -128,6 +133,19 @@ mod tests {
                 "std::cell::{Cell, RefCell}".to_owned(),
                 "std::rc::Rc".to_owned()
             ]
+        );
+    }
+
+    #[test]
+    fn test_group_imports_lowercase() {
+        assert_unordered_eq!(
+            group_imports(&[
+                "my::mod::lowercase",
+                "my::mod::ABCs",
+                "my::mod::btr",
+                "my::mod::KComplexity"
+            ]),
+            vec!["my::mod::{btr, lowercase, ABCs, KComplexity}".to_owned()]
         );
     }
 
