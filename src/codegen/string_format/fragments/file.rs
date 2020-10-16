@@ -1,4 +1,5 @@
-use super::{imports_as_str, AppendedFragment, CodeFragment};
+use super::{AppendedFragment, CodeFragment};
+use crate::codegen::string_format::imports::imports_as_str;
 use std::cell::RefCell;
 use std::rc::Rc;
 

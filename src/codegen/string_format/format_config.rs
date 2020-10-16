@@ -23,7 +23,11 @@ impl FormatConfig {
     /// Extract format values from input configs.
     pub fn from_cfgs(implement: &ImplementConfig, options: &CodegenConfig) -> Self {
         let yin_crate = if options.yin { "crate" } else { "zamm_yin" };
-        let imports = if options.yin { None } else { Some("zamm_yin::concepts::YIN_MAX_ID".to_owned()) };
+        let imports = if options.yin {
+            None
+        } else {
+            Some("zamm_yin::concepts::YIN_MAX_ID".to_owned())
+        };
         let name_transform = NameTransform::from_camel_case(&implement.name);
         let parent_name = implement.parent_name().to_string();
         let doc = match &implement.doc {
