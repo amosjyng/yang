@@ -8,10 +8,10 @@ use std::rc::Rc;
 /// Get the attribute body fragment.
 pub fn attribute_fragment(cfg: &FormatConfig) -> AtomicFragment {
     AtomicFragment {
-        imports: vec![format!(
-            "{crate}::concepts::attributes::{{Attribute, AttributeTrait}}",
-            crate = cfg.yin_crate
-        )],
+        imports: vec![
+            format!("{}::concepts::attributes::Attribute", cfg.yin_crate),
+            format!("{}::concepts::attributes::AttributeTrait", cfg.yin_crate),
+        ],
         atom: formatdoc! {r#"
             impl<'a> AttributeTrait<'a, {name}> for {name} {{
                 fn set_owner(&mut self, owner: &dyn FormTrait) {{
