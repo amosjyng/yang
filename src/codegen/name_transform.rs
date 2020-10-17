@@ -51,6 +51,20 @@ impl<'a> NameTransform<'a> {
         NameTransform { words }
     }
 
+    /// Parse a snake-cased name.
+    pub fn from_snake_case(name: &str) -> NameTransform {
+        NameTransform {
+            words: name.split('_').filter(|s| !s.is_empty()).collect(),
+        }
+    }
+
+    /// Parse a kebab-cased name.
+    pub fn from_kebab_case(name: &str) -> NameTransform {
+        NameTransform {
+            words: name.split('-').filter(|s| !s.is_empty()).collect(),
+        }
+    }
+
     /// Output a camel-case name.
     pub fn to_camel_case(&self) -> String {
         let mut snake_case = String::new();
@@ -146,6 +160,64 @@ mod tests {
         assert_eq!(
             NameTransform::from_camel_case("anRc").words,
             vec!["an", "Rc"]
+        );
+    }
+
+    #[test]
+    fn parse_snake_case_empty() {
+        assert_eq!(
+            NameTransform::from_snake_case("").words,
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn parse_snake_case_verbatim() {
+        assert_eq!(NameTransform::from_snake_case("name").words, vec!["name"]);
+    }
+
+    #[test]
+    fn parse_snake_case_simple() {
+        assert_eq!(
+            NameTransform::from_snake_case("name_transform").words,
+            vec!["name", "transform"]
+        );
+    }
+
+    #[test]
+    fn parse_snake_case_preserve_caps() {
+        assert_eq!(
+            NameTransform::from_snake_case("DNS_Resolver").words,
+            vec!["DNS", "Resolver"]
+        );
+    }
+
+    #[test]
+    fn parse_kebab_case_empty() {
+        assert_eq!(
+            NameTransform::from_kebab_case("").words,
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn parse_kebab_case_verbatim() {
+        assert_eq!(NameTransform::from_kebab_case("name").words, vec!["name"]);
+    }
+
+    #[test]
+    fn parse_kebab_case_simple() {
+        assert_eq!(
+            NameTransform::from_kebab_case("name-transform").words,
+            vec!["name", "transform"]
+        );
+    }
+
+    #[test]
+    fn parse_kebab_case_preserve_caps() {
+        assert_eq!(
+            NameTransform::from_kebab_case("DNS-Resolver").words,
+            vec!["DNS", "Resolver"]
         );
     }
 
