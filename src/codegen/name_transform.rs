@@ -235,10 +235,7 @@ mod tests {
 
     #[test]
     fn auto_parse_camel_case() {
-        assert_eq!(
-            NameTransform::from("anRc").words,
-            vec!["an", "Rc"]
-        );
+        assert_eq!(NameTransform::from("anRc").words, vec!["an", "Rc"]);
     }
 
     #[test]
