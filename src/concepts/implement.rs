@@ -36,6 +36,18 @@ impl ImplementConfig {
     }
 }
 
+impl Default for ImplementConfig {
+    fn default() -> Self {
+        Self {
+            name: "DummyConcept".to_owned(),
+            ancestry: vec!["Tao".to_owned()],
+            id: 1,
+            doc: None,
+            own_submodule: false,
+        }
+    }
+}
+
 impl Implement {
     /// Set another concept as an implementation target.
     pub fn set_target(&mut self, target: Archetype) {

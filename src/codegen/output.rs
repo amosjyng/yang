@@ -107,13 +107,7 @@ mod tests {
     fn test_post_process_comments() {
         let codegen_cfg = CodegenConfig::default();
         let code = code_attribute(&FormatConfig::from_cfgs(
-            &ImplementConfig {
-                name: "dummy".to_owned(),
-                ancestry: vec!["doh".to_owned()],
-                doc: None,
-                id: 3,
-                own_submodule: false,
-            },
+            &ImplementConfig::default(),
             &codegen_cfg,
         ));
         let result = post_process_generation(&code, &codegen_cfg);
@@ -128,13 +122,7 @@ mod tests {
             ..CodegenConfig::default()
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
-            &ImplementConfig {
-                name: "dummy".to_owned(),
-                ancestry: vec!["doh".to_owned()],
-                doc: None,
-                id: 3,
-                own_submodule: false,
-            },
+            &ImplementConfig::default(),
             &codegen_cfg,
         ));
         let result = post_process_generation(&code, &codegen_cfg);
@@ -148,13 +136,7 @@ mod tests {
             ..CodegenConfig::default()
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
-            &ImplementConfig {
-                name: "dummy".to_owned(),
-                ancestry: vec!["doh".to_owned()],
-                doc: None,
-                id: 3,
-                own_submodule: false,
-            },
+            &ImplementConfig::default(),
             &codegen_cfg,
         ));
         let result = post_process_generation(&code, &codegen_cfg);
@@ -167,15 +149,12 @@ mod tests {
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "short".to_owned(),
-                ancestry: vec!["doh".to_owned()],
-                doc: None,
-                id: 3,
-                own_submodule: false,
+                ..ImplementConfig::default()
             },
             &codegen_cfg,
         ));
         let result = post_process_generation(&code, &codegen_cfg);
-        assert!(!result.contains(FMT_SKIP_MARKER)); // relevant for test
+        assert!(!result.contains(FMT_SKIP_MARKER));
     }
 
     #[test]
@@ -186,11 +165,8 @@ mod tests {
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
-                name: "ReallySuperLongClassNameOhBoy".to_owned(), // relevant for test
-                ancestry: vec!["doh".to_owned()],
-                doc: None,
-                id: 3,
-                own_submodule: false,
+                name: "ReallySuperLongClassNameOhBoy".to_owned(),
+                ..ImplementConfig::default()
             },
             &codegen_cfg,
         ));
@@ -206,11 +182,8 @@ mod tests {
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
-                name: "ReallySuperLongClassNameOhBoy".to_owned(), // relevant for test
-                ancestry: vec!["doh".to_owned()],
-                doc: None,
-                id: 3,
-                own_submodule: false,
+                name: "ReallySuperLongClassNameOhBoy".to_owned(),
+                ..ImplementConfig::default()
             },
             &codegen_cfg,
         ));
@@ -240,11 +213,8 @@ mod tests {
     fn integration_test_attribute_generation() {
         assert!(code(
             &ImplementConfig {
-                name: "Target".to_owned(),
                 ancestry: vec!["Attribute".to_owned()], // relevant for test
-                id: 1,
-                doc: Some("The target of an implement command.".to_owned()),
-                own_submodule: false,
+                ..ImplementConfig::default()
             },
             &CodegenConfig::default()
         )
@@ -255,11 +225,8 @@ mod tests {
     fn integration_test_non_attribute_generation() {
         assert!(!code(
             &ImplementConfig {
-                name: "Data".to_owned(),
                 ancestry: vec!["Tao".to_owned()], // relevant for test
-                id: 1,
-                doc: None,
-                own_submodule: false,
+                ..ImplementConfig::default()
             },
             &CodegenConfig::default()
         )
