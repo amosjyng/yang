@@ -98,6 +98,18 @@ impl<'a> NameTransform<'a> {
     }
 }
 
+impl<'a> From<&'a str> for NameTransform<'a> {
+    fn from(name: &'a str) -> NameTransform<'a> {
+        if name.contains('_') {
+            Self::from_snake_case(name)
+        } else if name.contains('-') {
+            Self::from_kebab_case(name)
+        } else {
+            Self::from_camel_case(name)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -217,6 +229,30 @@ mod tests {
     fn parse_kebab_case_preserve_caps() {
         assert_eq!(
             NameTransform::from_kebab_case("DNS-Resolver").words,
+            vec!["DNS", "Resolver"]
+        );
+    }
+
+    #[test]
+    fn auto_parse_camel_case() {
+        assert_eq!(
+            NameTransform::from("anRc").words,
+            vec!["an", "Rc"]
+        );
+    }
+
+    #[test]
+    fn auto_parse_snake_case() {
+        assert_eq!(
+            NameTransform::from("name_Transform").words,
+            vec!["name", "Transform"]
+        );
+    }
+
+    #[test]
+    fn auto_parse_kebab_case() {
+        assert_eq!(
+            NameTransform::from("DNS-Resolver").words,
             vec!["DNS", "Resolver"]
         );
     }
