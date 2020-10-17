@@ -1,8 +1,8 @@
 use super::Implement;
-use crate::codegen::code;
 use crate::codegen::filesystem::{output_code, OutputConfig};
 use crate::codegen::CodegenConfig;
 use crate::codegen::NameTransform;
+use crate::codegen::{code, CodeConfig};
 use zamm_yin::concepts::{Archetype, FormTrait};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 
@@ -32,22 +32,37 @@ fn file_path(target: Archetype) -> String {
 }
 
 /// Handle the implementation request for a new attribute archetype.
-pub fn handle_implementation(request: Implement, cfg: &CodegenConfig) {
-    let impl_cfg = request.config().unwrap();
-    let code = code(&impl_cfg, cfg);
-    let file_path = file_path(request.target().unwrap());
+pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
+    let target = request.target().unwrap();
+    let target_name = target.internal_name().unwrap();
+    let parent_name = (*target
+        .ancestry()
+        .iter()
+        .last()
+        .unwrap()
+        .internal_name()
+        .unwrap())
+    .clone();
+    let code = code(&CodeConfig {
+        name: target_name.as_str(),
+        parent_name: parent_name.as_str(),
+        impl_cfg: request.config().unwrap(),
+        codegen_cfg: *codegen_cfg,
+    });
+
+    let file_path = file_path(target);
     output_code(&OutputConfig {
         code: &code,
         file_path: &file_path,
-        git_ignore: !cfg.release,
-        cargo_track: cfg.track_autogen,
+        git_ignore: !codegen_cfg.release,
+        cargo_track: codegen_cfg.track_autogen,
     });
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::concepts::{initialize_kb, ImplementConfig};
+    use crate::concepts::initialize_kb;
     use zamm_yin::concepts::attributes::{Attribute, Owner};
     use zamm_yin::concepts::{ArchetypeTrait, Tao};
 
@@ -77,25 +92,19 @@ mod tests {
 
     #[test]
     fn integration_test_attribute_generation() {
-        assert!(code(
-            &ImplementConfig {
-                parent_name: "Attribute".to_owned(), // relevant for test
-                ..ImplementConfig::default()
-            },
-            &CodegenConfig::default()
-        )
+        assert!(code(&CodeConfig {
+            parent_name: "Attribute",
+            ..CodeConfig::default()
+        })
         .contains("Attribute"));
     }
 
     #[test]
     fn integration_test_non_attribute_generation() {
-        assert!(!code(
-            &ImplementConfig {
-                parent_name: "Tao".to_owned(), // relevant for test
-                ..ImplementConfig::default()
-            },
-            &CodegenConfig::default()
-        )
+        assert!(!code(&CodeConfig {
+            parent_name: "Tao",
+            ..CodeConfig::default()
+        })
         .contains("Attribute"));
     }
 }

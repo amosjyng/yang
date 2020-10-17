@@ -2,7 +2,7 @@ use crate::concepts::Implement;
 use crate::concepts::ImplementConfig;
 use std::convert::TryFrom;
 use yaml_rust::YamlLoader;
-use zamm_yin::concepts::{Archetype, ArchetypeTrait, FormTrait, Tao};
+use zamm_yin::concepts::{Archetype, ArchetypeTrait, Tao};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 
 /// Parses a YAML string into a list of concepts as represented by the string.
@@ -21,17 +21,7 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
             let target_name = entry["target"].as_str().unwrap();
             let target = Archetype::try_from(target_name).unwrap();
             implement.set_target(target);
-            let parent_name = (*target
-                .ancestry()
-                .iter()
-                .last()
-                .unwrap()
-                .internal_name()
-                .unwrap())
-            .clone();
             let impl_config = ImplementConfig {
-                name: target_name.to_owned(),
-                parent_name,
                 id: entry["output_id"].as_i64().unwrap() as usize,
                 doc: entry["documentation"].as_str().map(|s| s.to_owned()),
             };

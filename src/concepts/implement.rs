@@ -17,10 +17,6 @@ pub struct Implement {
 /// things in the KB right now, we'll use a custom struct for now.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ImplementConfig {
-    /// Name of the concept being implemented.
-    pub name: String,
-    /// Name of the concept's parent.
-    pub parent_name: String,
     /// ID of the concept being implemented.
     pub id: usize,
     /// Documentation, if any, for the concept being implemented.
@@ -29,12 +25,7 @@ pub struct ImplementConfig {
 
 impl Default for ImplementConfig {
     fn default() -> Self {
-        Self {
-            name: "DummyConcept".to_owned(),
-            parent_name: "Tao".to_owned(),
-            id: 1,
-            doc: None,
-        }
+        Self { id: 1, doc: None }
     }
 }
 
@@ -184,16 +175,12 @@ mod tests {
         initialize_kb();
         let mut implement = Implement::individuate();
         implement.set_config(ImplementConfig {
-            name: "Implement".to_owned(),
-            parent_name: "Tao".to_owned(),
             id: 2,
             doc: Some("Hi".to_owned()),
         });
         assert_eq!(
             implement.config(),
             Some(ImplementConfig {
-                name: "Implement".to_owned(),
-                parent_name: "Tao".to_owned(),
                 id: 2,
                 doc: Some("Hi".to_owned()),
             })
