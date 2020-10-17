@@ -1,8 +1,8 @@
 use super::Implement;
 use crate::codegen::code;
-use crate::codegen::output::OutputConfig;
+use crate::codegen::filesystem::{output_code, OutputConfig};
+use crate::codegen::CodegenConfig;
 use crate::codegen::NameTransform;
-use crate::codegen::{output_code, CodegenConfig};
 use zamm_yin::concepts::{Archetype, FormTrait};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 
