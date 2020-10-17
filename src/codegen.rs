@@ -167,12 +167,7 @@ mod tests {
 
     #[test]
     fn test_post_process_comments() {
-        let codegen_cfg = CodegenConfig {
-            comment_autogen: true, // relevant for test
-            track_autogen: false,
-            yin: false,     // relevant for test
-            release: false, // relevant for test
-        };
+        let codegen_cfg = CodegenConfig::default();
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "dummy".to_owned(),
@@ -191,10 +186,8 @@ mod tests {
     #[test]
     fn test_post_process_no_comments() {
         let codegen_cfg = CodegenConfig {
-            comment_autogen: false, // relevant for test
-            track_autogen: false,
-            yin: false,
-            release: false,
+            comment_autogen: false,
+            ..CodegenConfig::default()
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
@@ -213,10 +206,8 @@ mod tests {
     #[test]
     fn test_post_process_yin() {
         let codegen_cfg = CodegenConfig {
-            comment_autogen: true,
-            track_autogen: false,
-            yin: true, // relevant for test
-            release: false,
+            yin: true,
+            ..CodegenConfig::default()
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
@@ -234,12 +225,7 @@ mod tests {
 
     #[test]
     fn test_post_process_fmt_not_skip() {
-        let codegen_cfg = CodegenConfig {
-            comment_autogen: true,
-            track_autogen: false,
-            yin: false,
-            release: false,
-        };
+        let codegen_cfg = CodegenConfig::default();
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
                 name: "short".to_owned(),
@@ -257,10 +243,8 @@ mod tests {
     #[test]
     fn test_post_process_fmt_skip() {
         let codegen_cfg = CodegenConfig {
-            comment_autogen: true,
-            track_autogen: false,
-            yin: false,
-            release: false, // relevant for test
+            release: false,
+            ..CodegenConfig::default()
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
@@ -279,10 +263,8 @@ mod tests {
     #[test]
     fn test_post_process_fmt_skip_release() {
         let codegen_cfg = CodegenConfig {
-            comment_autogen: true,
-            track_autogen: false,
-            yin: false,
-            release: true, // relevant for test
+            release: true,
+            ..CodegenConfig::default()
         };
         let code = code_attribute(&FormatConfig::from_cfgs(
             &ImplementConfig {
