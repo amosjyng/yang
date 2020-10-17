@@ -29,7 +29,7 @@ impl FormatConfig {
             Some("zamm_yin::concepts::YIN_MAX_ID".to_owned())
         };
         let name_transform = NameTransform::from_camel_case(&implement.name);
-        let parent_name = implement.parent_name().to_string();
+        let parent_name = implement.parent_name.to_string();
         let doc = match &implement.doc {
             Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
             None => String::new(),

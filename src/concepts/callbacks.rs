@@ -79,7 +79,7 @@ mod tests {
     fn integration_test_attribute_generation() {
         assert!(code(
             &ImplementConfig {
-                ancestry: vec!["Attribute".to_owned()], // relevant for test
+                parent_name: "Attribute".to_owned(), // relevant for test
                 ..ImplementConfig::default()
             },
             &CodegenConfig::default()
@@ -91,7 +91,7 @@ mod tests {
     fn integration_test_non_attribute_generation() {
         assert!(!code(
             &ImplementConfig {
-                ancestry: vec!["Tao".to_owned()], // relevant for test
+                parent_name: "Tao".to_owned(), // relevant for test
                 ..ImplementConfig::default()
             },
             &CodegenConfig::default()

@@ -29,9 +29,9 @@ fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
 /// Generate the final version of code, to be output to a file as-is.
 pub fn code(implement: &ImplementConfig, options: &CodegenConfig) -> String {
     let format_cfg = FormatConfig::from_cfgs(implement, options);
-    let initial_code = if implement.parent_name() == "Attribute" {
+    let initial_code = if implement.parent_name == "Attribute" {
         code_attribute(&format_cfg)
-    } else if implement.parent_name() == "Data" {
+    } else if implement.parent_name == "Data" {
         code_string_concept(&format_cfg)
     } else {
         code_tao(&format_cfg)

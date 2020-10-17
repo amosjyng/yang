@@ -21,14 +21,17 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
             let target_name = entry["target"].as_str().unwrap();
             let target = Archetype::try_from(target_name).unwrap();
             implement.set_target(target);
-            let ancestry = target
+            let parent_name = (*target
                 .ancestry()
                 .iter()
-                .map(|a| (*a.internal_name().unwrap()).clone())
-                .collect();
+                .last()
+                .unwrap()
+                .internal_name()
+                .unwrap())
+            .clone();
             let impl_config = ImplementConfig {
                 name: target_name.to_owned(),
-                ancestry,
+                parent_name,
                 id: entry["output_id"].as_i64().unwrap() as usize,
                 doc: entry["documentation"].as_str().map(|s| s.to_owned()),
             };
