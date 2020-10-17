@@ -115,7 +115,7 @@ fn folder_path(ancestry: &[&str]) -> String {
 /// Output code to filename
 pub fn output_code(implement: &ImplementConfig, options: &CodegenConfig) {
     let generated_code = code(implement, options);
-    let snake_name = NameTransform::from_camel_case(&implement.name).to_snake_case();
+    let snake_name = NameTransform::from(implement.name.as_str()).to_snake_case();
     let mut ancestry = implement
         .ancestry
         .iter()
