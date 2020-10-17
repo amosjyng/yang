@@ -1,5 +1,5 @@
 use crate::codegen::docstring::into_docstring;
-use crate::codegen::{CodegenConfig, ImplementConfig, NameTransform};
+use crate::codegen::{CodeConfig, NameTransform};
 
 /// Config values at the time of string generation.
 pub struct FormatConfig {
@@ -19,25 +19,43 @@ pub struct FormatConfig {
     pub id: String,
 }
 
-impl FormatConfig {
-    /// Extract format values from input configs.
-    pub fn from_cfgs(implement: &ImplementConfig, options: &CodegenConfig) -> Self {
-        let yin_crate = if options.yin { "crate" } else { "zamm_yin" };
-        let imports = if options.yin {
+impl Default for FormatConfig {
+    fn default() -> Self {
+        Self {
+            yin_crate: "zamm_yin".to_owned(),
+            imports: Some("zamm_yin::concepts::YIN_MAX_ID".to_owned()),
+            name: "Dummy".to_owned(),
+            internal_name: "dummy".to_owned(),
+            parent_name: "Tao".to_owned(),
+            doc: "".to_owned(),
+            id: "1".to_owned(),
+        }
+    }
+}
+
+impl<'a> From<&'a CodeConfig<'a>> for FormatConfig {
+    /// Extract format values from code config.
+    fn from(cfg: &CodeConfig) -> Self {
+        let yin_crate = if cfg.codegen_cfg.yin {
+            "crate"
+        } else {
+            "zamm_yin"
+        };
+        let imports = if cfg.codegen_cfg.yin {
             None
         } else {
             Some("zamm_yin::concepts::YIN_MAX_ID".to_owned())
         };
-        let name_transform = NameTransform::from_camel_case(&implement.name);
-        let parent_name = implement.parent_name().to_string();
-        let doc = match &implement.doc {
+        let name_transform = NameTransform::from(cfg.name);
+        let parent_name = cfg.parent_name.to_string();
+        let doc = match &cfg.impl_cfg.doc {
             Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
             None => String::new(),
         };
-        let id = if options.yin {
-            format!("{}", implement.id)
+        let id = if cfg.codegen_cfg.yin {
+            format!("{}", cfg.impl_cfg.id)
         } else {
-            format!("YIN_MAX_ID + {}", implement.id)
+            format!("YIN_MAX_ID + {}", cfg.impl_cfg.id)
         };
 
         Self {

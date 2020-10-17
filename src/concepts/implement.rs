@@ -17,34 +17,15 @@ pub struct Implement {
 /// things in the KB right now, we'll use a custom struct for now.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ImplementConfig {
-    /// Name of the concept being implemented.
-    pub name: String,
-    /// Ancestors, from most to least general.
-    pub ancestry: Vec<String>,
     /// ID of the concept being implemented.
     pub id: usize,
     /// Documentation, if any, for the concept being implemented.
     pub doc: Option<String>,
-    /// Whether this belongs in its own folder, as a submodule for descendant concepts.
-    pub own_submodule: bool,
-}
-
-impl ImplementConfig {
-    /// Get the parent name for this config.
-    pub fn parent_name(&self) -> &str {
-        &self.ancestry.last().unwrap()
-    }
 }
 
 impl Default for ImplementConfig {
     fn default() -> Self {
-        Self {
-            name: "DummyConcept".to_owned(),
-            ancestry: vec!["Tao".to_owned()],
-            id: 1,
-            doc: None,
-            own_submodule: false,
-        }
+        Self { id: 1, doc: None }
     }
 }
 
@@ -194,20 +175,14 @@ mod tests {
         initialize_kb();
         let mut implement = Implement::individuate();
         implement.set_config(ImplementConfig {
-            name: "Implement".to_owned(),
-            ancestry: vec!["Tao".to_owned()],
             id: 2,
             doc: Some("Hi".to_owned()),
-            own_submodule: true,
         });
         assert_eq!(
             implement.config(),
             Some(ImplementConfig {
-                name: "Implement".to_owned(),
-                ancestry: vec!["Tao".to_owned()],
                 id: 2,
                 doc: Some("Hi".to_owned()),
-                own_submodule: true,
             })
         );
     }
