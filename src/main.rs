@@ -4,6 +4,7 @@ use itertools::Itertools;
 use path_abs::{PathAbs, PathInfo};
 use std::env;
 use std::ffi::OsStr;
+use std::fs;
 use std::fs::read_to_string;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
@@ -141,11 +142,43 @@ fn release_pre_build() -> Result<(), Error> {
     Ok(())
 }
 
-/// Get version of the project in the current directory
+fn update_cargo_lock(package_name: &str, new_version: &str) -> Result<(), Error> {
+    let cargo_lock = "Cargo.lock";
+    let lock_contents = read_to_string(cargo_lock)?;
+    let mut lock_cfg = lock_contents.parse::<Value>().unwrap();
+    for table_value in lock_cfg["package"].as_array_mut().unwrap() {
+        let table = table_value.as_table_mut().unwrap();
+        if table["name"].as_str().unwrap() == package_name {
+            table["version"] = toml::Value::String(new_version.to_owned());
+        }
+    }
+    fs::write(cargo_lock, lock_cfg.to_string())?;
+    Ok(())
+}
+
+/// Get version of the project in the current directory. Also removes any non-release tags from the
+/// version (e.g. any "-beta" or "-alpha" suffixes).
 fn local_project_version() -> Result<String, Error> {
-    let build_contents = read_to_string("Cargo.toml")?;
-    let build_cfg = build_contents.parse::<Value>().unwrap();
-    Ok(build_cfg["package"]["version"].as_str().unwrap().to_owned())
+    let cargo_toml = "Cargo.toml";
+    let build_contents = read_to_string(cargo_toml)?;
+    let mut build_cfg = build_contents.parse::<Value>().unwrap();
+    let release_version = {
+        let version = build_cfg["package"]["version"].as_str().unwrap();
+        if !version.contains('-') {
+            return Ok(version.to_owned());
+        }
+        // otherwise, get rid of tag
+        version.split('-').next().unwrap().to_owned()
+    };
+    {
+        build_cfg["package"]["version"] = toml::Value::String(release_version.clone());
+        update_cargo_lock(
+            build_cfg["package"]["name"].as_str().unwrap(),
+            &release_version,
+        )?;
+    }
+    fs::write(cargo_toml, build_cfg.to_string())?;
+    Ok(release_version)
 }
 
 /// Destructively prepare repo for release after build.
