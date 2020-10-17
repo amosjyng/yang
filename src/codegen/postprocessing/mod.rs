@@ -7,40 +7,12 @@ pub mod mark_fmt;
 
 use super::CodegenConfig;
 pub use crate::codegen::name_transform::NameTransform;
-use crate::codegen::string_format::attribute::code_attribute;
-use crate::codegen::string_format::code_string_concept;
-use crate::codegen::string_format::tao::code_tao;
-use crate::codegen::string_format::FormatConfig;
-use crate::concepts::ImplementConfig;
 use mark_autogen::add_autogeneration_comments;
 use mark_fmt::add_fmt_skips;
 
-/// Configuration settings for generating a single concept's contents.
-pub struct CodeConfig<'a> {
-    /// Name of the concept to generate.
-    pub name: &'a str,
-    /// Name of the concept's parent.
-    pub parent_name: &'a str,
-    /// Concept-specific implementation settings.
-    pub impl_cfg: ImplementConfig,
-    /// Code generation settings for all concepts.
-    pub codegen_cfg: CodegenConfig,
-}
-
-impl<'a> Default for CodeConfig<'a> {
-    fn default() -> Self {
-        Self {
-            name: "dummy",
-            parent_name: "Tao",
-            impl_cfg: ImplementConfig::default(),
-            codegen_cfg: CodegenConfig::default(),
-        }
-    }
-}
-
 /// Do post-processing on generated code. Includes marking lines with autogeneration comments, or
 /// marking lines as requiring formatting skips.
-fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
+pub fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
     let formatted = add_fmt_skips(&code);
     if options.comment_autogen && !options.release {
         add_autogeneration_comments(&formatted)
@@ -49,22 +21,12 @@ fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
     }
 }
 
-/// Generate the final version of code, to be output to a file as-is.
-pub fn code(cfg: &CodeConfig) -> String {
-    let format_cfg = FormatConfig::from(cfg);
-    let initial_code = if cfg.parent_name == "Attribute" {
-        code_attribute(&format_cfg)
-    } else if cfg.parent_name == "Data" {
-        code_string_concept(&format_cfg)
-    } else {
-        code_tao(&format_cfg)
-    };
-    post_process_generation(&initial_code, &cfg.codegen_cfg)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::codegen::string_format::attribute::code_attribute;
+    use crate::codegen::string_format::FormatConfig;
+    use crate::codegen::CodeConfig;
     use mark_autogen::AUTOGENERATION_MARKER;
     use mark_fmt::FMT_SKIP_MARKER;
 
