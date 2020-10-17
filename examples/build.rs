@@ -19,7 +19,7 @@ fn main() {
         ancestry: vec!["Attribute".to_owned()],
         id: 1,
         doc: Some("The target of an implement command.".to_owned()),
-        own_submodule: false,
+        ..ImplementConfig::default()
     });
 
     handle_implementation(implement_command, &CodegenConfig::default());
