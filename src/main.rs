@@ -4,6 +4,7 @@ use itertools::Itertools;
 use path_abs::{PathAbs, PathInfo};
 use std::env;
 use std::ffi::OsStr;
+use std::fs;
 use std::fs::read_to_string;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
@@ -18,6 +19,19 @@ use zamm_yin::concepts::{ArchetypeTrait, Tao};
 
 /// All supported input filename extensions.
 const SUPPORTED_EXTENSIONS: &[&str] = &["md", "yml", "yaml"];
+
+/// Help text to display for the input file argument.
+const INPUT_HELP_TEXT: &str =
+    "The input file containing relevant information to generate code for. \
+    Currently only Markdown (extension .md) and YAML (extensions .yml or \
+    .yaml) are supported. If no input file is provided, yang will look for a \
+    file named `yin` with one of the above extensions, in the current \
+    directory.";
+
+struct BuildConfig<'a> {
+    input_file: Option<&'a str>,
+    codegen_cfg: CodegenConfig,
+}
 
 /// Find the right input file.
 fn find_file(specified_file: Option<&str>) -> Result<PathAbs, Error> {
@@ -114,7 +128,7 @@ where
 }
 
 /// Prepare for release build.
-fn release_pre_build() {
+fn release_pre_build() -> Result<(), Error> {
     if !run_command("git", &["status", "--porcelain"]).is_empty() {
         eprintln!(
             "{}",
@@ -124,14 +138,47 @@ fn release_pre_build() {
         );
         exit(1);
     }
-    clean_autogen();
+    clean_autogen()?;
+    Ok(())
 }
 
-/// Get version of the project in the current directory
+fn update_cargo_lock(package_name: &str, new_version: &str) -> Result<(), Error> {
+    let cargo_lock = "Cargo.lock";
+    let lock_contents = read_to_string(cargo_lock)?;
+    let mut lock_cfg = lock_contents.parse::<Value>().unwrap();
+    for table_value in lock_cfg["package"].as_array_mut().unwrap() {
+        let table = table_value.as_table_mut().unwrap();
+        if table["name"].as_str().unwrap() == package_name {
+            table["version"] = toml::Value::String(new_version.to_owned());
+        }
+    }
+    fs::write(cargo_lock, lock_cfg.to_string())?;
+    Ok(())
+}
+
+/// Get version of the project in the current directory. Also removes any non-release tags from the
+/// version (e.g. any "-beta" or "-alpha" suffixes).
 fn local_project_version() -> Result<String, Error> {
-    let build_contents = read_to_string("Cargo.toml")?;
-    let build_cfg = build_contents.parse::<Value>().unwrap();
-    Ok(build_cfg["package"]["version"].as_str().unwrap().to_owned())
+    let cargo_toml = "Cargo.toml";
+    let build_contents = read_to_string(cargo_toml)?;
+    let mut build_cfg = build_contents.parse::<Value>().unwrap();
+    let release_version = {
+        let version = build_cfg["package"]["version"].as_str().unwrap();
+        if !version.contains('-') {
+            return Ok(version.to_owned());
+        }
+        // otherwise, get rid of tag
+        version.split('-').next().unwrap().to_owned()
+    };
+    {
+        build_cfg["package"]["version"] = toml::Value::String(release_version.clone());
+        update_cargo_lock(
+            build_cfg["package"]["name"].as_str().unwrap(),
+            &release_version,
+        )?;
+    }
+    fs::write(cargo_toml, build_cfg.to_string())?;
+    Ok(release_version)
 }
 
 /// Destructively prepare repo for release after build.
@@ -151,40 +198,59 @@ fn release_post_build() -> Result<(), Error> {
     Ok(())
 }
 
-/// Generate code from the input file.
-fn build(args: &ArgMatches) -> Result<(), Error> {
-    let build_cfg = &CodegenConfig {
-        comment_autogen: args
-            .value_of("COMMENT_AUTOGEN")
-            .unwrap_or("true")
-            .parse::<bool>()
-            .unwrap(),
-        track_autogen: args.is_present("TRACK_AUTOGEN"),
-        yin: args.is_present("YIN"),
-        release: args.is_present("RELEASE"),
-    };
-
-    if build_cfg.release {
-        release_pre_build();
-    }
-
-    let found_input = find_file(args.value_of("INPUT"))?;
+fn generate_code(build_cfg: &BuildConfig) -> Result<(), Error> {
+    let found_input = find_file(build_cfg.input_file)?;
     parse_input(found_input)?;
 
     for implement_command in Implement::archetype().individuals() {
-        handle_implementation(Implement::from(implement_command), build_cfg)
+        handle_implementation(Implement::from(implement_command), &build_cfg.codegen_cfg);
     }
 
     save_autogen();
-    if build_cfg.release {
-        release_post_build()?;
-    }
+    Ok(())
+}
+
+/// Generate code from the input file.
+fn build(args: &ArgMatches) -> Result<(), Error> {
+    let build_cfg = BuildConfig {
+        input_file: args.value_of("INPUT"),
+        codegen_cfg: CodegenConfig {
+            comment_autogen: args
+                .value_of("COMMENT_AUTOGEN")
+                .unwrap_or("true")
+                .parse::<bool>()
+                .unwrap(),
+            track_autogen: args.is_present("TRACK_AUTOGEN"),
+            yin: args.is_present("YIN"),
+            release: false,
+        },
+    };
+
+    generate_code(&build_cfg)?;
+    Ok(())
+}
+
+fn release(args: &ArgMatches) -> Result<(), Error> {
+    let build_cfg = BuildConfig {
+        input_file: args.value_of("INPUT"),
+        codegen_cfg: CodegenConfig {
+            comment_autogen: false,
+            track_autogen: false,
+            yin: args.is_present("YIN"),
+            release: true,
+        },
+    };
+
+    release_pre_build()?;
+    generate_code(&build_cfg)?;
+    release_post_build()?;
     Ok(())
 }
 
 /// Clean all autogenerated files.
-fn clean(_: &ArgMatches) {
-    clean_autogen();
+fn clean(_: &ArgMatches) -> Result<(), Error> {
+    clean_autogen()?;
+    Ok(())
 }
 
 /// The entry-point to this code generation tool.
@@ -203,10 +269,7 @@ fn main() {
             .arg(
                 Arg::with_name("INPUT")
                     .value_name("INPUT")
-                    .help("The input file containing relevant information to generate code for. \
-                    Currently only Markdown (extension .md) and YAML (extensions .yml or .yaml) \
-                    are supported. If no input file is provided, yang will look for a file named \
-                    `yin` with one of the above extensions, in the current directory.")
+                    .help(INPUT_HELP_TEXT)
                     .takes_value(true),
             )
             .arg(
@@ -232,11 +295,21 @@ fn main() {
                     .long("yin")
                     .help("Set to generate code for Yin instead.")
             )
+        )
+        .subcommand(
+            SubCommand::with_name("release").setting(AppSettings::ColoredHelp)
+            .about("Prepare repo for a Cargo release. ")
             .arg(
-                Arg::with_name("RELEASE")
-                    .short("r")
-                    .long("release")
-                    .help("Prepare repo for a Cargo release.")
+                Arg::with_name("INPUT")
+                    .value_name("INPUT")
+                    .help(INPUT_HELP_TEXT)
+                    .takes_value(true)
+            )
+            .arg(
+                Arg::with_name("YIN")
+                    .short("y")
+                    .long("yin")
+                    .help("Set to generate code for Yin instead.")
             )
         )
         .subcommand(SubCommand::with_name("clean")
@@ -247,17 +320,21 @@ fn main() {
 
     initialize_kb();
 
-    if let Some(generate_args) = args.subcommand_matches("build") {
-        exit(match build(generate_args) {
-            Ok(_) => 0,
-            Err(e) => {
-                eprintln!("{}", e);
-                1
-            }
-        })
+    let result = if let Some(build_args) = args.subcommand_matches("build") {
+        build(build_args)
+    } else if let Some(release_args) = args.subcommand_matches("release") {
+        release(release_args)
     } else if let Some(clean_args) = args.subcommand_matches("clean") {
-        clean(clean_args);
+        clean(clean_args)
     } else {
         panic!("Arg not found. Did you reconfigure clap recently?");
-    }
+    };
+
+    exit(match result {
+        Ok(_) => 0,
+        Err(e) => {
+            eprintln!("{}", e);
+            1
+        }
+    })
 }
