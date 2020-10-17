@@ -4,6 +4,8 @@
 
 /// Code generation utilities.
 pub mod codegen;
+/// Interact with the terminal environment.
+pub mod commands;
 /// Yang-specific concepts.
 pub mod concepts;
 /// Input file parsing.
