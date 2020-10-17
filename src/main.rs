@@ -154,15 +154,19 @@ fn clean(_: &ArgMatches) -> Result<(), Error> {
 }
 
 /// Run various tests and checks.
-fn test(_: &ArgMatches) -> Result<(), Error> {
+fn test(args: &ArgMatches) -> Result<(), Error> {
+    let yang = args.is_present("YANG");
+
     println!("Formatting...");
     run_command("cargo", &["fmt"]);
     println!("Running tests...");
     run_command("cargo", &["test"]);
     println!("Running lints...");
     run_command("cargo", &["clippy", "--all-features", "--all-targets"]);
-    println!("Running yang build...");
-    run_command("cargo", &["run", "build"]);
+    if yang {
+        println!("Running yang build...");
+        run_command("cargo", &["run", "build"]);
+    }
     Ok(())
 }
 
@@ -238,7 +242,13 @@ fn main() {
         .subcommand(
             SubCommand::with_name("test")
                 .setting(AppSettings::ColoredHelp)
-                .about("Make sure the project will pass CI tests"),
+                .about("Make sure the project will pass CI tests")
+                .arg(
+                    Arg::with_name("YANG")
+                        .short("y")
+                        .long("yang")
+                        .help("Set when testing yang itself"),
+                ),
         )
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .get_matches();
