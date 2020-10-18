@@ -12,8 +12,8 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
         "std::fmt::Debug".to_owned(),
         "std::fmt::Formatter".to_owned(),
         "std::rc::Rc".to_owned(),
-        format!("{}::concepts::ArchetypeTrait", cfg.yin_crate),
-        format!("{}::concepts::FormTrait", cfg.yin_crate),
+        format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate),
+        format!("{}::tao::FormTrait", cfg.yin_crate),
         format!("{}::node_wrappers::debug_wrapper", cfg.yin_crate),
         format!("{}::node_wrappers::CommonNodeTrait", cfg.yin_crate),
         format!("{}::node_wrappers::FinalNode", cfg.yin_crate),
@@ -22,7 +22,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
         imports.push(import.clone());
     }
     if cfg.parent_name == "Tao" {
-        imports.push(format!("{}::concepts::Tao", cfg.yin_crate));
+        imports.push(format!("{}::tao::Tao", cfg.yin_crate));
     } else {
         imports.push(format!("super::{}", cfg.parent_name));
     }
@@ -105,7 +105,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
 pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
     let mut test_mod = ModuleFragment::new_test_module();
     let test_body = AtomicFragment {
-        imports: vec!["crate::concepts::initialize_kb".to_owned()],
+        imports: vec!["crate::tao::initialize_kb".to_owned()],
         atom: formatdoc! {r#"
             #[test]
             fn check_type_created() {{

@@ -95,13 +95,13 @@ mod tests {
             use std::fmt::{Debug, Formatter};
             use std::fmt;
             use std::rc::Rc;
-            use crate::concepts::attributes::{Attribute, AttributeTrait};
-            use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
+            use crate::tao::attributes::{Attribute, AttributeTrait};
+            use crate::tao::{ArchetypeTrait, FormTrait, Tao{imports}};
             use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};
         "}),
             indoc! {"
-            use crate::concepts::attributes::{Attribute, AttributeTrait};
-            use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
+            use crate::tao::attributes::{Attribute, AttributeTrait};
+            use crate::tao::{ArchetypeTrait, FormTrait, Tao{imports}};
             use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};
             use std::convert::TryFrom;
             use std::fmt;

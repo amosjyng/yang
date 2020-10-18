@@ -9,8 +9,8 @@ use std::rc::Rc;
 pub fn attribute_fragment(cfg: &FormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![
-            format!("{}::concepts::attributes::Attribute", cfg.yin_crate),
-            format!("{}::concepts::attributes::AttributeTrait", cfg.yin_crate),
+            format!("{}::tao::attribute::Attribute", cfg.yin_crate),
+            format!("{}::tao::attribute::AttributeTrait", cfg.yin_crate),
         ],
         atom: formatdoc! {r#"
             impl<'a> AttributeTrait<'a, {name}> for {name} {{
