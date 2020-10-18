@@ -27,9 +27,9 @@ fn file_path(target: Archetype) -> String {
         folder += "/";
         folder += &snake_name;
     }
-    // append _archetype to filename to avoid
+    // append _form to filename to avoid
     // https://rust-lang.github.io/rust-clippy/master/index.html#module_inception
-    format!("{}/{}_archetype.rs", folder, snake_name).to_ascii_lowercase()
+    format!("{}/{}_form.rs", folder, snake_name).to_ascii_lowercase()
 }
 
 /// Handle the implementation request for a new attribute archetype.
