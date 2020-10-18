@@ -12,6 +12,7 @@ use zamm_yang::commands::run_command;
 use zamm_yang::concepts::callbacks::handle_implementation;
 use zamm_yang::concepts::{initialize_kb, Implement};
 use zamm_yang::parse::{find_file, parse_input};
+use zamm_yin::concepts::archetype::ArchetypeFormTrait;
 use zamm_yin::concepts::ArchetypeTrait;
 
 /// Help text to display for the input file argument.
