@@ -1,10 +1,8 @@
 use itertools::Itertools;
 use std::collections::HashMap;
 
-/// Sort imports alphabetically.
-pub fn sort_imports(imports: &str) -> String {
-    let mut import_lines: Vec<&str> = imports.split('\n').collect();
-    import_lines.sort_by_key(|s| {
+fn sort_import_lines(imports: &mut [&str]) {
+    imports.sort_by_key(|s| {
         let n = s.len();
         if n > 0 {
             &s[..n - 1]
@@ -12,8 +10,20 @@ pub fn sort_imports(imports: &str) -> String {
             s
         }
     });
-    import_lines
+}
+
+/// Sort imports alphabetically.
+fn sort_imports(imports: &str) -> String {
+    let import_lines: Vec<&str> = imports.split('\n').collect();
+    let (mut super_lines, mut other_lines): (Vec<&str>, Vec<&str>) = import_lines
+        .iter()
+        .partition(|n| n.starts_with("use super::"));
+    // do them separately because we want super imports to come first
+    sort_import_lines(&mut super_lines);
+    sort_import_lines(&mut other_lines);
+    super_lines
         .into_iter()
+        .chain(other_lines.into_iter())
         .format("\n")
         .to_string()
         .trim()
@@ -109,6 +119,22 @@ mod tests {
             use std::rc::Rc;
         "}
             .trim()
+        );
+    }
+
+    #[test]
+    fn test_sort_imports_super() {
+        assert_eq!(
+            sort_imports(indoc! {"
+                use crate::concepts::attributes::{Attribute, AttributeTrait};
+                use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
+                use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};
+                use super::ParentTrait;"}),
+            indoc! {"
+                use super::ParentTrait;
+                use crate::concepts::attributes::{Attribute, AttributeTrait};
+                use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
+                use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};"}
         );
     }
 
