@@ -2,6 +2,7 @@ use zamm_yang::codegen::track_autogen::save_autogen;
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::concepts::callbacks::handle_implementation;
 use zamm_yang::concepts::{initialize_kb, Implement, ImplementConfig};
+use zamm_yin::concepts::archetype::ArchetypeFormTrait;
 use zamm_yin::concepts::attributes::Attribute;
 use zamm_yin::concepts::ArchetypeTrait;
 use zamm_yin::node_wrappers::CommonNodeTrait;

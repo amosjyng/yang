@@ -50,8 +50,8 @@ If you're using a custom build script, chances are you will want to generate Yin
 
 ```toml
 [build-dependencies]
-zamm_yin = "0.0.7"
-zamm_yang = "0.0.7"
+zamm_yin = "0.0.9"
+zamm_yang = "0.0.8"
 ```
 
 Then, define your `build.rs` as in the [example](examples/build.rs), and your `main.rs` in the same way as above.
