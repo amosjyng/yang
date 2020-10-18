@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn folder_path_tao() {
         initialize_kb();
-        assert_eq!(file_path(Tao::archetype()), "src/tao/tao_archetype.rs");
+        assert_eq!(file_path(Tao::archetype()), "src/tao/tao_form.rs");
     }
 
     #[test]
@@ -78,7 +78,7 @@ mod tests {
         initialize_kb();
         assert_eq!(
             file_path(Attribute::archetype()),
-            "src/tao/attribute/attribute_archetype.rs"
+            "src/tao/attribute/attribute_form.rs"
         );
     }
 
@@ -87,7 +87,7 @@ mod tests {
         initialize_kb();
         assert_eq!(
             file_path(Owner::archetype()),
-            "src/tao/attribute/owner_archetype.rs"
+            "src/tao/attribute/owner_form.rs"
         );
     }
 

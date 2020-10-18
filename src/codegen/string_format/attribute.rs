@@ -9,26 +9,13 @@ use std::rc::Rc;
 pub fn attribute_fragment(cfg: &FormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![
-            format!("{}::tao::attribute::Attribute", cfg.yin_crate),
+            format!("{}::tao::Tao", cfg.yin_crate),
             format!("{}::tao::attribute::AttributeTrait", cfg.yin_crate),
         ],
         atom: formatdoc! {r#"
-            impl<'a> AttributeTrait<'a, {name}> for {name} {{
-                fn set_owner(&mut self, owner: &dyn FormTrait) {{
-                    self.base.set_owner(owner);
-                }}
-
-                fn owner(&self) -> Option<Tao> {{
-                    self.base.owner()
-                }}
-
-                fn set_value(&mut self, value: &dyn FormTrait) {{
-                    self.base.set_value(value);
-                }}
-
-                fn value(&self) -> Option<Tao> {{
-                    self.base.value()
-                }}
+            impl AttributeTrait for {name} {{
+                type OwnerForm = Tao;
+                type ValueForm = Tao;
             }}"#, name = cfg.name},
     }
 }
@@ -43,7 +30,7 @@ pub fn attribute_test_fragment(cfg: &FormatConfig) -> AtomicFragment {
                 initialize_kb();
                 let mut instance = {name}::individuate();
                 let owner_of_owner = {name}::individuate();
-                instance.set_owner(&owner_of_owner);
+                instance.set_owner(&owner_of_owner.ego_death());
                 assert_eq!(instance.owner(), Some(owner_of_owner.ego_death()));
                 assert_eq!(instance.value(), None);
             }}
@@ -53,7 +40,7 @@ pub fn attribute_test_fragment(cfg: &FormatConfig) -> AtomicFragment {
                 initialize_kb();
                 let mut instance = {name}::individuate();
                 let value_of_owner = {name}::individuate();
-                instance.set_value(&value_of_owner);
+                instance.set_value(&value_of_owner.ego_death());
                 assert_eq!(instance.owner(), None);
                 assert_eq!(instance.value(), Some(value_of_owner.ego_death()));
             }}"#, name = cfg.name},
