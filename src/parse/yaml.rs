@@ -1,3 +1,4 @@
+use crate::codegen::NameTransform;
 use crate::concepts::Implement;
 use crate::concepts::ImplementConfig;
 use std::convert::TryFrom;
@@ -18,7 +19,8 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
         let parent = Archetype::try_from(entry["parent"].as_str().unwrap()).unwrap();
         let mut new_subtype = parent.individuate_as_archetype();
         if let Some(name) = entry["name"].as_str() {
-            new_subtype.set_internal_name(name.to_owned());
+            let canonical = NameTransform::from(name).to_kebab_case();
+            new_subtype.set_internal_name(canonical);
         }
         if let Some(attrs) = entry["attributes"].as_vec() {
             for attr in attrs {
@@ -29,8 +31,9 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
         }
         if parent == Implement::archetype() {
             let mut implement = Implement::from(new_subtype.id());
-            let target_name = entry["target"].as_str().unwrap();
-            let target = Archetype::try_from(target_name).unwrap();
+            let target_name =
+                NameTransform::from(entry["target"].as_str().unwrap()).to_kebab_case();
+            let target = Archetype::try_from(target_name.as_str()).unwrap();
             implement.set_target(target);
 
             let impl_config = ImplementConfig {
@@ -72,7 +75,7 @@ mod tests {
         assert_eq!(concepts.len(), 1);
         let target = concepts[0];
         assert!(target.has_ancestor(Attribute::archetype()));
-        assert_eq!(target.internal_name(), Some(Rc::new("Target".to_owned())));
+        assert_eq!(target.internal_name(), Some(Rc::new("target".to_owned())));
     }
 
     #[test]
@@ -101,7 +104,7 @@ mod tests {
         assert_eq!(concepts.len(), 1);
         let target = concepts[0];
         assert!(target.has_ancestor(Attribute::archetype()));
-        assert_eq!(target.internal_name(), Some(Rc::new("Target".to_owned())));
+        assert_eq!(target.internal_name(), Some(Rc::new("target".to_owned())));
         let target_as_attr_type = AttributeArchetype::from(*target.essence());
         assert_eq!(
             target_as_attr_type.owner_archetype(),
@@ -124,7 +127,7 @@ mod tests {
         assert_eq!(concepts.len(), 1);
         let target = concepts[0];
         assert!(target.has_ancestor(Tao::archetype()));
-        assert_eq!(target.internal_name(), Some(Rc::new("Foo".to_owned())));
+        assert_eq!(target.internal_name(), Some(Rc::new("foo".to_owned())));
         assert_eq!(
             target.attribute_archetypes(),
             vec![
@@ -151,7 +154,7 @@ mod tests {
         assert!(implement.has_ancestor(Implement::archetype()));
         assert_eq!(
             implement.target().map(|t| t.internal_name()).flatten(),
-            Some(Rc::new("Target".to_owned()))
+            Some(Rc::new("target".to_owned()))
         );
         let cfg = implement.config().unwrap();
         assert_eq!(cfg.id, 2);
