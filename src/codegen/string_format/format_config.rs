@@ -20,8 +20,12 @@ pub struct FormatConfig {
     pub archetype_name: String,
     /// List of attributes this class has.
     pub all_attributes: String,
-    /// Imports for above list of attributes.
+    /// Imports for above list of introduced attributes.
     pub all_attribute_imports: Vec<String>,
+    /// List of attributes this class introduced.
+    pub introduced_attributes: String,
+    /// Imports for above list of introduced attributes.
+    pub introduced_attribute_imports: Vec<String>,
     /// Rustdoc for the class.
     pub doc: String,
     /// ID of the concept.
@@ -40,6 +44,8 @@ impl Default for FormatConfig {
             archetype_name: "Archetype".to_owned(),
             all_attributes: "vec![]".to_owned(),
             all_attribute_imports: vec![],
+            introduced_attributes: "vec![]".to_owned(),
+            introduced_attribute_imports: vec![],
             doc: "".to_owned(),
             id: "1".to_owned(),
         }
@@ -72,6 +78,18 @@ impl<'a> From<&'a CodeConfig<'a>> for FormatConfig {
             .iter()
             .map(|s| s.import.clone())
             .collect();
+        let introduced_attributes = format!(
+            "vec![{}]",
+            cfg.introduced_attributes
+                .iter()
+                .map(|s| format!("{}::archetype()", s.name))
+                .format(", ")
+        );
+        let introduced_attribute_imports = cfg
+            .introduced_attributes
+            .iter()
+            .map(|s| s.import.clone())
+            .collect();
         let archetype_name = if cfg.parent.name == "Attribute" {
             "AttributeArchetype".to_owned()
         } else {
@@ -95,6 +113,8 @@ impl<'a> From<&'a CodeConfig<'a>> for FormatConfig {
             parent_import: cfg.parent.import.clone(),
             all_attributes,
             all_attribute_imports,
+            introduced_attributes,
+            introduced_attribute_imports,
             archetype_name,
             internal_name: name_transform.to_kebab_case(),
             doc,
