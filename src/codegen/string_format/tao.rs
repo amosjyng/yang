@@ -131,14 +131,8 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
             #[test]
             fn check_type_attributes() {{
                 initialize_kb();
-                assert_eq!(
-                    {name}::archetype().introduced_attribute_archetypes(),
-                    {introduced_attributes}
-                );
-                assert_eq!(
-                    {name}::archetype().attribute_archetypes(),
-                    {all_attributes}
-                );
+                assert_eq!({name}::archetype().introduced_attribute_archetypes(), {introduced_attributes});
+                assert_eq!({name}::archetype().attribute_archetypes(), {all_attributes});
             }}
 
             #[test]
