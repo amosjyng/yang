@@ -20,6 +20,13 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
         if let Some(name) = entry["name"].as_str() {
             new_subtype.set_internal_name(name.to_owned());
         }
+        if let Some(attrs) = entry["attributes"].as_vec() {
+            for attr in attrs {
+                let attr_name = attr.as_str().unwrap();
+                let target_attr = AttributeArchetype::try_from(attr_name).unwrap();
+                new_subtype.add_attribute_type(target_attr);
+            }
+        }
         if parent == Implement::archetype() {
             let mut implement = Implement::from(new_subtype.id());
             let target_name = entry["target"].as_str().unwrap();
@@ -51,7 +58,7 @@ mod tests {
     use crate::concepts::{initialize_kb, Implement};
     use indoc::indoc;
     use std::rc::Rc;
-    use zamm_yin::concepts::attributes::Attribute;
+    use zamm_yin::concepts::attributes::{Attribute, Owner, OwnerArchetype};
     use zamm_yin::concepts::FormTrait;
 
     #[test]
@@ -104,6 +111,30 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_has_attributes() {
+        initialize_kb();
+
+        let concepts = parse_yaml(indoc! {"
+            - name: Foo
+              parent: Tao
+              attributes:
+                - owner
+                - owner-archetype
+        "});
+        assert_eq!(concepts.len(), 1);
+        let target = concepts[0];
+        assert!(target.has_ancestor(Tao::archetype()));
+        assert_eq!(target.internal_name(), Some(Rc::new("Foo".to_owned())));
+        assert_eq!(
+            target.attribute_archetypes(),
+            vec![
+                AttributeArchetype::from(Owner::TYPE_ID),
+                AttributeArchetype::from(OwnerArchetype::TYPE_ID)
+            ]
+        );
+    }
+
+    #[test]
     fn test_parse_implement() {
         initialize_kb();
 
@@ -125,6 +156,24 @@ mod tests {
         let cfg = implement.config().unwrap();
         assert_eq!(cfg.id, 2);
         assert_eq!(cfg.doc, Some("Howdy, how ya doing?".to_owned()));
+    }
+
+    #[test]
+    fn test_parse_shadow_old_nodes() {
+        initialize_kb();
+
+        let concepts = parse_yaml(indoc! {"
+            - name: Attribute
+              parent: Tao
+            - parent: Implement
+              target: Attribute
+              output_id: 2
+        "});
+        assert_eq!(concepts.len(), 2);
+        let implement = Implement::from(concepts[1]);
+        let target = implement.target().unwrap();
+        assert_ne!(target, Attribute::archetype());
+        assert_eq!(target.introduced_attribute_types(), vec![]);
     }
 
     #[test]

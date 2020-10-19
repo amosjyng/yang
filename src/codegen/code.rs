@@ -32,6 +32,10 @@ pub struct CodeConfig<'a> {
     pub name: &'a str,
     /// The concept's parent.
     pub parent: StructConfig,
+    /// List of all attributes that this concept has.
+    pub all_attributes: Vec<StructConfig>,
+    /// List of all attributes introduced by this concept.
+    pub introduced_attributes: Vec<StructConfig>,
     /// Structs for additional attributes.
     pub attribute_structs: HashMap<&'a str, StructConfig>,
     /// Concept-specific implementation settings.
@@ -45,6 +49,8 @@ impl<'a> Default for CodeConfig<'a> {
         Self {
             name: "dummy",
             parent: StructConfig::default(),
+            all_attributes: Vec::default(),
+            introduced_attributes: Vec::default(),
             attribute_structs: HashMap::default(),
             impl_cfg: ImplementConfig::default(),
             codegen_cfg: CodegenConfig::default(),

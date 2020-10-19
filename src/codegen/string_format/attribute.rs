@@ -7,21 +7,12 @@ use std::rc::Rc;
 
 /// Get the attribute body fragment.
 pub fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
-    let mut imports = vec![format!(
-        "{}::tao::attribute::AttributeTrait",
-        cfg.tao_cfg.yin_crate
-    )];
-    imports.push(format!(
-        "{}::{}",
-        cfg.tao_cfg.yin_crate, cfg.owner_form.import
-    ));
-    imports.push(format!(
-        "{}::{}",
-        cfg.tao_cfg.yin_crate, cfg.value_form.import
-    ));
-
     AtomicFragment {
-        imports,
+        imports: vec![
+            format!("{}::tao::attribute::AttributeTrait", cfg.tao_cfg.yin_crate),
+            format!("{}::{}", cfg.tao_cfg.yin_crate, cfg.owner_form.import),
+            format!("{}::{}", cfg.tao_cfg.yin_crate, cfg.value_form.import),
+        ],
         atom: formatdoc! {r#"
             impl AttributeTrait for {name} {{
                 type OwnerForm = {owner_form};
@@ -60,7 +51,7 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
         imports,
         atom: formatdoc! {r#"
             #[test]
-            fn check_attributes_specified() {{
+            fn check_attribute_constraints() {{
                 initialize_kb();
                 assert_eq!(
                     {name}::archetype().owner_archetype(),
