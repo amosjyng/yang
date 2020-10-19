@@ -42,11 +42,11 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
             };
             implement.set_config(impl_config);
         } else if new_subtype.has_ancestor(Attribute::archetype()) {
-            // Note: it is exactly because existing functionality is tied to the existing Attribute 
-            // node, that Attribute cannot be auto-generated right now. When Attribute gets defined 
-            // in the yin file, the old Attribute gets shadowed (as it should), but then all 
-            // newly defined subtypes of Attribute no longer pass checks such as this one because 
-            // they are not subtypes of the old Attribute, and Attribute-specific generation logic 
+            // Note: it is exactly because existing functionality is tied to the existing Attribute
+            // node, that Attribute cannot be auto-generated right now. When Attribute gets defined
+            // in the yin file, the old Attribute gets shadowed (as it should), but then all
+            // newly defined subtypes of Attribute no longer pass checks such as this one because
+            // they are not subtypes of the old Attribute, and Attribute-specific generation logic
             // never gets activated.
             let mut attr_subtype = AttributeArchetype::from(new_subtype.id());
             if let Some(owner_type_name) = entry["owner_archetype"].as_str() {
