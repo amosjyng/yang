@@ -62,8 +62,14 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
             #[test]
             fn check_attributes_specified() {{
                 initialize_kb();
-                assert_eq!({name}::archetype().owner_archetype(), {owner_type}::archetype().as_archetype());
-                assert_eq!({name}::archetype().value_archetype(), {value_type}::archetype().as_archetype());
+                assert_eq!(
+                    {name}::archetype().owner_archetype(),
+                    {owner_type}::archetype().as_archetype()
+                );
+                assert_eq!(
+                    {name}::archetype().value_archetype(),
+                    {value_type}::archetype().as_archetype()
+                );
             }}
 
             #[test]
