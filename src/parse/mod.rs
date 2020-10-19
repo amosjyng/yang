@@ -11,7 +11,7 @@ use std::env;
 use std::fs::read_to_string;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
-use zamm_yin::concepts::Tao;
+use zamm_yin::tao::Form;
 
 /// All supported input filename extensions.
 pub const SUPPORTED_EXTENSIONS: &[&str] = &["md", "yml", "yaml"];
@@ -58,7 +58,7 @@ pub fn find_file(specified_file: Option<&str>) -> Result<PathAbs, Error> {
 }
 
 /// Parse the giveninput file.
-pub fn parse_input(found_input: PathAbs) -> Result<Vec<Tao>, Error> {
+pub fn parse_input(found_input: PathAbs) -> Result<Vec<Form>, Error> {
     println!(
         "cargo:rerun-if-changed={}",
         found_input.as_os_str().to_str().unwrap()

@@ -28,7 +28,7 @@ One type of data is a "string":
 
 ```yaml
 - name: StringConcept
-  parent: Data
+  parent: data
 ```
 
 ### Implementation
@@ -46,7 +46,7 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 
 ```yaml
 - parent: Implement
-  target: Data
+  target: data
   output_id: 3
   documentation: |-
 ```

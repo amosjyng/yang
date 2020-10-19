@@ -5,19 +5,15 @@ use crate::codegen::NameTransform;
 use crate::codegen::{code, CodeConfig, CodegenConfig, StructConfig};
 use itertools::Itertools;
 use std::collections::HashMap;
-use zamm_yin::concepts::archetype::attribute::AttributeArchetype;
-use zamm_yin::concepts::archetype::ArchetypeFormTrait;
-use zamm_yin::concepts::attributes::{Attribute, OwnerArchetype, ValueArchetype};
-use zamm_yin::concepts::{Archetype, ArchetypeTrait, Form, FormTrait, Tao};
 use zamm_yin::node_wrappers::CommonNodeTrait;
+use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
+use zamm_yin::tao::attribute::{Attribute, OwnerArchetype, ValueArchetype};
+use zamm_yin::tao::{Form, FormTrait, Tao};
 
 fn in_own_submodule(target: &Archetype) -> bool {
     // todo: use children() instead of individuals(), and filter by type, once Yin has that
     // functionality
-    target
-        .individuals()
-        .iter()
-        .any(|i| *i != target.ego_death()) // todo: remove once Yin bug fixed
+    target.individuals().iter().any(|i| *i != target.as_form()) // todo: remove once Yin bug fixed
 }
 
 fn ancestor_names(target: &Archetype, separator: &str) -> String {
@@ -75,13 +71,15 @@ pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
         .map(|a| concept_to_struct(&a.as_archetype()))
         .collect();
     let introduced_attributes = target
-        .introduced_attribute_types()
+        .introduced_attribute_archetypes()
         .iter()
         .map(|a| concept_to_struct(&a.as_archetype()))
         .collect();
 
     let mut attr_structs = HashMap::new();
-    if target == Attribute::archetype() || target.has_ancestor(Attribute::archetype()) {
+    if target == Attribute::archetype().as_archetype()
+        || target.has_ancestor(Attribute::archetype().as_archetype())
+    {
         let target_attr = AttributeArchetype::from(target.id());
         let owner_type = target_attr.owner_archetype();
         let value_type = target_attr.value_archetype();
@@ -126,9 +124,9 @@ pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
 mod tests {
     use super::*;
     use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
-    use crate::concepts::initialize_kb;
-    use zamm_yin::concepts::attributes::{Attribute, Owner};
-    use zamm_yin::concepts::{ArchetypeTrait, Tao};
+    use crate::tao::initialize_kb;
+    use zamm_yin::tao::attribute::{Attribute, Owner};
+    use zamm_yin::tao::Tao;
 
     #[test]
     fn own_submodule_tao() {
@@ -139,13 +137,13 @@ mod tests {
     #[test]
     fn own_submodule_attributes() {
         initialize_kb();
-        assert!(in_own_submodule(&Attribute::archetype()));
+        assert!(in_own_submodule(&Attribute::archetype().as_archetype()));
     }
 
     #[test]
     fn own_submodule_nested() {
         initialize_kb();
-        assert!(!in_own_submodule(&Owner::archetype()));
+        assert!(!in_own_submodule(&Owner::archetype().as_archetype()));
     }
 
     #[test]
@@ -158,7 +156,7 @@ mod tests {
     fn folder_path_attributes() {
         initialize_kb();
         assert_eq!(
-            file_path(&Attribute::archetype()),
+            file_path(&Attribute::archetype().as_archetype()),
             "src/tao/attribute/attribute_form.rs"
         );
     }
@@ -167,7 +165,7 @@ mod tests {
     fn folder_path_nested() {
         initialize_kb();
         assert_eq!(
-            file_path(&Owner::archetype()),
+            file_path(&Owner::archetype().as_archetype()),
             "src/tao/attribute/owner_form.rs"
         );
     }
@@ -182,7 +180,7 @@ mod tests {
     fn import_path_attributes() {
         initialize_kb();
         assert_eq!(
-            import_path(&Attribute::archetype()),
+            import_path(&Attribute::archetype().as_archetype()),
             "tao::attribute::Attribute"
         );
     }
@@ -190,7 +188,10 @@ mod tests {
     #[test]
     fn import_path_nested() {
         initialize_kb();
-        assert_eq!(import_path(&Owner::archetype()), "tao::attribute::Owner");
+        assert_eq!(
+            import_path(&Owner::archetype().as_archetype()),
+            "tao::attribute::Owner"
+        );
     }
 
     #[test]

@@ -1,22 +1,20 @@
 use crate::codegen::NameTransform;
-use crate::concepts::Implement;
-use crate::concepts::ImplementConfig;
+use crate::tao::{Implement, ImplementConfig};
 use std::convert::TryFrom;
 use yaml_rust::YamlLoader;
-use zamm_yin::concepts::archetype::attribute::AttributeArchetype;
-use zamm_yin::concepts::archetype::ArchetypeFormTrait;
-use zamm_yin::concepts::attributes::Attribute;
-use zamm_yin::concepts::FormTrait;
-use zamm_yin::concepts::{Archetype, ArchetypeTrait, Tao};
 use zamm_yin::node_wrappers::CommonNodeTrait;
+use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
+use zamm_yin::tao::attribute::Attribute;
+use zamm_yin::tao::{Form, FormTrait};
 
 /// Parses a YAML string into a list of concepts as represented by the string.
-pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
-    let mut new_concepts = Vec::<Tao>::new();
+pub fn parse_yaml(yaml: &str) -> Vec<Form> {
+    let mut new_concepts = Vec::<Form>::new();
     let docs = YamlLoader::load_from_str(yaml).unwrap();
     let doc = &docs[0];
     for entry in doc.as_vec().unwrap() {
-        let parent = Archetype::try_from(entry["parent"].as_str().unwrap()).unwrap();
+        let parent_name = NameTransform::from(entry["parent"].as_str().unwrap()).to_kebab_case();
+        let parent = Archetype::try_from(parent_name.as_str()).unwrap();
         let mut new_subtype = parent.individuate_as_archetype();
         if let Some(name) = entry["name"].as_str() {
             let canonical = NameTransform::from(name).to_kebab_case();
@@ -24,8 +22,8 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
         }
         if let Some(attrs) = entry["attributes"].as_vec() {
             for attr in attrs {
-                let attr_name = attr.as_str().unwrap();
-                let target_attr = AttributeArchetype::try_from(attr_name).unwrap();
+                let canonical = NameTransform::from(attr.as_str().unwrap()).to_kebab_case();
+                let target_attr = AttributeArchetype::try_from(canonical.as_str()).unwrap();
                 new_subtype.add_attribute_type(target_attr);
             }
         }
@@ -41,7 +39,7 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
                 doc: entry["documentation"].as_str().map(|s| s.to_owned()),
             };
             implement.set_config(impl_config);
-        } else if new_subtype.has_ancestor(Attribute::archetype()) {
+        } else if new_subtype.has_ancestor(Attribute::archetype().as_archetype()) {
             // Note: it is exactly because existing functionality is tied to the existing Attribute
             // node, that Attribute cannot be auto-generated right now. When Attribute gets defined
             // in the yin file, the old Attribute gets shadowed (as it should), but then all
@@ -50,13 +48,15 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
             // never gets activated.
             let mut attr_subtype = AttributeArchetype::from(new_subtype.id());
             if let Some(owner_type_name) = entry["owner_archetype"].as_str() {
-                attr_subtype.set_owner_archetype(Archetype::try_from(owner_type_name).unwrap());
+                let canonical = NameTransform::from(owner_type_name).to_kebab_case();
+                attr_subtype.set_owner_archetype(Archetype::try_from(canonical.as_str()).unwrap());
             }
             if let Some(value_type_name) = entry["value_archetype"].as_str() {
-                attr_subtype.set_value_archetype(Archetype::try_from(value_type_name).unwrap());
+                let canonical = NameTransform::from(value_type_name).to_kebab_case();
+                attr_subtype.set_value_archetype(Archetype::try_from(canonical.as_str()).unwrap());
             }
         }
-        new_concepts.push(new_subtype.ego_death());
+        new_concepts.push(new_subtype.as_form());
     }
     new_concepts
 }
@@ -64,11 +64,11 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::concepts::{initialize_kb, Implement};
+    use crate::tao::{initialize_kb, Implement};
     use indoc::indoc;
     use std::rc::Rc;
-    use zamm_yin::concepts::attributes::{Attribute, Owner, OwnerArchetype};
-    use zamm_yin::concepts::FormTrait;
+    use zamm_yin::tao::attribute::{Attribute, Owner, OwnerArchetype};
+    use zamm_yin::tao::{FormTrait, Tao};
 
     #[test]
     fn test_parse_archetype() {
@@ -80,7 +80,7 @@ mod tests {
         "});
         assert_eq!(concepts.len(), 1);
         let target = concepts[0];
-        assert!(target.has_ancestor(Attribute::archetype()));
+        assert!(target.has_ancestor(Attribute::archetype().as_archetype()));
         assert_eq!(target.internal_name(), Some(Rc::new("target".to_owned())));
     }
 
@@ -93,7 +93,7 @@ mod tests {
         "});
         assert_eq!(concepts.len(), 1);
         let target = concepts[0];
-        assert!(target.has_ancestor(Attribute::archetype()));
+        assert!(target.has_ancestor(Attribute::archetype().as_archetype()));
         assert_eq!(target.internal_name(), None);
     }
 
@@ -109,7 +109,7 @@ mod tests {
         "});
         assert_eq!(concepts.len(), 1);
         let target = concepts[0];
-        assert!(target.has_ancestor(Attribute::archetype()));
+        assert!(target.has_ancestor(Attribute::archetype().as_archetype()));
         assert_eq!(target.internal_name(), Some(Rc::new("target".to_owned())));
         let target_as_attr_type = AttributeArchetype::from(*target.essence());
         assert_eq!(
@@ -128,18 +128,15 @@ mod tests {
               parent: Tao
               attributes:
                 - owner
-                - owner-archetype
+                - OwnerArchetype
         "});
         assert_eq!(concepts.len(), 1);
         let target = concepts[0];
-        assert!(target.has_ancestor(Tao::archetype()));
+        assert!(target.has_ancestor(Tao::archetype().as_archetype()));
         assert_eq!(target.internal_name(), Some(Rc::new("foo".to_owned())));
         assert_eq!(
             target.attribute_archetypes(),
-            vec![
-                AttributeArchetype::from(Owner::TYPE_ID),
-                AttributeArchetype::from(OwnerArchetype::TYPE_ID)
-            ]
+            vec![Owner::archetype(), OwnerArchetype::archetype()]
         );
     }
 
@@ -156,7 +153,7 @@ mod tests {
               documentation: Howdy, how ya doing?
         "});
         assert_eq!(concepts.len(), 2);
-        let implement = Implement::from(concepts[1]);
+        let implement = Implement::from(concepts[1].id());
         assert!(implement.has_ancestor(Implement::archetype()));
         assert_eq!(
             implement.target().map(|t| t.internal_name()).flatten(),
@@ -179,10 +176,10 @@ mod tests {
               output_id: 2
         "});
         assert_eq!(concepts.len(), 2);
-        let implement = Implement::from(concepts[1]);
+        let implement = Implement::from(concepts[1].id());
         let target = implement.target().unwrap();
-        assert_ne!(target, Attribute::archetype());
-        assert_eq!(target.introduced_attribute_types(), vec![]);
+        assert_ne!(target, Attribute::archetype().as_archetype());
+        assert_eq!(target.introduced_attribute_archetypes(), vec![]);
     }
 
     #[test]
@@ -199,7 +196,7 @@ mod tests {
                 So much to do.
                 So little time.
         "});
-        let implement = Implement::from(concepts[1]);
+        let implement = Implement::from(concepts[1].id());
         let cfg = implement.config().unwrap();
         assert_eq!(cfg.doc, Some("So much to do.\nSo little time.".to_owned()));
     }
@@ -219,7 +216,7 @@ mod tests {
 
                 So little time.
         "});
-        let implement = Implement::from(concepts[1]);
+        let implement = Implement::from(concepts[1].id());
         let cfg = implement.config().unwrap();
         assert_eq!(
             cfg.doc,

@@ -5,7 +5,7 @@ use crate::codegen::string_format::attribute::code_attribute;
 use crate::codegen::string_format::code_string_concept;
 use crate::codegen::string_format::tao::code_tao;
 use crate::codegen::string_format::{AttributeFormatConfig, FormatConfig};
-use crate::concepts::ImplementConfig;
+use crate::tao::ImplementConfig;
 use std::collections::HashMap;
 
 /// Config representing an imported struct.
