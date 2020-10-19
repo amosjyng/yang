@@ -69,7 +69,7 @@ mod tests {
     #[test]
     fn test_post_process_fmt_not_skip() {
         let code_cfg = &CodeConfig {
-            name: "short",
+            name: "S", // short
             ..CodeConfig::default()
         };
         let code = code_tao(&FormatConfig::from(code_cfg));
