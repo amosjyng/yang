@@ -90,7 +90,7 @@ impl<'a> From<&'a CodeConfig<'a>> for FormatConfig {
             .iter()
             .map(|s| s.import.clone())
             .collect();
-        let archetype_name = if cfg.parent.name == "Attribute" {
+        let archetype_name = if cfg.parent.name.to_lowercase() == "attribute" {
             "AttributeArchetype".to_owned()
         } else {
             "Archetype".to_owned()

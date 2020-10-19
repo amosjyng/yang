@@ -60,9 +60,9 @@ impl<'a> Default for CodeConfig<'a> {
 
 /// Generate the final version of code, to be output to a file as-is.
 pub fn code(cfg: &CodeConfig) -> String {
-    let initial_code = if cfg.parent.name == "Attribute" {
+    let initial_code = if cfg.parent.name.to_lowercase() == "attribute" {
         code_attribute(&AttributeFormatConfig::from(cfg))
-    } else if cfg.parent.name == "Data" {
+    } else if cfg.parent.name.to_lowercase() == "data" {
         code_string_concept(&FormatConfig::from(cfg))
     } else {
         code_tao(&FormatConfig::from(cfg))

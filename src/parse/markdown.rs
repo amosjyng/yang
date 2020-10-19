@@ -247,7 +247,7 @@ mod tests {
         assert!(implement.has_ancestor(Implement::archetype()));
         assert_eq!(
             implement.target().map(|t| t.internal_name()).flatten(),
-            Some(Rc::new("Target".to_owned()))
+            Some(Rc::new("target".to_owned()))
         );
         let cfg = implement.config().unwrap();
         assert_eq!(cfg.id, 2);
