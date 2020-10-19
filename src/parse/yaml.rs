@@ -159,6 +159,24 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_shadow_old_nodes() {
+        initialize_kb();
+
+        let concepts = parse_yaml(indoc! {"
+            - name: Attribute
+              parent: Tao
+            - parent: Implement
+              target: Attribute
+              output_id: 2
+        "});
+        assert_eq!(concepts.len(), 2);
+        let implement = Implement::from(concepts[1]);
+        let target = implement.target().unwrap();
+        assert_ne!(target, Attribute::archetype());
+        assert_eq!(target.introduced_attribute_types(), vec![]);
+    }
+
+    #[test]
     fn test_parse_multiline_string() {
         initialize_kb();
 
