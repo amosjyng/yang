@@ -105,8 +105,12 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
 /// Get the Tao test fragment
 pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
     let mut test_mod = ModuleFragment::new_test_module();
+    let mut imports = vec!["crate::tao::initialize_kb".to_owned()];
+    for attr_import in &cfg.all_attribute_imports {
+        imports.push(format!("{}::{}", cfg.yin_crate, attr_import));
+    }
     let test_body = AtomicFragment {
-        imports: vec!["crate::tao::initialize_kb".to_owned()],
+        imports,
         atom: formatdoc! {r#"
             #[test]
             fn check_type_created() {{
@@ -115,6 +119,15 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
                 assert_eq!(
                     {name}::archetype().internal_name(),
                     Some(Rc::new({name}::TYPE_NAME.to_string()))
+                );
+            }}
+
+            #[test]
+            fn check_type_attributes() {{
+                initialize_kb();
+                assert_eq!(
+                    {name}::archetype().attribute_archetypes(),
+                    {all_attributes}
                 );
             }}
 
@@ -151,6 +164,7 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
                 assert_eq!(concept.internal_name(), Some(Rc::new("A".to_string())));
             }}"#,
             name = cfg.name,
+            all_attributes = cfg.all_attributes,
         },
     };
     test_mod.append(Rc::new(RefCell::new(test_body)));

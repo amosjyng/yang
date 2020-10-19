@@ -51,7 +51,7 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
         imports,
         atom: formatdoc! {r#"
             #[test]
-            fn check_attributes_specified() {{
+            fn check_attribute_constraints() {{
                 initialize_kb();
                 assert_eq!(
                     {name}::archetype().owner_archetype(),

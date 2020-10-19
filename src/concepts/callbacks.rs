@@ -69,6 +69,12 @@ pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
     let parent = ancestors.iter().last().unwrap();
     let parent_struct = concept_to_struct(parent);
 
+    let all_attributes = target
+        .attribute_archetypes()
+        .iter()
+        .map(|a| concept_to_struct(&a.as_archetype()))
+        .collect();
+
     let mut attr_structs = HashMap::new();
     if target == Attribute::archetype() || target.has_ancestor(Attribute::archetype()) {
         let target_attr = AttributeArchetype::from(target.id());
@@ -95,6 +101,7 @@ pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
     let code = code(&CodeConfig {
         name: target_name.as_str(),
         parent: parent_struct,
+        all_attributes,
         attribute_structs: attr_structs,
         impl_cfg: request.config().unwrap(),
         codegen_cfg: *codegen_cfg,
