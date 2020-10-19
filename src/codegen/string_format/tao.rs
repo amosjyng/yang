@@ -12,8 +12,10 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
         "std::fmt::Debug".to_owned(),
         "std::fmt::Formatter".to_owned(),
         "std::rc::Rc".to_owned(),
-        format!("{}::concepts::ArchetypeTrait", cfg.yin_crate),
-        format!("{}::concepts::FormTrait", cfg.yin_crate),
+        format!("{}::{}", cfg.yin_crate, cfg.parent_import),
+        format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate),
+        format!("{}::tao::archetype::{}", cfg.yin_crate, cfg.archetype_name),
+        format!("{}::tao::FormTrait", cfg.yin_crate),
         format!("{}::node_wrappers::debug_wrapper", cfg.yin_crate),
         format!("{}::node_wrappers::CommonNodeTrait", cfg.yin_crate),
         format!("{}::node_wrappers::FinalNode", cfg.yin_crate),
@@ -21,18 +23,13 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
     if let Some(import) = &cfg.imports {
         imports.push(import.clone());
     }
-    if cfg.parent_name == "Tao" {
-        imports.push(format!("{}::concepts::Tao", cfg.yin_crate));
-    } else {
-        imports.push(format!("super::{}", cfg.parent_name));
-    }
     AtomicFragment {
         imports,
         atom: formatdoc! {r#"
             {doc}
             #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
             pub struct {name} {{
-                base: {parent},
+                base: FinalNode,
             }}
             
             impl Debug for {name} {{
@@ -44,8 +41,14 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
             impl From<usize> for {name} {{
                 fn from(id: usize) -> Self {{
                     Self {{
-                        base: {parent}::from(id),
+                        base: FinalNode::from(id),
                     }}
+                }}
+            }}
+
+            impl From<FinalNode> for {name} {{
+                fn from(f: FinalNode) -> Self {{
+                    Self {{ base: f }}
                 }}
             }}
             
@@ -53,7 +56,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
                 type Error = String;
             
                 fn try_from(name: &'a str) -> Result<Self, Self::Error> {{
-                    {parent}::try_from(name).map(|a| Self {{ base: a }})
+                    FinalNode::try_from(name).map(|f| Self {{ base: f }})
                 }}
             }}
             
@@ -71,31 +74,29 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
                 }}
             }}
             
-            impl<'a> ArchetypeTrait<'a, {name}> for {name} {{
+            impl<'a> ArchetypeTrait<'a> for {name} {{
+                type ArchetypeForm = {archetype};
+                type Form = {name};
+
                 const TYPE_ID: usize = {id};
                 const TYPE_NAME: &'static str = "{internal_name}";
                 const PARENT_TYPE_ID: usize = {parent}::TYPE_ID;
-            
-                fn individuate_with_parent(parent_id: usize) -> Self {{
-                    Self {{
-                        base: {parent}::individuate_with_parent(parent_id),
-                    }}
-                }}
             }}
             
             impl FormTrait for {name} {{
                 fn essence(&self) -> &FinalNode {{
-                    self.base.essence()
+                    &self.base
                 }}
             
                 fn essence_mut(&mut self) -> &mut FinalNode {{
-                    self.base.essence_mut()
+                    &mut self.base
                 }}
             }}"#,
             doc = cfg.doc,
             name = cfg.name,
             internal_name = cfg.internal_name,
             parent = cfg.parent_name,
+            archetype = cfg.archetype_name,
             id = cfg.id,
         },
     }
@@ -105,7 +106,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
 pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
     let mut test_mod = ModuleFragment::new_test_module();
     let test_body = AtomicFragment {
-        imports: vec!["crate::concepts::initialize_kb".to_owned()],
+        imports: vec!["crate::tao::initialize_kb".to_owned()],
         atom: formatdoc! {r#"
             #[test]
             fn check_type_created() {{

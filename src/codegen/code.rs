@@ -4,15 +4,36 @@ use crate::codegen::postprocessing::post_process_generation;
 use crate::codegen::string_format::attribute::code_attribute;
 use crate::codegen::string_format::code_string_concept;
 use crate::codegen::string_format::tao::code_tao;
-use crate::codegen::string_format::FormatConfig;
+use crate::codegen::string_format::{AttributeFormatConfig, FormatConfig};
 use crate::concepts::ImplementConfig;
+use std::collections::HashMap;
+
+/// Config representing an imported struct.
+#[derive(Clone)]
+pub struct StructConfig {
+    /// Name of the Struct.
+    pub name: String,
+    /// Import path for this Struct.
+    pub import: String,
+}
+
+impl Default for StructConfig {
+    fn default() -> Self {
+        Self {
+            name: "Tao".to_owned(),
+            import: "zamm_yin::tao::Tao".to_owned(),
+        }
+    }
+}
 
 /// Configuration settings for generating a single concept's contents.
 pub struct CodeConfig<'a> {
     /// Name of the concept to generate.
     pub name: &'a str,
-    /// Name of the concept's parent.
-    pub parent_name: &'a str,
+    /// The concept's parent.
+    pub parent: StructConfig,
+    /// Structs for additional attributes.
+    pub attribute_structs: HashMap<&'a str, StructConfig>,
     /// Concept-specific implementation settings.
     pub impl_cfg: ImplementConfig,
     /// Code generation settings for all concepts.
@@ -23,7 +44,8 @@ impl<'a> Default for CodeConfig<'a> {
     fn default() -> Self {
         Self {
             name: "dummy",
-            parent_name: "Tao",
+            parent: StructConfig::default(),
+            attribute_structs: HashMap::default(),
             impl_cfg: ImplementConfig::default(),
             codegen_cfg: CodegenConfig::default(),
         }
@@ -32,13 +54,12 @@ impl<'a> Default for CodeConfig<'a> {
 
 /// Generate the final version of code, to be output to a file as-is.
 pub fn code(cfg: &CodeConfig) -> String {
-    let format_cfg = FormatConfig::from(cfg);
-    let initial_code = if cfg.parent_name == "Attribute" {
-        code_attribute(&format_cfg)
-    } else if cfg.parent_name == "Data" {
-        code_string_concept(&format_cfg)
+    let initial_code = if cfg.parent.name == "Attribute" {
+        code_attribute(&AttributeFormatConfig::from(cfg))
+    } else if cfg.parent.name == "Data" {
+        code_string_concept(&FormatConfig::from(cfg))
     } else {
-        code_tao(&format_cfg)
+        code_tao(&FormatConfig::from(cfg))
     };
     post_process_generation(&initial_code, &cfg.codegen_cfg)
 }

@@ -1,10 +1,8 @@
 use itertools::Itertools;
 use std::collections::HashMap;
 
-/// Sort imports alphabetically.
-pub fn sort_imports(imports: &str) -> String {
-    let mut import_lines: Vec<&str> = imports.split('\n').collect();
-    import_lines.sort_by_key(|s| {
+fn sort_import_lines(imports: &mut [&str]) {
+    imports.sort_by_key(|s| {
         let n = s.len();
         if n > 0 {
             &s[..n - 1]
@@ -12,8 +10,21 @@ pub fn sort_imports(imports: &str) -> String {
             s
         }
     });
-    import_lines
+}
+
+/// Sort imports alphabetically.
+fn sort_imports(imports: &str) -> String {
+    let import_lines: Vec<&str> = imports.split('\n').collect();
+    let (mut super_lines, mut other_lines): (Vec<&str>, Vec<&str>) = import_lines
+        .iter()
+        .partition(|n| n.starts_with("use super::"));
+    // do them separately because we want super imports to come first
+    sort_import_lines(&mut super_lines);
+    sort_import_lines(&mut other_lines);
+    super_lines
         .into_iter()
+        .chain(other_lines.into_iter())
+        .filter(|s| !s.is_empty())
         .format("\n")
         .to_string()
         .trim()
@@ -34,19 +45,19 @@ fn group_imports(imports: &[&str]) -> Vec<String> {
 
     let mut final_imports = Vec::new();
     for (path, names) in &groups {
-        let import = if names.len() > 1 {
-            let (mut lower, mut upper): (Vec<&str>, Vec<&str>) = names
-                .iter()
-                .partition(|n| n.chars().next().unwrap().is_lowercase());
-            // do them separately because we want lowercase imports to come first, but the default
-            // string sort would sort the uppercase ones first
-            lower.sort_unstable();
-            upper.sort_unstable();
-            format!(
-                "{}::{{{}}}",
-                path,
-                lower.iter().chain(upper.iter()).format(", ").to_string()
-            )
+        let (mut lower, mut upper): (Vec<&str>, Vec<&str>) = names
+            .iter()
+            .partition(|n| n.chars().next().unwrap().is_lowercase());
+        // do them separately because we want lowercase imports to come first, but the default
+        // string sort would sort the uppercase ones first
+        lower.sort_unstable();
+        lower.dedup();
+        upper.sort_unstable();
+        upper.dedup();
+        let import_names = lower.iter().chain(upper.iter()).format(", ").to_string();
+        let import = if import_names.contains(", ") {
+            // means there was more than one name
+            format!("{}::{{{}}}", path, import_names)
         } else {
             format!("{}::{}", path, names.first().unwrap())
         };
@@ -113,6 +124,41 @@ mod tests {
     }
 
     #[test]
+    fn test_sort_imports_super() {
+        assert_eq!(
+            sort_imports(indoc! {"
+                use crate::concepts::attributes::{Attribute, AttributeTrait};
+                use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
+                use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};
+                use super::ParentTrait;"}),
+            indoc! {"
+                use super::ParentTrait;
+                use crate::concepts::attributes::{Attribute, AttributeTrait};
+                use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
+                use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};"}
+        );
+    }
+
+    #[test]
+    fn test_sort_imports_ignore_empty() {
+        assert_eq!(
+            sort_imports(indoc! {"
+                use crate::concepts::attributes::{Attribute, AttributeTrait};
+
+                use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
+
+                
+                use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};
+                use super::ParentTrait;"}),
+            indoc! {"
+                use super::ParentTrait;
+                use crate::concepts::attributes::{Attribute, AttributeTrait};
+                use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
+                use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};"}
+        );
+    }
+
+    #[test]
     fn test_group_import_none() {
         assert_eq!(group_imports(&[]), Vec::<String>::new());
     }
@@ -133,6 +179,14 @@ mod tests {
                 "std::cell::{Cell, RefCell}".to_owned(),
                 "std::rc::Rc".to_owned()
             ]
+        );
+    }
+
+    #[test]
+    fn test_group_import_repeats() {
+        assert_unordered_eq!(
+            group_imports(&["std::cell::RefCell", "std::rc::Rc", "std::cell::RefCell"]),
+            vec!["std::cell::RefCell".to_owned(), "std::rc::Rc".to_owned()]
         );
     }
 
