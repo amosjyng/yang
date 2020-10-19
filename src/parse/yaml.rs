@@ -2,6 +2,10 @@ use crate::concepts::Implement;
 use crate::concepts::ImplementConfig;
 use std::convert::TryFrom;
 use yaml_rust::YamlLoader;
+use zamm_yin::concepts::archetype::attribute::AttributeArchetype;
+use zamm_yin::concepts::archetype::ArchetypeFormTrait;
+use zamm_yin::concepts::attributes::Attribute;
+use zamm_yin::concepts::FormTrait;
 use zamm_yin::concepts::{Archetype, ArchetypeTrait, Tao};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 
@@ -12,22 +16,31 @@ pub fn parse_yaml(yaml: &str) -> Vec<Tao> {
     let doc = &docs[0];
     for entry in doc.as_vec().unwrap() {
         let parent = Archetype::try_from(entry["parent"].as_str().unwrap()).unwrap();
-        let mut new_concept = Tao::individuate_with_parent(parent.id());
+        let mut new_subtype = parent.individuate_as_archetype();
         if let Some(name) = entry["name"].as_str() {
-            new_concept.set_internal_name(name.to_owned());
+            new_subtype.set_internal_name(name.to_owned());
         }
         if parent == Implement::archetype() {
-            let mut implement = Implement::from(new_concept);
+            let mut implement = Implement::from(new_subtype.id());
             let target_name = entry["target"].as_str().unwrap();
             let target = Archetype::try_from(target_name).unwrap();
             implement.set_target(target);
+
             let impl_config = ImplementConfig {
                 id: entry["output_id"].as_i64().unwrap() as usize,
                 doc: entry["documentation"].as_str().map(|s| s.to_owned()),
             };
             implement.set_config(impl_config);
+        } else if new_subtype.has_ancestor(Attribute::archetype()) {
+            let mut attr_subtype = AttributeArchetype::from(new_subtype.id());
+            if let Some(owner_type_name) = entry["owner_archetype"].as_str() {
+                attr_subtype.set_owner_archetype(Archetype::try_from(owner_type_name).unwrap());
+            }
+            if let Some(value_type_name) = entry["value_archetype"].as_str() {
+                attr_subtype.set_value_archetype(Archetype::try_from(value_type_name).unwrap());
+            }
         }
-        new_concepts.push(new_concept);
+        new_concepts.push(new_subtype.ego_death());
     }
     new_concepts
 }
@@ -66,6 +79,28 @@ mod tests {
         let target = concepts[0];
         assert!(target.has_ancestor(Attribute::archetype()));
         assert_eq!(target.internal_name(), None);
+    }
+
+    #[test]
+    fn test_parse_attribute_owner_value_archetypes() {
+        initialize_kb();
+
+        let concepts = parse_yaml(indoc! {"
+            - name: Target
+              parent: Attribute
+              owner_archetype: Implement
+              value_archetype: Tao
+        "});
+        assert_eq!(concepts.len(), 1);
+        let target = concepts[0];
+        assert!(target.has_ancestor(Attribute::archetype()));
+        assert_eq!(target.internal_name(), Some(Rc::new("Target".to_owned())));
+        let target_as_attr_type = AttributeArchetype::from(*target.essence());
+        assert_eq!(
+            target_as_attr_type.owner_archetype(),
+            Implement::archetype()
+        );
+        assert_eq!(target_as_attr_type.value_archetype(), Tao::archetype());
     }
 
     #[test]

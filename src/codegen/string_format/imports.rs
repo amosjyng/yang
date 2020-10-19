@@ -44,19 +44,19 @@ fn group_imports(imports: &[&str]) -> Vec<String> {
 
     let mut final_imports = Vec::new();
     for (path, names) in &groups {
-        let import = if names.len() > 1 {
-            let (mut lower, mut upper): (Vec<&str>, Vec<&str>) = names
-                .iter()
-                .partition(|n| n.chars().next().unwrap().is_lowercase());
-            // do them separately because we want lowercase imports to come first, but the default
-            // string sort would sort the uppercase ones first
-            lower.sort_unstable();
-            upper.sort_unstable();
-            format!(
-                "{}::{{{}}}",
-                path,
-                lower.iter().chain(upper.iter()).format(", ").to_string()
-            )
+        let (mut lower, mut upper): (Vec<&str>, Vec<&str>) = names
+            .iter()
+            .partition(|n| n.chars().next().unwrap().is_lowercase());
+        // do them separately because we want lowercase imports to come first, but the default
+        // string sort would sort the uppercase ones first
+        lower.sort_unstable();
+        lower.dedup();
+        upper.sort_unstable();
+        upper.dedup();
+        let import_names = lower.iter().chain(upper.iter()).format(", ").to_string();
+        let import = if import_names.contains(", ") {
+            // means there was more than one name
+            format!("{}::{{{}}}", path, import_names)
         } else {
             format!("{}::{}", path, names.first().unwrap())
         };
@@ -159,6 +159,14 @@ mod tests {
                 "std::cell::{Cell, RefCell}".to_owned(),
                 "std::rc::Rc".to_owned()
             ]
+        );
+    }
+
+    #[test]
+    fn test_group_import_repeats() {
+        assert_unordered_eq!(
+            group_imports(&["std::cell::RefCell", "std::rc::Rc", "std::cell::RefCell"]),
+            vec!["std::cell::RefCell".to_owned(), "std::rc::Rc".to_owned()]
         );
     }
 

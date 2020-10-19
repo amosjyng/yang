@@ -24,7 +24,7 @@ pub fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codegen::string_format::attribute::code_attribute;
+    use crate::codegen::string_format::tao::code_tao;
     use crate::codegen::string_format::FormatConfig;
     use crate::codegen::CodeConfig;
     use mark_autogen::AUTOGENERATION_MARKER;
@@ -32,7 +32,7 @@ mod tests {
 
     #[test]
     fn test_post_process_comments() {
-        let code = code_attribute(&FormatConfig::default());
+        let code = code_tao(&FormatConfig::default());
         let result = post_process_generation(&code, &CodegenConfig::default());
         assert!(result.contains(AUTOGENERATION_MARKER));
         assert!(result.contains("YIN_MAX_ID"));
@@ -47,7 +47,7 @@ mod tests {
             },
             ..CodeConfig::default()
         };
-        let code = code_attribute(&FormatConfig::from(code_cfg));
+        let code = code_tao(&FormatConfig::from(code_cfg));
         let result = post_process_generation(&code, &code_cfg.codegen_cfg);
         assert!(!result.contains(AUTOGENERATION_MARKER));
     }
@@ -61,7 +61,7 @@ mod tests {
             },
             ..CodeConfig::default()
         };
-        let code = code_attribute(&FormatConfig::from(code_cfg));
+        let code = code_tao(&FormatConfig::from(code_cfg));
         let result = post_process_generation(&code, &code_cfg.codegen_cfg);
         assert!(!result.contains("YIN_MAX_ID"));
     }
@@ -72,7 +72,7 @@ mod tests {
             name: "short",
             ..CodeConfig::default()
         };
-        let code = code_attribute(&FormatConfig::from(code_cfg));
+        let code = code_tao(&FormatConfig::from(code_cfg));
         let result = post_process_generation(&code, &code_cfg.codegen_cfg);
         assert!(!result.contains(FMT_SKIP_MARKER));
     }
@@ -87,7 +87,7 @@ mod tests {
             },
             ..CodeConfig::default()
         };
-        let code = code_attribute(&FormatConfig::from(code_cfg));
+        let code = code_tao(&FormatConfig::from(code_cfg));
         let result = post_process_generation(&code, &code_cfg.codegen_cfg);
         assert!(result.contains(FMT_SKIP_MARKER));
     }
@@ -102,7 +102,7 @@ mod tests {
             },
             ..CodeConfig::default()
         };
-        let code = code_attribute(&FormatConfig::from(code_cfg));
+        let code = code_tao(&FormatConfig::from(code_cfg));
         let result = post_process_generation(&code, &code_cfg.codegen_cfg);
         assert!(result.contains(FMT_SKIP_MARKER));
     }

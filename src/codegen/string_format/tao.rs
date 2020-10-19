@@ -12,6 +12,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
         "std::fmt::Debug".to_owned(),
         "std::fmt::Formatter".to_owned(),
         "std::rc::Rc".to_owned(),
+        format!("{}::{}", cfg.yin_crate, cfg.parent_import),
         format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate),
         format!("{}::tao::archetype::{}", cfg.yin_crate, cfg.archetype_name),
         format!("{}::tao::FormTrait", cfg.yin_crate),
@@ -21,11 +22,6 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
     ];
     if let Some(import) = &cfg.imports {
         imports.push(import.clone());
-    }
-    if cfg.parent_name == "Tao" {
-        imports.push(format!("{}::tao::Tao", cfg.yin_crate));
-    } else {
-        imports.push(format!("super::{}", cfg.parent_name));
     }
     AtomicFragment {
         imports,
