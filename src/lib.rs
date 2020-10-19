@@ -7,6 +7,6 @@ pub mod codegen;
 /// Interact with the terminal environment.
 pub mod commands;
 /// Yang-specific concepts.
-pub mod concepts;
+pub mod tao;
 /// Input file parsing.
 pub mod parse;

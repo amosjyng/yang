@@ -1,12 +1,12 @@
-mod concepts {
-    pub mod attributes {
+mod tao {
+    pub mod attribute {
         pub mod target;
     }
 }
 
-use concepts::attributes::target::Target;
-use zamm_yin::concepts::attributes::Inherits;
-use zamm_yin::concepts::ArchetypeTrait;
+use tao::attribute::target::Target;
+use zamm_yin::tao::attribute::Inherits;
+use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::graph::{bind_in_memory_graph, Graph, InjectionGraph};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 

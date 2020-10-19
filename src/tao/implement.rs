@@ -1,16 +1,17 @@
-use crate::concepts::Target;
+use crate::tao::Target;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use zamm_yin::concepts::{Archetype, ArchetypeTrait, FormTrait, Tao, YIN_MAX_ID};
+use zamm_yin::tao::{FormTrait, Tao, YIN_MAX_ID};
+use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::graph::value_wrappers::{unwrap_strong, StrongValue};
 use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, CommonNodeTrait, FinalNode};
 
 /// Represents a command to implement something.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Implement {
-    base: Tao,
+    base: FinalNode,
 }
 
 /// Contains all information needed to generate a concept. Because it's too difficult to store
@@ -67,14 +68,16 @@ impl Debug for Implement {
 impl From<usize> for Implement {
     fn from(id: usize) -> Self {
         Implement {
-            base: Tao::from(id),
+            base: FinalNode::from(id),
         }
     }
 }
 
-impl From<Tao> for Implement {
-    fn from(t: Tao) -> Self {
-        Implement { base: t }
+impl From<FinalNode> for Implement {
+    fn from(f: FinalNode) -> Self {
+        Implement {
+            base: f,
+        }
     }
 }
 
@@ -82,7 +85,7 @@ impl<'a> TryFrom<&'a str> for Implement {
     type Error = String;
 
     fn try_from(name: &'a str) -> Result<Self, Self::Error> {
-        Tao::try_from(name).map(|a| Self { base: a })
+        FinalNode::try_from(name).map(|f| Self { base: f })
     }
 }
 
@@ -100,33 +103,30 @@ impl CommonNodeTrait for Implement {
     }
 }
 
-impl<'a> ArchetypeTrait<'a, Implement> for Implement {
+impl<'a> ArchetypeTrait<'a> for Implement {
+    type ArchetypeForm = Archetype;
+    type Form = Implement;
+
     const TYPE_ID: usize = YIN_MAX_ID + 1;
     const TYPE_NAME: &'static str = "Implement";
     const PARENT_TYPE_ID: usize = Tao::TYPE_ID;
-
-    fn individuate_with_parent(parent_id: usize) -> Self {
-        Self {
-            base: Tao::individuate_with_parent(parent_id),
-        }
-    }
 }
 
 impl FormTrait for Implement {
     fn essence(&self) -> &FinalNode {
-        self.base.essence()
+        &self.base
     }
 
     fn essence_mut(&mut self) -> &mut FinalNode {
-        self.base.essence_mut()
+        &mut self.base
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::concepts::initialize_kb;
-    use zamm_yin::concepts::attributes::Owner;
+    use crate::tao::initialize_kb;
+    use zamm_yin::tao::attribute::Owner;
 
     #[test]
     fn check_type_created() {
@@ -166,8 +166,8 @@ mod tests {
     fn set_and_retrieve_target() {
         initialize_kb();
         let mut implement = Implement::individuate();
-        implement.set_target(Owner::archetype());
-        assert_eq!(implement.target(), Some(Owner::archetype()));
+        implement.set_target(Owner::archetype().as_archetype());
+        assert_eq!(implement.target(), Some(Owner::archetype().as_archetype()));
     }
 
     #[test]

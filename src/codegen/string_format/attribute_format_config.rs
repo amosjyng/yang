@@ -1,7 +1,7 @@
 use super::FormatConfig;
 use crate::codegen::{CodeConfig, StructConfig};
-use zamm_yin::concepts::attributes::{OwnerArchetype, ValueArchetype};
-use zamm_yin::concepts::ArchetypeTrait;
+use zamm_yin::tao::attribute::{OwnerArchetype, ValueArchetype};
+use zamm_yin::tao::archetype::ArchetypeTrait;
 
 /// Key for retrieving owner form in AttributeTrait impl.
 pub const OWNER_FORM_KEY: &str = "_owner_form";
