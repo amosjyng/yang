@@ -24,6 +24,7 @@ fn sort_imports(imports: &str) -> String {
     super_lines
         .into_iter()
         .chain(other_lines.into_iter())
+        .filter(|s| !s.is_empty())
         .format("\n")
         .to_string()
         .trim()
@@ -128,6 +129,25 @@ mod tests {
             sort_imports(indoc! {"
                 use crate::concepts::attributes::{Attribute, AttributeTrait};
                 use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
+                use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};
+                use super::ParentTrait;"}),
+            indoc! {"
+                use super::ParentTrait;
+                use crate::concepts::attributes::{Attribute, AttributeTrait};
+                use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
+                use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};"}
+        );
+    }
+
+    #[test]
+    fn test_sort_imports_ignore_empty() {
+        assert_eq!(
+            sort_imports(indoc! {"
+                use crate::concepts::attributes::{Attribute, AttributeTrait};
+
+                use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
+
+                
                 use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};
                 use super::ParentTrait;"}),
             indoc! {"
