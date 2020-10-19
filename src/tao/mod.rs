@@ -7,10 +7,10 @@ mod implement;
 
 use attribute::Target;
 pub use implement::{Implement, ImplementConfig};
-use zamm_yin::tao::attribute::Inherits;
-use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::graph::{Graph, InjectionGraph};
 use zamm_yin::initialize_type;
+use zamm_yin::tao::archetype::ArchetypeTrait;
+use zamm_yin::tao::attribute::Inherits;
 
 /// Initialize Yin, including with Yang-specific concepts.
 pub fn initialize_kb() {

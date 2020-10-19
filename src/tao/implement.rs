@@ -3,10 +3,10 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use zamm_yin::tao::{FormTrait, Tao, YIN_MAX_ID};
-use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::graph::value_wrappers::{unwrap_strong, StrongValue};
 use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, CommonNodeTrait, FinalNode};
+use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
+use zamm_yin::tao::{FormTrait, Tao, YIN_MAX_ID};
 
 /// Represents a command to implement something.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -75,9 +75,7 @@ impl From<usize> for Implement {
 
 impl From<FinalNode> for Implement {
     fn from(f: FinalNode) -> Self {
-        Implement {
-            base: f,
-        }
+        Implement { base: f }
     }
 }
 
@@ -108,7 +106,7 @@ impl<'a> ArchetypeTrait<'a> for Implement {
     type Form = Implement;
 
     const TYPE_ID: usize = YIN_MAX_ID + 1;
-    const TYPE_NAME: &'static str = "Implement";
+    const TYPE_NAME: &'static str = "implement";
     const PARENT_TYPE_ID: usize = Tao::TYPE_ID;
 }
 

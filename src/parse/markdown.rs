@@ -68,9 +68,9 @@ mod tests {
     use crate::tao::{initialize_kb, Implement};
     use indoc::indoc;
     use std::rc::Rc;
-    use zamm_yin::tao::{FormTrait};
-    use zamm_yin::tao::archetype::ArchetypeTrait;
     use zamm_yin::node_wrappers::CommonNodeTrait;
+    use zamm_yin::tao::archetype::ArchetypeTrait;
+    use zamm_yin::tao::FormTrait;
 
     #[test]
     fn test_yaml_extraction_nothing() {

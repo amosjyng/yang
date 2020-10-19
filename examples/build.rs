@@ -2,9 +2,9 @@ use zamm_yang::codegen::track_autogen::save_autogen;
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::tao::callbacks::handle_implementation;
 use zamm_yang::tao::{initialize_kb, Implement, ImplementConfig};
-use zamm_yin::tao::archetype::{ArchetypeTrait, ArchetypeFormTrait};
-use zamm_yin::tao::attribute::Attribute;
 use zamm_yin::node_wrappers::CommonNodeTrait;
+use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
+use zamm_yin::tao::attribute::Attribute;
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
