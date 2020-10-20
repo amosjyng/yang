@@ -1,5 +1,6 @@
 use crate::codegen::docstring::into_docstring;
-use crate::codegen::{CodeConfig, NameTransform};
+use crate::codegen::CodeConfig;
+use heck::{CamelCase, KebabCase};
 use itertools::Itertools;
 
 /// Config values at the time of string generation.
@@ -65,7 +66,6 @@ impl<'a> From<&'a CodeConfig<'a>> for FormatConfig {
         } else {
             Some("zamm_yin::tao::YIN_MAX_ID".to_owned())
         };
-        let name_transform = NameTransform::from(cfg.name);
         let all_attributes = format!(
             "vec![{}]",
             cfg.all_attributes
@@ -108,7 +108,7 @@ impl<'a> From<&'a CodeConfig<'a>> for FormatConfig {
         Self {
             yin_crate: yin_crate.to_owned(),
             imports,
-            name: name_transform.to_camel_case(),
+            name: cfg.name.to_camel_case(),
             parent_name: cfg.parent.name.clone(),
             parent_import: cfg.parent.import.clone(),
             all_attributes,
@@ -116,7 +116,7 @@ impl<'a> From<&'a CodeConfig<'a>> for FormatConfig {
             introduced_attributes,
             introduced_attribute_imports,
             archetype_name,
-            internal_name: name_transform.to_kebab_case(),
+            internal_name: cfg.name.to_kebab_case(),
             doc,
             id,
         }

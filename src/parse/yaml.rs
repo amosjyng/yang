@@ -1,5 +1,5 @@
-use crate::codegen::NameTransform;
 use crate::tao::{Implement, ImplementConfig};
+use heck::KebabCase;
 use std::convert::TryFrom;
 use yaml_rust::YamlLoader;
 use zamm_yin::node_wrappers::CommonNodeTrait;
@@ -13,24 +13,22 @@ pub fn parse_yaml(yaml: &str) -> Vec<Form> {
     let docs = YamlLoader::load_from_str(yaml).unwrap();
     let doc = &docs[0];
     for entry in doc.as_vec().unwrap() {
-        let parent_name = NameTransform::from(entry["parent"].as_str().unwrap()).to_kebab_case();
+        let parent_name = entry["parent"].as_str().unwrap().to_kebab_case();
         let parent = Archetype::try_from(parent_name.as_str()).unwrap();
         let mut new_subtype = parent.individuate_as_archetype();
         if let Some(name) = entry["name"].as_str() {
-            let canonical = NameTransform::from(name).to_kebab_case();
-            new_subtype.set_internal_name(canonical);
+            new_subtype.set_internal_name(name.to_kebab_case());
         }
         if let Some(attrs) = entry["attributes"].as_vec() {
             for attr in attrs {
-                let canonical = NameTransform::from(attr.as_str().unwrap()).to_kebab_case();
+                let canonical = attr.as_str().unwrap().to_kebab_case();
                 let target_attr = AttributeArchetype::try_from(canonical.as_str()).unwrap();
                 new_subtype.add_attribute_type(target_attr);
             }
         }
         if parent == Implement::archetype() {
             let mut implement = Implement::from(new_subtype.id());
-            let target_name =
-                NameTransform::from(entry["target"].as_str().unwrap()).to_kebab_case();
+            let target_name = entry["target"].as_str().unwrap().to_kebab_case();
             let target = Archetype::try_from(target_name.as_str()).unwrap();
             implement.set_target(target);
 
@@ -48,12 +46,14 @@ pub fn parse_yaml(yaml: &str) -> Vec<Form> {
             // never gets activated.
             let mut attr_subtype = AttributeArchetype::from(new_subtype.id());
             if let Some(owner_type_name) = entry["owner_archetype"].as_str() {
-                let canonical = NameTransform::from(owner_type_name).to_kebab_case();
-                attr_subtype.set_owner_archetype(Archetype::try_from(canonical.as_str()).unwrap());
+                attr_subtype.set_owner_archetype(
+                    Archetype::try_from(owner_type_name.to_kebab_case().as_str()).unwrap(),
+                );
             }
             if let Some(value_type_name) = entry["value_archetype"].as_str() {
-                let canonical = NameTransform::from(value_type_name).to_kebab_case();
-                attr_subtype.set_value_archetype(Archetype::try_from(canonical.as_str()).unwrap());
+                attr_subtype.set_value_archetype(
+                    Archetype::try_from(value_type_name.to_kebab_case().as_str()).unwrap(),
+                );
             }
         }
         new_concepts.push(new_subtype.as_form());

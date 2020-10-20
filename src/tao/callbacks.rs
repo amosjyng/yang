@@ -1,8 +1,8 @@
 use super::Implement;
 use crate::codegen::filesystem::{output_code, OutputConfig};
 use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
-use crate::codegen::NameTransform;
 use crate::codegen::{code, CodeConfig, CodegenConfig, StructConfig};
+use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
 use std::collections::HashMap;
 use zamm_yin::node_wrappers::CommonNodeTrait;
@@ -23,7 +23,7 @@ fn ancestor_names(target: &Archetype, separator: &str) -> String {
         .map(|a| {
             let name = a.internal_name().unwrap();
             // this means that paths will now feature singular instead of plural nouns
-            NameTransform::from(name.as_str()).to_snake_case()
+            name.as_str().to_snake_case()
         })
         .format(separator)
         .to_string();
@@ -31,13 +31,13 @@ fn ancestor_names(target: &Archetype, separator: &str) -> String {
         if !ancestors.is_empty() {
             path += separator;
         }
-        path += &NameTransform::from(target.internal_name().unwrap().as_str()).to_snake_case();
+        path += &target.internal_name().unwrap().as_str().to_snake_case();
     }
     path.to_ascii_lowercase()
 }
 
 fn file_path(target: &Archetype) -> String {
-    let snake_name = NameTransform::from(target.internal_name().unwrap().as_str()).to_snake_case();
+    let snake_name = target.internal_name().unwrap().as_str().to_snake_case();
     // append _form to filename to avoid
     // https://rust-lang.github.io/rust-clippy/master/index.html#module_inception
     format!("src/{}/{}_form.rs", ancestor_names(target, "/"), snake_name).to_ascii_lowercase()
@@ -45,14 +45,14 @@ fn file_path(target: &Archetype) -> String {
 
 /// Returns the import path, not including the crate itself.
 fn import_path(target: &Archetype) -> String {
-    let struct_name = NameTransform::from(target.internal_name().unwrap().as_str()).to_camel_case();
+    let struct_name = target.internal_name().unwrap().as_str().to_camel_case();
     format!("{}::{}", ancestor_names(target, "::"), struct_name)
 }
 
 /// Turns a concept into a struct to be imported.
 fn concept_to_struct(target: &Archetype) -> StructConfig {
     StructConfig {
-        name: NameTransform::from(target.internal_name().unwrap().as_str()).to_camel_case(),
+        name: target.internal_name().unwrap().as_str().to_camel_case(),
         import: import_path(target),
     }
 }
