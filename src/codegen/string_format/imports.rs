@@ -3,12 +3,15 @@ use std::collections::HashMap;
 
 fn sort_import_lines(imports: &mut [&str]) {
     imports.sort_by_key(|s| {
-        let n = s.len();
-        if n > 0 {
-            &s[..n - 1]
-        } else {
-            s
+        let mut inverted_s = String::new();
+        for c in s.chars() {
+            if c.is_lowercase() {
+                inverted_s += &c.to_uppercase().collect::<String>();
+            } else {
+                inverted_s += &c.to_lowercase().collect::<String>();
+            }
         }
+        inverted_s
     });
 }
 
@@ -157,6 +160,30 @@ mod tests {
                 "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
                 "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}",
             ]
+        );
+    }
+
+    #[test]
+    fn test_sort_imports_struct_vs_module() {
+        assert_eq!(
+            sort_imports(&vec![
+                "zamm_yin::tao::Tao",
+                "zamm_yin::tao::archetype::ArchetypeFormTrait",
+                "zamm_yin::tao::attribute::{Owner, Value}",
+            ]),
+            vec![
+                "zamm_yin::tao::archetype::ArchetypeFormTrait",
+                "zamm_yin::tao::attribute::{Owner, Value}",
+                "zamm_yin::tao::Tao",
+            ]
+        );
+    }
+
+    #[test]
+    fn test_sort_imports_module_no_struct() {
+        assert_eq!(
+            sort_imports(&vec!["std::fmt", "std::convert::TryFrom",]),
+            vec!["std::convert::TryFrom", "std::fmt",]
         );
     }
 
