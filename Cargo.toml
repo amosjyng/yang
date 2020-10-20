@@ -1,11 +1,21 @@
+[package]
+name = "zamm_yang"
+version = "0.0.9-beta"
+authors = ["Amos Jun-yeung Ng <me@amos.ng>"]
+edition = "2018"
+description = "A basic, experimental code generator"
+readme = "README.md"
+repository = "https://github.com/amosjyng/yang"
+license = "GPL-3.0"
+keywords = ["codegen", "code-generation"]
+categories = ["command-line-utilities", "development-tools"]
+
 [[bin]]
 name = "yang"
 path = "src/main.rs"
-[build-dependencies.reqwest]
-features = ["blocking"]
-version = "^0.10.8"
 
 [dependencies]
+clap = { version = "^2.33.3", features = ["color", "wrap_help"] }
 colored = "^2"
 heck = "0.3.1"
 indoc = "^1.0"
@@ -17,18 +27,5 @@ toml = "^0.5.7"
 yaml-rust = "^0.4"
 zamm_yin = "0.0.11"
 
-[dependencies.clap]
-features = ["color", "wrap_help"]
-version = "^2.33.3"
-
-[package]
-authors = ["Amos Jun-yeung Ng <me@amos.ng>"]
-categories = ["command-line-utilities", "development-tools"]
-description = "A basic, experimental code generator"
-edition = "2018"
-keywords = ["codegen", "code-generation"]
-license = "GPL-3.0"
-name = "zamm_yang"
-readme = "README.md"
-repository = "https://github.com/amosjyng/yang"
-version = "0.0.9"
+[build-dependencies]
+reqwest = { version = "^0.10.8", features = ["blocking"] }
