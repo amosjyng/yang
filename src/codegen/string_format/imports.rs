@@ -3,21 +3,22 @@ use std::collections::HashMap;
 
 fn sort_import_lines(imports: &mut [&str]) {
     imports.sort_by_key(|s| {
-        let n = s.len();
-        if n > 0 {
-            &s[..n - 1]
-        } else {
-            s
+        let mut inverted_s = String::new();
+        for c in s.chars() {
+            if c.is_lowercase() {
+                inverted_s += &c.to_uppercase().collect::<String>();
+            } else {
+                inverted_s += &c.to_lowercase().collect::<String>();
+            }
         }
+        inverted_s
     });
 }
 
 /// Sort imports alphabetically.
-fn sort_imports(imports: &str) -> String {
-    let import_lines: Vec<&str> = imports.split('\n').collect();
-    let (mut super_lines, mut other_lines): (Vec<&str>, Vec<&str>) = import_lines
-        .iter()
-        .partition(|n| n.starts_with("use super::"));
+fn sort_imports(imports: &[&str]) -> Vec<String> {
+    let (mut super_lines, mut other_lines): (Vec<&str>, Vec<&str>) =
+        imports.iter().partition(|n| n.starts_with("super::"));
     // do them separately because we want super imports to come first
     sort_import_lines(&mut super_lines);
     sort_import_lines(&mut other_lines);
@@ -25,10 +26,8 @@ fn sort_imports(imports: &str) -> String {
         .into_iter()
         .chain(other_lines.into_iter())
         .filter(|s| !s.is_empty())
-        .format("\n")
-        .to_string()
-        .trim()
-        .to_owned()
+        .map(|s| s.to_owned())
+        .collect()
 }
 
 /// Group imports together.
@@ -68,13 +67,16 @@ fn group_imports(imports: &[&str]) -> Vec<String> {
 
 /// Serialize imports into a string.
 pub fn imports_as_str(imports: &[&str]) -> String {
+    let grouped_imports = group_imports(imports);
+    let grouped_imports_str: Vec<&str> = grouped_imports.iter().map(|i| i.as_str()).collect();
+    let sorted_imports = sort_imports(&grouped_imports_str);
     // this doesn't need to take into account self.tests because tests don't contribute to file
     // imports
     let mut result = String::new();
-    for import in group_imports(imports) {
+    for import in sorted_imports {
         result += &format!("use {};\n", import);
     }
-    sort_imports(&result).trim().to_owned()
+    result.trim().to_owned()
 }
 
 #[cfg(test)]
@@ -101,60 +103,87 @@ mod tests {
     #[test]
     fn test_sort_imports_crate() {
         assert_eq!(
-            sort_imports(indoc! {"
-            use std::convert::TryFrom;
-            use std::fmt::{Debug, Formatter};
-            use std::fmt;
-            use std::rc::Rc;
-            use crate::concepts::attributes::{Attribute, AttributeTrait};
-            use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
-            use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};
-        "}),
-            indoc! {"
-            use crate::concepts::attributes::{Attribute, AttributeTrait};
-            use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
-            use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};
-            use std::convert::TryFrom;
-            use std::fmt;
-            use std::fmt::{Debug, Formatter};
-            use std::rc::Rc;
-        "}
-            .trim()
+            sort_imports(&[
+                "std::convert::TryFrom",
+                "std::fmt::{Debug, Formatter}",
+                "std::fmt",
+                "std::rc::Rc",
+                "crate::concepts::attributes::{Attribute, AttributeTrait}",
+                "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
+                "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}"
+            ]),
+            &[
+                "crate::concepts::attributes::{Attribute, AttributeTrait}",
+                "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
+                "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}",
+                "std::convert::TryFrom",
+                "std::fmt",
+                "std::fmt::{Debug, Formatter}",
+                "std::rc::Rc",
+            ]
         );
     }
 
     #[test]
     fn test_sort_imports_super() {
         assert_eq!(
-            sort_imports(indoc! {"
-                use crate::concepts::attributes::{Attribute, AttributeTrait};
-                use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
-                use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};
-                use super::ParentTrait;"}),
-            indoc! {"
-                use super::ParentTrait;
-                use crate::concepts::attributes::{Attribute, AttributeTrait};
-                use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
-                use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};"}
+            sort_imports(&[
+                "crate::concepts::attributes::{Attribute, AttributeTrait}",
+                "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
+                "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}",
+                "super::ParentTrait"
+            ]),
+            &[
+                "super::ParentTrait",
+                "crate::concepts::attributes::{Attribute, AttributeTrait}",
+                "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
+                "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}"
+            ]
         );
     }
 
     #[test]
     fn test_sort_imports_ignore_empty() {
         assert_eq!(
-            sort_imports(indoc! {"
-                use crate::concepts::attributes::{Attribute, AttributeTrait};
+            sort_imports(&[
+                "crate::concepts::attributes::{Attribute, AttributeTrait}",
+                "",
+                "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
+                "",
+                "",
+                "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}",
+                "super::ParentTrait"
+            ]),
+            &[
+                "super::ParentTrait",
+                "crate::concepts::attributes::{Attribute, AttributeTrait}",
+                "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
+                "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}",
+            ]
+        );
+    }
 
-                use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
+    #[test]
+    fn test_sort_imports_struct_vs_module() {
+        assert_eq!(
+            sort_imports(&[
+                "zamm_yin::tao::Tao",
+                "zamm_yin::tao::archetype::ArchetypeFormTrait",
+                "zamm_yin::tao::attribute::{Owner, Value}",
+            ]),
+            &[
+                "zamm_yin::tao::archetype::ArchetypeFormTrait",
+                "zamm_yin::tao::attribute::{Owner, Value}",
+                "zamm_yin::tao::Tao",
+            ]
+        );
+    }
 
-                
-                use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};
-                use super::ParentTrait;"}),
-            indoc! {"
-                use super::ParentTrait;
-                use crate::concepts::attributes::{Attribute, AttributeTrait};
-                use crate::concepts::{ArchetypeTrait, FormTrait, Tao{imports}};
-                use crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode};"}
+    #[test]
+    fn test_sort_imports_module_no_struct() {
+        assert_eq!(
+            sort_imports(&["std::fmt", "std::convert::TryFrom",]),
+            &["std::convert::TryFrom", "std::fmt",]
         );
     }
 

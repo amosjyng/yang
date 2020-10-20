@@ -166,7 +166,17 @@ fn test(args: &ArgMatches) -> Result<(), Error> {
     println!("Running tests...");
     run_command("cargo", &["test"]);
     println!("Running lints...");
-    run_command("cargo", &["clippy", "--all-features", "--all-targets"]);
+    run_command(
+        "cargo",
+        &[
+            "clippy",
+            "--all-features",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings",
+        ],
+    );
     if yang {
         println!("Running yang build...");
         run_command("cargo", &["run", "build"]);
