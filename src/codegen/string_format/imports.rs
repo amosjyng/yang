@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn test_sort_imports_crate() {
         assert_eq!(
-            sort_imports(&vec![
+            sort_imports(&[
                 "std::convert::TryFrom",
                 "std::fmt::{Debug, Formatter}",
                 "std::fmt",
@@ -112,7 +112,7 @@ mod tests {
                 "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
                 "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}"
             ]),
-            vec![
+            &[
                 "crate::concepts::attributes::{Attribute, AttributeTrait}",
                 "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
                 "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}",
@@ -127,13 +127,13 @@ mod tests {
     #[test]
     fn test_sort_imports_super() {
         assert_eq!(
-            sort_imports(&vec![
+            sort_imports(&[
                 "crate::concepts::attributes::{Attribute, AttributeTrait}",
                 "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
                 "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}",
                 "super::ParentTrait"
             ]),
-            vec![
+            &[
                 "super::ParentTrait",
                 "crate::concepts::attributes::{Attribute, AttributeTrait}",
                 "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
@@ -145,7 +145,7 @@ mod tests {
     #[test]
     fn test_sort_imports_ignore_empty() {
         assert_eq!(
-            sort_imports(&vec![
+            sort_imports(&[
                 "crate::concepts::attributes::{Attribute, AttributeTrait}",
                 "",
                 "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
@@ -154,7 +154,7 @@ mod tests {
                 "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}",
                 "super::ParentTrait"
             ]),
-            vec![
+            &[
                 "super::ParentTrait",
                 "crate::concepts::attributes::{Attribute, AttributeTrait}",
                 "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
@@ -166,12 +166,12 @@ mod tests {
     #[test]
     fn test_sort_imports_struct_vs_module() {
         assert_eq!(
-            sort_imports(&vec![
+            sort_imports(&[
                 "zamm_yin::tao::Tao",
                 "zamm_yin::tao::archetype::ArchetypeFormTrait",
                 "zamm_yin::tao::attribute::{Owner, Value}",
             ]),
-            vec![
+            &[
                 "zamm_yin::tao::archetype::ArchetypeFormTrait",
                 "zamm_yin::tao::attribute::{Owner, Value}",
                 "zamm_yin::tao::Tao",
@@ -182,8 +182,8 @@ mod tests {
     #[test]
     fn test_sort_imports_module_no_struct() {
         assert_eq!(
-            sort_imports(&vec!["std::fmt", "std::convert::TryFrom",]),
-            vec!["std::convert::TryFrom", "std::fmt",]
+            sort_imports(&["std::fmt", "std::convert::TryFrom",]),
+            &["std::convert::TryFrom", "std::fmt",]
         );
     }
 
