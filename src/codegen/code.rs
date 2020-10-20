@@ -1,5 +1,4 @@
 use super::CodegenConfig;
-pub use crate::codegen::name_transform::NameTransform;
 use crate::codegen::postprocessing::post_process_generation;
 use crate::codegen::string_format::attribute::code_attribute;
 use crate::codegen::string_format::code_string_concept;

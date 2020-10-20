@@ -6,7 +6,6 @@ pub mod mark_autogen;
 pub mod mark_fmt;
 
 use super::CodegenConfig;
-pub use crate::codegen::name_transform::NameTransform;
 use mark_autogen::add_autogeneration_comments;
 use mark_fmt::add_fmt_skips;
 
