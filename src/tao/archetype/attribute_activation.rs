@@ -21,7 +21,7 @@ pub trait CodegenFlags: FormTrait {
     }
 
     /// Whether or not concept should be generated inside its own module.
-    fn own_module(&self) -> bool {
+    fn force_own_module(&self) -> bool {
         self.essence().has_flag(OwnModule::TYPE_ID)
     }
 }
@@ -61,9 +61,9 @@ mod tests {
     fn test_own_module_activation() {
         initialize_kb();
         let mut new_attr = Tao::archetype().individuate_as_archetype();
-        assert!(!new_attr.own_module());
+        assert!(!new_attr.force_own_module());
 
         new_attr.mark_own_module();
-        assert!(new_attr.own_module());
+        assert!(new_attr.force_own_module());
     }
 }

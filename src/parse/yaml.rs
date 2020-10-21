@@ -73,7 +73,7 @@ pub fn parse_yaml(yaml: &str) -> Vec<Form> {
                 parse_attr_info(&mut target, &entries[&target_id]);
             }
 
-            if entry["own_module"].as_bool().unwrap_or(false) {
+            if entry["force_own_module"].as_bool().unwrap_or(false) {
                 target.mark_own_module();
             }
 
@@ -290,7 +290,7 @@ mod tests {
         let implement = Implement::from(concepts[1].id());
         let target = implement.target().unwrap();
         assert!(!target.attribute_logic_activated());
-        assert!(!target.own_module());
+        assert!(!target.force_own_module());
     }
 
     #[test]
@@ -303,13 +303,13 @@ mod tests {
             - parent: Implement
               target: MyType
               output_id: 2
-              own_module: true
+              force_own_module: true
         "});
         assert_eq!(concepts.len(), 2);
         let implement = Implement::from(concepts[1].id());
         let target = implement.target().unwrap();
         assert!(!target.attribute_logic_activated());
-        assert!(target.own_module());
+        assert!(target.force_own_module());
     }
 
     #[test]

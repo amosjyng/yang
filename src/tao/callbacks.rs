@@ -64,7 +64,7 @@ fn import_path(target: &Archetype, force_own_module: bool) -> String {
 fn concept_to_struct(target: &Archetype) -> StructConfig {
     StructConfig {
         name: target.internal_name().unwrap().as_str().to_camel_case(),
-        import: import_path(target, target.own_module()),
+        import: import_path(target, target.force_own_module()),
     }
 }
 
@@ -130,7 +130,7 @@ pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
 
     let file_path = file_path(
         &request.target().unwrap(),
-        request.target().unwrap().own_module(),
+        request.target().unwrap().force_own_module(),
     );
     output_code(&OutputConfig {
         code: &code,
