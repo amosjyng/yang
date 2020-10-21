@@ -28,7 +28,25 @@ One type of data is a "string":
 
 ```yaml
 - name: StringConcept
-  parent: data
+  parent: Data
+```
+
+When Yin tells us about herself, we must forget all preconceptions we have about the world and listen to what she has to say. That means when she speaks of what an attribute is, we *listen* instead of shoehorning her description into what we already think of as an attribute.
+
+However, this also means that Yin's new attribute node won't be the same `Attribute` node that Yang ties all his custom attribute generation code to. Until all of the logic that goes into generating attributes becomes fully defined in graph form, we're going to need some way of telling Yang to activate that custom logic for newly defined nodes that don't inherit from the existing `Attribute` node:
+
+```yaml
+- name: Flag
+  parent: Tao
+- name: UsesAttributeLogic
+  parent: Tao
+```
+
+Due to current limitations with Yang, we cannot set Tao as the parent here. We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
+
+```yaml
+- name: NewlyDefined
+  parent: Tao
 ```
 
 ### Implementation
@@ -46,8 +64,35 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 
 ```yaml
 - parent: Implement
-  target: data
+  target: Flag
   output_id: 3
+  documentation: |-
+```
+
+> Unary relations.
+
+```yaml
+- parent: Implement
+  target: UsesAttributeLogic
+  output_id: 4
+  documentation: |-
+```
+
+> Marks an archetype and all its descendants as requiring attribute-specific logic during generation.
+
+```yaml
+- parent: Implement
+  target: NewlyDefined
+  output_id: 5
+  documentation: |-
+```
+
+> Marks an archetype and all its descendants as having been newly defined as part of this particular build.
+
+```yaml
+- parent: Implement
+  target: data
+  output_id: 6
   documentation: |-
 ```
 
@@ -56,7 +101,7 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 ```yaml
 - parent: Implement
   target: StringConcept
-  output_id: 4
+  output_id: 7
   documentation: |-
 ```
 

@@ -2,6 +2,7 @@ use super::Implement;
 use crate::codegen::filesystem::{output_code, OutputConfig};
 use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
 use crate::codegen::{code, CodeConfig, CodegenConfig, StructConfig};
+use crate::tao::archetype::CodegenFlags;
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
 use std::collections::HashMap;
@@ -57,13 +58,15 @@ fn concept_to_struct(target: &Archetype) -> StructConfig {
     }
 }
 
-/// Handle the implementation request for a new attribute archetype.
-pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
+fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConfig {
     let target = request.target().unwrap();
     let target_name = target.internal_name().unwrap();
     let ancestors = target.ancestry();
     let parent = ancestors.iter().last().unwrap();
     let parent_struct = concept_to_struct(parent);
+    let activate_attribute = target == Attribute::archetype().as_archetype()
+        || parent.has_ancestor(Attribute::archetype().as_archetype())
+        || target.attribute_logic_activated();
 
     let all_attributes = target
         .attribute_archetypes()
@@ -77,9 +80,7 @@ pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
         .collect();
 
     let mut attr_structs = HashMap::new();
-    if target == Attribute::archetype().as_archetype()
-        || target.has_ancestor(Attribute::archetype().as_archetype())
-    {
+    if activate_attribute {
         let target_attr = AttributeArchetype::from(target.id());
         let owner_type = target_attr.owner_archetype();
         let value_type = target_attr.value_archetype();
@@ -101,17 +102,23 @@ pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
         attr_structs.insert(VALUE_FORM_KEY, concept_to_struct(&value_form));
     }
 
-    let code = code(&CodeConfig {
-        name: target_name.as_str(),
+    CodeConfig {
+        name: target_name,
         parent: parent_struct,
+        activate_attribute,
         all_attributes,
         introduced_attributes,
         attribute_structs: attr_structs,
         impl_cfg: request.config().unwrap(),
         codegen_cfg: *codegen_cfg,
-    });
+    }
+}
 
-    let file_path = file_path(&target);
+/// Handle the implementation request for a new attribute archetype.
+pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
+    let code = code(&code_cfg_for(request, codegen_cfg));
+
+    let file_path = file_path(&request.target().unwrap());
     output_code(&OutputConfig {
         code: &code,
         file_path: &file_path,
@@ -125,6 +132,8 @@ mod tests {
     use super::*;
     use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
     use crate::tao::initialize_kb;
+    use crate::tao::ImplementConfig;
+    use std::rc::Rc;
     use zamm_yin::tao::attribute::{Attribute, Owner};
     use zamm_yin::tao::Tao;
 
@@ -195,6 +204,47 @@ mod tests {
     }
 
     #[test]
+    fn code_cfg_for_attribute_not_activated() {
+        initialize_kb();
+        let mut target = Tao::archetype().individuate_as_archetype();
+        target.set_internal_name("MyAttrType".to_owned());
+        let mut implement = Implement::individuate();
+        implement.set_target(target);
+        implement.set_config(ImplementConfig::default());
+
+        assert!(!code_cfg_for(implement, &CodegenConfig::default()).activate_attribute);
+    }
+
+    #[test]
+    fn code_cfg_for_attribute_activated() {
+        initialize_kb();
+        let mut target = AttributeArchetype::from(Tao::archetype().individuate_as_archetype().id());
+        target.set_internal_name("MyAttrType".to_owned());
+        target.activate_attribute_logic();
+        target.set_owner_archetype(Tao::archetype());
+        target.set_value_archetype(Form::archetype());
+        let mut implement = Implement::individuate();
+        implement.set_target(target.as_archetype());
+        implement.set_config(ImplementConfig::default());
+
+        let codegen_cfg = CodegenConfig::default();
+        let cfg = code_cfg_for(implement, &codegen_cfg);
+        assert!(cfg.activate_attribute);
+        assert_eq!(
+            cfg.attribute_structs
+                .get(OwnerArchetype::TYPE_NAME)
+                .map(|a| a.name.as_str()),
+            Some("Tao")
+        );
+        assert_eq!(
+            cfg.attribute_structs
+                .get(ValueArchetype::TYPE_NAME)
+                .map(|a| a.name.as_str()),
+            Some("Form")
+        );
+    }
+
+    #[test]
     fn integration_test_attribute_generation() {
         let mut attr_structs = HashMap::new();
         attr_structs.insert(
@@ -226,15 +276,29 @@ mod tests {
             },
         );
         let code = code(&CodeConfig {
+            name: Rc::new("MyNewAttr".to_owned()),
             parent: StructConfig {
-                name: "Attribute".to_owned(),
+                name: "MyAttr".to_owned(),
                 ..StructConfig::default()
             },
+            activate_attribute: true,
             attribute_structs: attr_structs,
+            codegen_cfg: CodegenConfig {
+                comment_autogen: false,
+                ..CodegenConfig::default()
+            },
             ..CodeConfig::default()
         });
+        assert!(code.contains("AttributeArchetype"));
         assert!(code.contains("type OwnerForm = MyOwner"));
         assert!(code.contains("type ValueForm = MyValue"));
+        assert!(code.contains("check_attribute_constraints"));
+        assert!(code.contains(
+            "assert_eq!(
+            MyNewAttr::archetype().owner_archetype(),
+            MyOwner::archetype().as_archetype()
+        )"
+        ));
     }
 
     #[test]

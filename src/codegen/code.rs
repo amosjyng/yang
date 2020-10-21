@@ -6,6 +6,7 @@ use crate::codegen::string_format::tao::code_tao;
 use crate::codegen::string_format::{AttributeFormatConfig, FormatConfig};
 use crate::tao::ImplementConfig;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 /// Config representing an imported struct.
 #[derive(Clone)]
@@ -28,9 +29,11 @@ impl Default for StructConfig {
 /// Configuration settings for generating a single concept's contents.
 pub struct CodeConfig<'a> {
     /// Name of the concept to generate.
-    pub name: &'a str,
+    pub name: Rc<String>,
     /// The concept's parent.
     pub parent: StructConfig,
+    /// Whether or not to use attribute for this one.
+    pub activate_attribute: bool,
     /// List of all attributes that this concept has.
     pub all_attributes: Vec<StructConfig>,
     /// List of all attributes introduced by this concept.
@@ -46,8 +49,9 @@ pub struct CodeConfig<'a> {
 impl<'a> Default for CodeConfig<'a> {
     fn default() -> Self {
         Self {
-            name: "dummy",
+            name: Rc::new("dummy".to_owned()),
             parent: StructConfig::default(),
+            activate_attribute: false,
             all_attributes: Vec::default(),
             introduced_attributes: Vec::default(),
             attribute_structs: HashMap::default(),
@@ -59,7 +63,7 @@ impl<'a> Default for CodeConfig<'a> {
 
 /// Generate the final version of code, to be output to a file as-is.
 pub fn code(cfg: &CodeConfig) -> String {
-    let initial_code = if cfg.parent.name.to_lowercase() == "attribute" {
+    let initial_code = if cfg.activate_attribute {
         code_attribute(&AttributeFormatConfig::from(cfg))
     } else if cfg.parent.name.to_lowercase() == "data" {
         code_string_concept(&FormatConfig::from(cfg))

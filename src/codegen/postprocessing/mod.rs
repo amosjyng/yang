@@ -28,6 +28,7 @@ mod tests {
     use crate::codegen::CodeConfig;
     use mark_autogen::AUTOGENERATION_MARKER;
     use mark_fmt::FMT_SKIP_MARKER;
+    use std::rc::Rc;
 
     #[test]
     fn test_post_process_comments() {
@@ -68,7 +69,7 @@ mod tests {
     #[test]
     fn test_post_process_fmt_not_skip() {
         let code_cfg = &CodeConfig {
-            name: "S", // short
+            name: Rc::new("S".to_owned()), // short
             ..CodeConfig::default()
         };
         let code = code_tao(&FormatConfig::from(code_cfg));
@@ -79,7 +80,7 @@ mod tests {
     #[test]
     fn test_post_process_fmt_skip() {
         let code_cfg = &CodeConfig {
-            name: "ReallySuperLongClassNameOhBoy",
+            name: Rc::new("ReallySuperLongClassNameOhBoy".to_owned()),
             codegen_cfg: CodegenConfig {
                 release: false,
                 ..CodegenConfig::default()
@@ -94,7 +95,7 @@ mod tests {
     #[test]
     fn test_post_process_fmt_skip_release() {
         let code_cfg = &CodeConfig {
-            name: "ReallySuperLongClassNameOhBoy",
+            name: Rc::new("ReallySuperLongClassNameOhBoy".to_owned()),
             codegen_cfg: CodegenConfig {
                 release: true,
                 ..CodegenConfig::default()
