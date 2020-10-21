@@ -16,7 +16,7 @@ use zamm_yin::tao::{Form, FormTrait, Tao};
 fn in_own_submodule(target: &Archetype) -> bool {
     // todo: use children() instead of individuals(), and filter by type, once Yin has that
     // functionality
-    target.individuals().iter().any(|i| *i != target.as_form()) // todo: remove once Yin bug fixed
+    !target.child_archetypes().is_empty() // todo: remove once Yin bug fixed
 }
 
 fn ancestor_names(target: &Archetype, separator: &str, force_own_module: bool) -> String {
