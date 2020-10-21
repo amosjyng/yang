@@ -15,7 +15,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
         format!("{}::{}", cfg.yin_crate, cfg.parent_import),
         format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate),
         format!("{}::tao::archetype::{}", cfg.yin_crate, cfg.archetype_name),
-        format!("{}::tao::FormTrait", cfg.yin_crate),
+        format!("{}::tao::form::FormTrait", cfg.yin_crate),
         format!("{}::node_wrappers::debug_wrapper", cfg.yin_crate),
         format!("{}::node_wrappers::CommonNodeTrait", cfg.yin_crate),
         format!("{}::node_wrappers::FinalNode", cfg.yin_crate),

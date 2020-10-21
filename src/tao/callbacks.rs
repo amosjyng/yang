@@ -6,6 +6,7 @@ use crate::tao::archetype::CodegenFlags;
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::attribute::{Attribute, OwnerArchetype, ValueArchetype};
@@ -67,6 +68,14 @@ fn concept_to_struct(target: &Archetype) -> StructConfig {
     }
 }
 
+fn or_form_default(archetype: Archetype) -> Archetype {
+    if archetype == Tao::archetype() {
+        Archetype::try_from(Form::TYPE_NAME).unwrap() // allow user to override Form
+    } else {
+        archetype
+    }
+}
+
 fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConfig {
     let target = request.target().unwrap();
     let target_name = target.internal_name().unwrap();
@@ -96,16 +105,8 @@ fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConfig {
         attr_structs.insert(OwnerArchetype::TYPE_NAME, concept_to_struct(&owner_type));
         attr_structs.insert(ValueArchetype::TYPE_NAME, concept_to_struct(&value_type));
 
-        let owner_form = if owner_type == Tao::archetype() {
-            Form::archetype()
-        } else {
-            owner_type
-        };
-        let value_form = if value_type == Tao::archetype() {
-            Form::archetype()
-        } else {
-            value_type
-        };
+        let owner_form = or_form_default(owner_type);
+        let value_form = or_form_default(value_type);
 
         attr_structs.insert(OWNER_FORM_KEY, concept_to_struct(&owner_form));
         attr_structs.insert(VALUE_FORM_KEY, concept_to_struct(&value_form));
