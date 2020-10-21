@@ -67,9 +67,14 @@ pub fn parse_yaml(yaml: &str) -> Vec<Form> {
             if entry["attribute_logic"].as_bool().unwrap_or(false) {
                 target.activate_attribute_logic();
             }
+            // separate if-statement because attribute logic activation gets inherited
             if target.attribute_logic_activated() {
                 let target_id = target.id();
                 parse_attr_info(&mut target, &entries[&target_id]);
+            }
+
+            if entry["force_own_module"].as_bool().unwrap_or(false) {
+                target.mark_own_module();
             }
 
             let impl_config = ImplementConfig {
@@ -268,6 +273,43 @@ mod tests {
         );
         assert_eq!(target.owner_archetype(), Tao::archetype());
         assert_eq!(target.value_archetype(), Form::archetype());
+    }
+
+    #[test]
+    fn test_parse_implement_own_module_unmarked() {
+        initialize_kb();
+
+        let concepts = parse_yaml(indoc! {"
+            - name: MyType
+              parent: Tao
+            - parent: Implement
+              target: MyType
+              output_id: 2
+        "});
+        assert_eq!(concepts.len(), 2);
+        let implement = Implement::from(concepts[1].id());
+        let target = implement.target().unwrap();
+        assert!(!target.attribute_logic_activated());
+        assert!(!target.force_own_module());
+    }
+
+    #[test]
+    fn test_parse_implement_own_module_marked() {
+        initialize_kb();
+
+        let concepts = parse_yaml(indoc! {"
+            - name: MyType
+              parent: Tao
+            - parent: Implement
+              target: MyType
+              output_id: 2
+              force_own_module: true
+        "});
+        assert_eq!(concepts.len(), 2);
+        let implement = Implement::from(concepts[1].id());
+        let target = implement.target().unwrap();
+        assert!(!target.attribute_logic_activated());
+        assert!(target.force_own_module());
     }
 
     #[test]

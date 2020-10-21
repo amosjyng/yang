@@ -49,6 +49,15 @@ Due to current limitations with Yang, we cannot set Tao as the parent here. We s
   parent: Tao
 ```
 
+During implementation, we should be able to force a new attribute to live inside its own module. This override should take place even if the concept doesn't have any child archetypes yet, so that any concepts in downstream packages that depend on it will know where to look:
+
+```yaml
+- name: OwnModule
+  parent: Tao
+```
+
+
+
 ### Implementation
 
 Unlike with Yin, we don't actually want to implement *everything* we know, because everything we know about Yin is already implemented inside her physical body. We only want to implement the things that we learned about Yang here:
@@ -91,8 +100,17 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 
 ```yaml
 - parent: Implement
-  target: data
+  target: OwnModule
   output_id: 6
+  documentation: |-
+```
+
+> Marks an archetype as living inside its own module, even if it doesn't have any defined child archetypes yet.
+
+```yaml
+- parent: Implement
+  target: data
+  output_id: 7
   documentation: |-
 ```
 
@@ -101,7 +119,7 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 ```yaml
 - parent: Implement
   target: StringConcept
-  output_id: 7
+  output_id: 8
   documentation: |-
 ```
 
