@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 /// Config representing an imported struct.
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StructConfig {
     /// Name of the Struct.
     pub name: String,

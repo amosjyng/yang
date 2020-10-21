@@ -17,7 +17,7 @@ fn in_own_submodule(target: &Archetype) -> bool {
     target.individuals().iter().any(|i| *i != target.as_form()) // todo: remove once Yin bug fixed
 }
 
-fn ancestor_names(target: &Archetype, separator: &str) -> String {
+fn ancestor_names(target: &Archetype, separator: &str, force_own_module: bool) -> String {
     let ancestors = target.ancestry();
     let mut path = ancestors
         .iter()
@@ -28,7 +28,7 @@ fn ancestor_names(target: &Archetype, separator: &str) -> String {
         })
         .format(separator)
         .to_string();
-    if in_own_submodule(target) {
+    if force_own_module || in_own_submodule(target) {
         if !ancestors.is_empty() {
             path += separator;
         }
@@ -37,24 +37,33 @@ fn ancestor_names(target: &Archetype, separator: &str) -> String {
     path.to_ascii_lowercase()
 }
 
-fn file_path(target: &Archetype) -> String {
+fn file_path(target: &Archetype, force_own_module: bool) -> String {
     let snake_name = target.internal_name().unwrap().as_str().to_snake_case();
     // append _form to filename to avoid
     // https://rust-lang.github.io/rust-clippy/master/index.html#module_inception
-    format!("src/{}/{}_form.rs", ancestor_names(target, "/"), snake_name).to_ascii_lowercase()
+    format!(
+        "src/{}/{}_form.rs",
+        ancestor_names(target, "/", force_own_module),
+        snake_name
+    )
+    .to_ascii_lowercase()
 }
 
 /// Returns the import path, not including the crate itself.
-fn import_path(target: &Archetype) -> String {
+fn import_path(target: &Archetype, force_own_module: bool) -> String {
     let struct_name = target.internal_name().unwrap().as_str().to_camel_case();
-    format!("{}::{}", ancestor_names(target, "::"), struct_name)
+    format!(
+        "{}::{}",
+        ancestor_names(target, "::", force_own_module),
+        struct_name
+    )
 }
 
 /// Turns a concept into a struct to be imported.
 fn concept_to_struct(target: &Archetype) -> StructConfig {
     StructConfig {
         name: target.internal_name().unwrap().as_str().to_camel_case(),
-        import: import_path(target),
+        import: import_path(target, target.own_module()),
     }
 }
 
@@ -118,7 +127,10 @@ fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConfig {
 pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
     let code = code(&code_cfg_for(request, codegen_cfg));
 
-    let file_path = file_path(&request.target().unwrap());
+    let file_path = file_path(
+        &request.target().unwrap(),
+        request.target().unwrap().own_module(),
+    );
     output_code(&OutputConfig {
         code: &code,
         file_path: &file_path,
@@ -158,14 +170,14 @@ mod tests {
     #[test]
     fn folder_path_tao() {
         initialize_kb();
-        assert_eq!(file_path(&Tao::archetype()), "src/tao/tao_form.rs");
+        assert_eq!(file_path(&Tao::archetype(), false), "src/tao/tao_form.rs");
     }
 
     #[test]
     fn folder_path_attributes() {
         initialize_kb();
         assert_eq!(
-            file_path(&Attribute::archetype().as_archetype()),
+            file_path(&Attribute::archetype().as_archetype(), false),
             "src/tao/attribute/attribute_form.rs"
         );
     }
@@ -174,22 +186,31 @@ mod tests {
     fn folder_path_nested() {
         initialize_kb();
         assert_eq!(
-            file_path(&Owner::archetype().as_archetype()),
+            file_path(&Owner::archetype().as_archetype(), false),
             "src/tao/attribute/owner_form.rs"
+        );
+    }
+
+    #[test]
+    fn folder_path_forced_own_module() {
+        initialize_kb();
+        assert_eq!(
+            file_path(&Owner::archetype().as_archetype(), true),
+            "src/tao/attribute/owner/owner_form.rs"
         );
     }
 
     #[test]
     fn import_path_tao() {
         initialize_kb();
-        assert_eq!(import_path(&Tao::archetype()), "tao::Tao");
+        assert_eq!(import_path(&Tao::archetype(), false), "tao::Tao");
     }
 
     #[test]
     fn import_path_attributes() {
         initialize_kb();
         assert_eq!(
-            import_path(&Attribute::archetype().as_archetype()),
+            import_path(&Attribute::archetype().as_archetype(), false),
             "tao::attribute::Attribute"
         );
     }
@@ -198,8 +219,67 @@ mod tests {
     fn import_path_nested() {
         initialize_kb();
         assert_eq!(
-            import_path(&Owner::archetype().as_archetype()),
+            import_path(&Owner::archetype().as_archetype(), false),
             "tao::attribute::Owner"
+        );
+    }
+
+    #[test]
+    fn import_path_forced_own_module() {
+        initialize_kb();
+        assert_eq!(
+            import_path(&Owner::archetype().as_archetype(), true),
+            "tao::attribute::owner::Owner"
+        );
+    }
+
+    #[test]
+    fn struct_config_tao() {
+        initialize_kb();
+        assert_eq!(
+            concept_to_struct(&Tao::archetype()),
+            StructConfig {
+                name: "Tao".to_owned(),
+                import: "tao::Tao".to_owned(),
+            }
+        );
+    }
+
+    #[test]
+    fn struct_config_attributes() {
+        initialize_kb();
+        assert_eq!(
+            concept_to_struct(&Attribute::archetype().as_archetype()),
+            StructConfig {
+                name: "Attribute".to_owned(),
+                import: "tao::attribute::Attribute".to_owned(),
+            }
+        );
+    }
+
+    #[test]
+    fn struct_config_nested() {
+        initialize_kb();
+        assert_eq!(
+            concept_to_struct(&Owner::archetype().as_archetype()),
+            StructConfig {
+                name: "Owner".to_owned(),
+                import: "tao::attribute::Owner".to_owned(),
+            }
+        );
+    }
+
+    #[test]
+    fn struct_config_forced_own_module() {
+        initialize_kb();
+        let mut owner = Owner::archetype();
+        owner.mark_own_module();
+        assert_eq!(
+            concept_to_struct(&owner.as_archetype()),
+            StructConfig {
+                name: "Owner".to_owned(),
+                import: "tao::attribute::owner::Owner".to_owned(),
+            }
         );
     }
 
