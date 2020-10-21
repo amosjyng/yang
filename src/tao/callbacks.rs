@@ -3,6 +3,7 @@ use crate::codegen::filesystem::{output_code, OutputConfig};
 use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
 use crate::codegen::{code, CodeConfig, CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
+use crate::tao::form::DefinedMarker;
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
 use std::collections::HashMap;
@@ -51,20 +52,29 @@ fn file_path(target: &Archetype, force_own_module: bool) -> String {
 }
 
 /// Returns the import path, not including the crate itself.
-fn import_path(target: &Archetype, force_own_module: bool) -> String {
+///
+/// `yin_override` needed for now because Yin is not yet fully described by its own yin.md.
+/// todo: remove once Yin supports that
+fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -> String {
+    let yin_crate = if yin_override || target.as_form().is_newly_defined() {
+        "crate"
+    } else {
+        "zamm_yin"
+    };
     let struct_name = target.internal_name().unwrap().as_str().to_camel_case();
     format!(
-        "{}::{}",
-        ancestor_names(target, "::", force_own_module),
+        "{}::{}::{}",
+        yin_crate,
+        ancestor_names(&target, "::", force_own_module),
         struct_name
     )
 }
 
 /// Turns a concept into a struct to be imported.
-fn concept_to_struct(target: &Archetype) -> StructConfig {
+fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig {
     StructConfig {
         name: target.internal_name().unwrap().as_str().to_camel_case(),
-        import: import_path(target, target.force_own_module()),
+        import: import_path(target, target.force_own_module(), yin_override),
     }
 }
 
@@ -81,7 +91,7 @@ fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConfig {
     let target_name = target.internal_name().unwrap();
     let ancestors = target.ancestry();
     let parent = ancestors.iter().last().unwrap();
-    let parent_struct = concept_to_struct(parent);
+    let parent_struct = concept_to_struct(parent, codegen_cfg.yin);
     let activate_attribute = target == Attribute::archetype().as_archetype()
         || parent.has_ancestor(Attribute::archetype().as_archetype())
         || target.attribute_logic_activated();
@@ -89,12 +99,12 @@ fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConfig {
     let all_attributes = target
         .attribute_archetypes()
         .iter()
-        .map(|a| concept_to_struct(&a.as_archetype()))
+        .map(|a| concept_to_struct(&a.as_archetype(), codegen_cfg.yin))
         .collect();
     let introduced_attributes = target
         .introduced_attribute_archetypes()
         .iter()
-        .map(|a| concept_to_struct(&a.as_archetype()))
+        .map(|a| concept_to_struct(&a.as_archetype(), codegen_cfg.yin))
         .collect();
 
     let mut attr_structs = HashMap::new();
@@ -102,14 +112,26 @@ fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConfig {
         let target_attr = AttributeArchetype::from(target.id());
         let owner_type = target_attr.owner_archetype();
         let value_type = target_attr.value_archetype();
-        attr_structs.insert(OwnerArchetype::TYPE_NAME, concept_to_struct(&owner_type));
-        attr_structs.insert(ValueArchetype::TYPE_NAME, concept_to_struct(&value_type));
+        attr_structs.insert(
+            OwnerArchetype::TYPE_NAME,
+            concept_to_struct(&owner_type, codegen_cfg.yin),
+        );
+        attr_structs.insert(
+            ValueArchetype::TYPE_NAME,
+            concept_to_struct(&value_type, codegen_cfg.yin),
+        );
 
         let owner_form = or_form_default(owner_type);
         let value_form = or_form_default(value_type);
 
-        attr_structs.insert(OWNER_FORM_KEY, concept_to_struct(&owner_form));
-        attr_structs.insert(VALUE_FORM_KEY, concept_to_struct(&value_form));
+        attr_structs.insert(
+            OWNER_FORM_KEY,
+            concept_to_struct(&owner_form, codegen_cfg.yin),
+        );
+        attr_structs.insert(
+            VALUE_FORM_KEY,
+            concept_to_struct(&value_form, codegen_cfg.yin),
+        );
     }
 
     CodeConfig {
@@ -204,15 +226,18 @@ mod tests {
     #[test]
     fn import_path_tao() {
         initialize_kb();
-        assert_eq!(import_path(&Tao::archetype(), false), "tao::Tao");
+        assert_eq!(
+            import_path(&Tao::archetype(), false, false),
+            "zamm_yin::tao::Tao"
+        );
     }
 
     #[test]
     fn import_path_attributes() {
         initialize_kb();
         assert_eq!(
-            import_path(&Attribute::archetype().as_archetype(), false),
-            "tao::attribute::Attribute"
+            import_path(&Attribute::archetype().as_archetype(), false, false),
+            "zamm_yin::tao::attribute::Attribute"
         );
     }
 
@@ -220,8 +245,8 @@ mod tests {
     fn import_path_nested() {
         initialize_kb();
         assert_eq!(
-            import_path(&Owner::archetype().as_archetype(), false),
-            "tao::attribute::Owner"
+            import_path(&Owner::archetype().as_archetype(), false, false),
+            "zamm_yin::tao::attribute::Owner"
         );
     }
 
@@ -229,8 +254,19 @@ mod tests {
     fn import_path_forced_own_module() {
         initialize_kb();
         assert_eq!(
-            import_path(&Owner::archetype().as_archetype(), true),
-            "tao::attribute::owner::Owner"
+            import_path(&Owner::archetype().as_archetype(), true, false),
+            "zamm_yin::tao::attribute::owner::Owner"
+        );
+    }
+
+    #[test]
+    fn import_path_newly_defined() {
+        initialize_kb();
+        let owner = Owner::archetype();
+        owner.as_form().mark_newly_defined();
+        assert_eq!(
+            import_path(&owner.as_archetype(), false, false),
+            "crate::tao::attribute::Owner"
         );
     }
 
@@ -238,10 +274,10 @@ mod tests {
     fn struct_config_tao() {
         initialize_kb();
         assert_eq!(
-            concept_to_struct(&Tao::archetype()),
+            concept_to_struct(&Tao::archetype(), false),
             StructConfig {
                 name: "Tao".to_owned(),
-                import: "tao::Tao".to_owned(),
+                import: "zamm_yin::tao::Tao".to_owned(),
             }
         );
     }
@@ -250,10 +286,10 @@ mod tests {
     fn struct_config_attributes() {
         initialize_kb();
         assert_eq!(
-            concept_to_struct(&Attribute::archetype().as_archetype()),
+            concept_to_struct(&Attribute::archetype().as_archetype(), false),
             StructConfig {
                 name: "Attribute".to_owned(),
-                import: "tao::attribute::Attribute".to_owned(),
+                import: "zamm_yin::tao::attribute::Attribute".to_owned(),
             }
         );
     }
@@ -262,10 +298,10 @@ mod tests {
     fn struct_config_nested() {
         initialize_kb();
         assert_eq!(
-            concept_to_struct(&Owner::archetype().as_archetype()),
+            concept_to_struct(&Owner::archetype().as_archetype(), false),
             StructConfig {
                 name: "Owner".to_owned(),
-                import: "tao::attribute::Owner".to_owned(),
+                import: "zamm_yin::tao::attribute::Owner".to_owned(),
             }
         );
     }
@@ -276,10 +312,24 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            concept_to_struct(&owner.as_archetype()),
+            concept_to_struct(&owner.as_archetype(), false),
             StructConfig {
                 name: "Owner".to_owned(),
-                import: "tao::attribute::owner::Owner".to_owned(),
+                import: "zamm_yin::tao::attribute::owner::Owner".to_owned(),
+            }
+        );
+    }
+
+    #[test]
+    fn struct_config_newly_defined() {
+        initialize_kb();
+        let owner = Owner::archetype();
+        owner.as_form().mark_newly_defined();
+        assert_eq!(
+            concept_to_struct(&owner.as_archetype(), false),
+            StructConfig {
+                name: "Owner".to_owned(),
+                import: "crate::tao::attribute::Owner".to_owned(),
             }
         );
     }
@@ -289,6 +339,7 @@ mod tests {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name("MyAttrType".to_owned());
+        target.as_form().mark_newly_defined();
         let mut implement = Implement::individuate();
         implement.set_target(target);
         implement.set_config(ImplementConfig::default());
@@ -301,6 +352,7 @@ mod tests {
         initialize_kb();
         let mut target = AttributeArchetype::from(Tao::archetype().individuate_as_archetype().id());
         target.set_internal_name("MyAttrType".to_owned());
+        target.as_form().mark_newly_defined();
         target.activate_attribute_logic();
         target.set_owner_archetype(Tao::archetype());
         target.set_value_archetype(Form::archetype());

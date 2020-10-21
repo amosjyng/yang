@@ -12,7 +12,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
         "std::fmt::Debug".to_owned(),
         "std::fmt::Formatter".to_owned(),
         "std::rc::Rc".to_owned(),
-        format!("{}::{}", cfg.yin_crate, cfg.parent_import),
+        cfg.parent_import.to_owned(),
         format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate),
         format!("{}::tao::archetype::{}", cfg.yin_crate, cfg.archetype_name),
         format!("{}::tao::form::FormTrait", cfg.yin_crate),
@@ -110,10 +110,10 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
         format!("{}::tao::archetype::ArchetypeFormTrait", cfg.yin_crate),
     ];
     for attr_import in &cfg.all_attribute_imports {
-        imports.push(format!("{}::{}", cfg.yin_crate, attr_import));
+        imports.push(attr_import.clone());
     }
     for attr_import in &cfg.introduced_attribute_imports {
-        imports.push(format!("{}::{}", cfg.yin_crate, attr_import));
+        imports.push(attr_import.clone());
     }
     let test_body = AtomicFragment {
         imports,

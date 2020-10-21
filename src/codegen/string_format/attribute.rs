@@ -10,8 +10,8 @@ pub fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![
             format!("{}::tao::attribute::AttributeTrait", cfg.tao_cfg.yin_crate),
-            format!("{}::{}", cfg.tao_cfg.yin_crate, cfg.owner_form.import),
-            format!("{}::{}", cfg.tao_cfg.yin_crate, cfg.value_form.import),
+            cfg.owner_form.import.clone(),
+            cfg.value_form.import.clone(),
         ],
         atom: formatdoc! {r#"
             impl AttributeTrait for {name} {{
@@ -33,18 +33,12 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
     // there's a chance the form is the same as the type, in which case it will have gotten
     // imported above already
     if cfg.owner_type.name != cfg.owner_form.name {
-        imports.push(format!(
-            "{}::{}",
-            cfg.tao_cfg.yin_crate, cfg.owner_type.import
-        ));
+        imports.push(cfg.owner_type.import.clone());
     }
     // there's a chance the form is the same as the type, in which case it will have gotten
     // imported above already
     if cfg.value_type.name != cfg.value_form.name {
-        imports.push(format!(
-            "{}::{}",
-            cfg.tao_cfg.yin_crate, cfg.value_type.import
-        ));
+        imports.push(cfg.value_type.import.clone());
     }
 
     AtomicFragment {
