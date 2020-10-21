@@ -1,4 +1,4 @@
-use crate::tao::UsesAttributeLogic;
+use crate::tao::{OwnModule, UsesAttributeLogic};
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::FormTrait;
@@ -13,6 +13,16 @@ pub trait CodegenFlags: FormTrait {
     /// Whether this concept should have attribute-specific logic activated during code generation.
     fn attribute_logic_activated(&self) -> bool {
         self.essence().has_flag(UsesAttributeLogic::TYPE_ID)
+    }
+
+    /// Mark concept to be generated inside its own module.
+    fn mark_own_module(&mut self) {
+        self.essence_mut().add_flag(OwnModule::TYPE_ID);
+    }
+
+    /// Whether or not concept should be generated inside its own module.
+    fn own_module(&self) -> bool {
+        self.essence().has_flag(OwnModule::TYPE_ID)
     }
 }
 
@@ -45,5 +55,15 @@ mod tests {
 
         new_attr.activate_attribute_logic();
         assert!(sub_attr.attribute_logic_activated());
+    }
+
+    #[test]
+    fn test_own_module_activation() {
+        initialize_kb();
+        let mut new_attr = Tao::archetype().individuate_as_archetype();
+        assert!(!new_attr.own_module());
+
+        new_attr.mark_own_module();
+        assert!(new_attr.own_module());
     }
 }
