@@ -8,7 +8,7 @@ use yaml_rust::{Yaml, YamlLoader};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::attribute::Attribute;
-use zamm_yin::tao::{Tao, Form, FormTrait};
+use zamm_yin::tao::{Form, FormTrait, Tao};
 
 fn parse_attr_info(new_subtype: &mut Archetype, entry: &HashMap<String, Yaml>) {
     let mut attr_subtype = AttributeArchetype::from(new_subtype.id());
@@ -55,9 +55,10 @@ pub fn parse_yaml(yaml: &str) -> Vec<Form> {
             new_concept.mark_newly_defined();
             new_concept
         };
-        
-        let existing_entry =
-        entries.entry(current_concept.id()).or_insert_with(HashMap::<String, Yaml>::new);
+
+        let existing_entry = entries
+            .entry(current_concept.id())
+            .or_insert_with(HashMap::<String, Yaml>::new);
 
         for (k, v) in entry.as_hash().unwrap() {
             existing_entry.insert(k.as_str().unwrap().to_owned(), v.clone());
@@ -93,7 +94,12 @@ pub fn parse_yaml(yaml: &str) -> Vec<Form> {
             let mut target = Archetype::try_from(target_name.as_str()).unwrap();
             implement.set_target(target);
 
-            if entry.get("attribute_logic").map(|y| y.as_bool()).flatten().unwrap_or(false) {
+            if entry
+                .get("attribute_logic")
+                .map(|y| y.as_bool())
+                .flatten()
+                .unwrap_or(false)
+            {
                 target.activate_attribute_logic();
             }
             // separate if-statement because attribute logic activation gets inherited
@@ -102,13 +108,20 @@ pub fn parse_yaml(yaml: &str) -> Vec<Form> {
                 parse_attr_info(&mut target, &entries[&target_id]);
             }
 
-            if entry.get("force_own_module").map(|y| y.as_bool()).flatten().unwrap_or(false) {
+            if entry
+                .get("force_own_module")
+                .map(|y| y.as_bool())
+                .flatten()
+                .unwrap_or(false)
+            {
                 target.mark_own_module();
             }
 
             let impl_config = ImplementConfig {
                 id: entry["output_id"].as_i64().unwrap() as usize,
-                doc: entry.get("documentation").map(|s| s.as_str().unwrap().to_owned()),
+                doc: entry
+                    .get("documentation")
+                    .map(|s| s.as_str().unwrap().to_owned()),
             };
             implement.set_config(impl_config);
         } else if current_concept.has_ancestor(Attribute::archetype().as_archetype()) {
