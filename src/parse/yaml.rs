@@ -57,7 +57,7 @@ pub fn parse_yaml(yaml: &str) -> Vec<Form> {
         };
         
         let existing_entry =
-        entries.entry(current_concept.id()).or_insert_with(|| HashMap::<String, Yaml>::new());
+        entries.entry(current_concept.id()).or_insert_with(HashMap::<String, Yaml>::new);
 
         for (k, v) in entry.as_hash().unwrap() {
             existing_entry.insert(k.as_str().unwrap().to_owned(), v.clone());
