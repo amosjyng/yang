@@ -8,16 +8,16 @@ use yaml_rust::{Yaml, YamlLoader};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::attribute::Attribute;
-use zamm_yin::tao::{Form, FormTrait};
+use zamm_yin::tao::{Tao, Form, FormTrait};
 
-fn parse_attr_info(new_subtype: &mut Archetype, entry: &Yaml) {
+fn parse_attr_info(new_subtype: &mut Archetype, entry: &HashMap<String, Yaml>) {
     let mut attr_subtype = AttributeArchetype::from(new_subtype.id());
-    if let Some(owner_type_name) = entry["owner_archetype"].as_str() {
+    if let Some(owner_type_name) = entry.get("owner_archetype").map(|y| y.as_str()).flatten() {
         attr_subtype.set_owner_archetype(
             Archetype::try_from(owner_type_name.to_kebab_case().as_str()).unwrap(),
         );
     }
-    if let Some(value_type_name) = entry["value_archetype"].as_str() {
+    if let Some(value_type_name) = entry.get("value_archetype").map(|y| y.as_str()).flatten() {
         attr_subtype.set_value_archetype(
             Archetype::try_from(value_type_name.to_kebab_case().as_str()).unwrap(),
         );
@@ -30,41 +30,70 @@ pub fn parse_yaml(yaml: &str) -> Vec<Form> {
     let docs = YamlLoader::load_from_str(yaml).unwrap();
     let doc = &docs[0];
     let mut entries = HashMap::new();
-    for entry in doc.as_vec().unwrap() {
-        let parent_name = entry["parent"].as_str().unwrap().to_kebab_case();
-        let parent = Archetype::try_from(parent_name.as_str()).unwrap();
-        let mut new_concept = parent.individuate_as_form();
-        new_concept.mark_newly_defined();
-        entries.insert(new_concept.id(), entry.clone());
 
-        if let Some(name) = entry["name"].as_str() {
+    // define everything first
+    for entry in doc.as_vec().unwrap() {
+        if let Some(name) = entry["define"].as_str() {
+            let mut new_concept = Tao::individuate();
+            // that's all we have to do for now, just ensure that this name now exists for this node
             new_concept.set_internal_name(name.to_kebab_case());
         }
-        if let Some(attrs) = entry["attributes"].as_vec() {
+    }
+
+    // then collect all entries for the same node together
+    for entry in doc.as_vec().unwrap() {
+        let current_concept = if let Some(name) = entry["define"].as_str() {
+            // it's already been defined, just find it again
+            let mut new_concept = Form::try_from(name.to_kebab_case().as_str()).unwrap();
+            new_concept.mark_newly_defined();
+            new_concept
+        } else if let Some(name) = entry["name"].as_str() {
+            Form::try_from(name.to_kebab_case().as_str()).unwrap()
+        } else {
+            // Not referring to existing node (no "name"), so it must be a new node. Not naming the // new node either (no "define"), so don't bother giving it a name.
+            let mut new_concept = Tao::individuate();
+            new_concept.mark_newly_defined();
+            new_concept
+        };
+        
+        let existing_entry =
+        entries.entry(current_concept.id()).or_insert_with(|| HashMap::<String, Yaml>::new());
+
+        for (k, v) in entry.as_hash().unwrap() {
+            existing_entry.insert(k.as_str().unwrap().to_owned(), v.clone());
+        }
+    }
+
+    // now parse all new nodes
+    let mut node_ids = entries.keys().collect::<Vec<&usize>>();
+    node_ids.sort(); // for determinism
+    for concept_id in node_ids {
+        let mut current_concept = Form::from(*concept_id);
+        let entry = &entries[concept_id];
+
+        if let Some(parent_name) = entry.get("parent").map(|y| y.as_str()).flatten() {
+            let parent = Archetype::try_from(parent_name.to_kebab_case().as_str()).unwrap();
+            current_concept.add_parent(parent);
+        }
+
+        if let Some(attrs) = entry.get("attributes").map(|y| y.as_vec()).flatten() {
             // attributes can only be specified for new types, not new individuals unless the
             // individual is a singleton
-            let mut new_subtype = Archetype::from(new_concept.id());
+            let mut new_subtype = Archetype::from(*concept_id);
             for attr in attrs {
                 let canonical = attr.as_str().unwrap().to_kebab_case();
                 let target_attr = AttributeArchetype::try_from(canonical.as_str()).unwrap();
                 new_subtype.add_attribute_type(target_attr);
             }
         }
-    }
-    // some entries cannot be parsed until a later entry gives it more context, so do a second pass
-    // todo: get all new nodes, once Yin supports that
-    let mut node_ids = entries.keys().collect::<Vec<&usize>>();
-    node_ids.sort(); // for determinism
-    for new_concept_id in node_ids {
-        let new_concept = Form::from(*new_concept_id);
-        let entry = &entries[new_concept_id];
-        if new_concept.has_ancestor(Implement::archetype()) {
-            let mut implement = Implement::from(new_concept.id());
+
+        if current_concept.has_ancestor(Implement::archetype()) {
+            let mut implement = Implement::from(*concept_id);
             let target_name = entry["target"].as_str().unwrap().to_kebab_case();
             let mut target = Archetype::try_from(target_name.as_str()).unwrap();
             implement.set_target(target);
 
-            if entry["attribute_logic"].as_bool().unwrap_or(false) {
+            if entry.get("attribute_logic").map(|y| y.as_bool()).flatten().unwrap_or(false) {
                 target.activate_attribute_logic();
             }
             // separate if-statement because attribute logic activation gets inherited
@@ -73,19 +102,19 @@ pub fn parse_yaml(yaml: &str) -> Vec<Form> {
                 parse_attr_info(&mut target, &entries[&target_id]);
             }
 
-            if entry["force_own_module"].as_bool().unwrap_or(false) {
+            if entry.get("force_own_module").map(|y| y.as_bool()).flatten().unwrap_or(false) {
                 target.mark_own_module();
             }
 
             let impl_config = ImplementConfig {
                 id: entry["output_id"].as_i64().unwrap() as usize,
-                doc: entry["documentation"].as_str().map(|s| s.to_owned()),
+                doc: entry.get("documentation").map(|s| s.as_str().unwrap().to_owned()),
             };
             implement.set_config(impl_config);
-        } else if new_concept.has_ancestor(Attribute::archetype().as_archetype()) {
-            parse_attr_info(&mut Archetype::from(new_concept.id()), entry);
+        } else if current_concept.has_ancestor(Attribute::archetype().as_archetype()) {
+            parse_attr_info(&mut Archetype::from(current_concept.id()), entry);
         }
-        new_concepts.push(new_concept);
+        new_concepts.push(current_concept);
     }
     new_concepts
 }
@@ -104,7 +133,7 @@ mod tests {
         initialize_kb();
 
         let concepts = parse_yaml(indoc! {"
-            - name: Target
+            - define: Target
               parent: Attribute
         "});
         assert_eq!(concepts.len(), 1);
@@ -132,7 +161,7 @@ mod tests {
         initialize_kb();
 
         let concepts = parse_yaml(indoc! {"
-            - name: Target
+            - define: Target
               parent: Attribute
               owner_archetype: Implement
               value_archetype: Tao
@@ -154,7 +183,7 @@ mod tests {
         initialize_kb();
 
         let concepts = parse_yaml(indoc! {"
-            - name: Foo
+            - define: Foo
               parent: Tao
               attributes:
                 - owner
@@ -175,7 +204,7 @@ mod tests {
         initialize_kb();
 
         let concepts = parse_yaml(indoc! {"
-            - name: Target
+            - define: Target
               parent: Attribute
             - parent: Implement
               target: Target
@@ -199,7 +228,7 @@ mod tests {
         initialize_kb();
 
         let concepts = parse_yaml(indoc! {"
-            - name: Attribute
+            - define: Attribute
               parent: Tao
             - parent: Implement
               target: Attribute
@@ -220,8 +249,89 @@ mod tests {
         initialize_kb();
 
         let concepts = parse_yaml(indoc! {"
+            - define: Attribute
+              parent: Tao
+              owner_archetype: Tao
+              value_archetype: Form
+            - parent: Implement
+              target: Attribute
+              output_id: 2
+              attribute_logic: true
+        "});
+        assert_eq!(concepts.len(), 2);
+        let implement = Implement::from(concepts[1].id());
+        let target = AttributeArchetype::from(implement.target().unwrap().id());
+        assert!(target.attribute_logic_activated());
+        assert_eq!(target.owner_archetype(), Tao::archetype());
+        assert_eq!(target.value_archetype(), Form::archetype());
+        let cfg = implement.config().unwrap();
+        assert_eq!(cfg.id, 2);
+        assert_eq!(cfg.doc, None);
+    }
+
+    #[test]
+    fn test_parse_split_up_definition() {
+        initialize_kb();
+
+        let concepts = parse_yaml(indoc! {"
+            - define: Attribute
+              parent: Tao
+            - name: Attribute
+              owner_archetype: Tao
+              value_archetype: Form
+            - parent: Implement
+              target: Attribute
+              output_id: 2
+              attribute_logic: true
+        "});
+        assert_eq!(concepts.len(), 2);
+        let implement = Implement::from(concepts[1].id());
+        let target = AttributeArchetype::from(implement.target().unwrap().id());
+        assert!(target.attribute_logic_activated());
+        assert_eq!(target.owner_archetype(), Tao::archetype());
+        assert_eq!(target.value_archetype(), Form::archetype());
+        let cfg = implement.config().unwrap();
+        assert_eq!(cfg.id, 2);
+        assert_eq!(cfg.doc, None);
+    }
+
+    #[test]
+    fn test_parse_define_only() {
+        initialize_kb();
+
+        let concepts = parse_yaml(indoc! {"
+            - define: Attribute
             - name: Attribute
               parent: Tao
+            - name: Attribute
+              owner_archetype: Tao
+              value_archetype: Form
+            - parent: Implement
+              target: Attribute
+              output_id: 2
+              attribute_logic: true
+        "});
+        assert_eq!(concepts.len(), 2);
+        let implement = Implement::from(concepts[1].id());
+        let target = AttributeArchetype::from(implement.target().unwrap().id());
+        assert!(target.attribute_logic_activated());
+        assert_eq!(target.owner_archetype(), Tao::archetype());
+        assert_eq!(target.value_archetype(), Form::archetype());
+        let cfg = implement.config().unwrap();
+        assert_eq!(cfg.id, 2);
+        assert_eq!(cfg.doc, None);
+    }
+
+    #[test]
+    fn test_parse_out_of_order() {
+        initialize_kb();
+
+        // refer to attribute even before definition
+        let concepts = parse_yaml(indoc! {"
+            - name: Attribute
+              parent: Tao
+            - define: Attribute
+            - name: Attribute
               owner_archetype: Tao
               value_archetype: Form
             - parent: Implement
@@ -245,11 +355,11 @@ mod tests {
         initialize_kb();
 
         let concepts = parse_yaml(indoc! {"
-            - name: MyAttr
+            - define: MyAttr
               parent: Tao
               owner_archetype: Tao
               value_archetype: Tao
-            - name: Color
+            - define: Color
               parent: MyAttr
               value_archetype: Form
             - parent: Implement
@@ -280,7 +390,7 @@ mod tests {
         initialize_kb();
 
         let concepts = parse_yaml(indoc! {"
-            - name: MyType
+            - define: MyType
               parent: Tao
             - parent: Implement
               target: MyType
@@ -298,7 +408,7 @@ mod tests {
         initialize_kb();
 
         let concepts = parse_yaml(indoc! {"
-            - name: MyType
+            - define: MyType
               parent: Tao
             - parent: Implement
               target: MyType
@@ -317,7 +427,7 @@ mod tests {
         initialize_kb();
 
         let concepts = parse_yaml(indoc! {"
-            - name: Attribute
+            - define: Attribute
               parent: Tao
             - parent: Implement
               target: Attribute
@@ -335,7 +445,7 @@ mod tests {
         initialize_kb();
 
         let concepts = parse_yaml(indoc! {"
-            - name: Target
+            - define: Target
               parent: Attribute
             - parent: Implement
               target: Target
@@ -354,7 +464,7 @@ mod tests {
         initialize_kb();
 
         let concepts = parse_yaml(indoc! {"
-            - name: Target
+            - define: Target
               parent: Attribute
             - parent: Implement
               target: Target
