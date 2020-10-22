@@ -9,7 +9,10 @@ use std::rc::Rc;
 pub fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![
-            format!("{}::tao::relation::attribute::AttributeTrait", cfg.tao_cfg.yin_crate),
+            format!(
+                "{}::tao::relation::attribute::AttributeTrait",
+                cfg.tao_cfg.yin_crate
+            ),
             cfg.owner_form.import.clone(),
             cfg.value_form.import.clone(),
         ],
