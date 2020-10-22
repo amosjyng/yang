@@ -56,7 +56,7 @@ pub fn file_path(target: &Archetype) -> String {
 /// `yin_override` needed for now because Yin is not yet fully described by its own yin.md.
 /// todo: remove once Yin supports that
 fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -> String {
-    let yin_crate = if yin_override || target.as_form().is_newly_defined() {
+    let yin_crate = if yin_override || target.is_newly_defined() {
         "crate"
     } else {
         "zamm_yin"
@@ -247,8 +247,8 @@ mod tests {
     #[test]
     fn import_path_newly_defined() {
         initialize_kb();
-        let owner = Owner::archetype();
-        owner.as_form().mark_newly_defined();
+        let mut owner = Owner::archetype();
+        owner.mark_newly_defined();
         assert_eq!(
             import_path(&owner.as_archetype(), false, false),
             "crate::tao::attribute::Owner"
@@ -308,8 +308,8 @@ mod tests {
     #[test]
     fn struct_config_newly_defined() {
         initialize_kb();
-        let owner = Owner::archetype();
-        owner.as_form().mark_newly_defined();
+        let mut owner = Owner::archetype();
+        owner.mark_newly_defined();
         assert_eq!(
             concept_to_struct(&owner.as_archetype(), false),
             StructConfig {
@@ -324,7 +324,7 @@ mod tests {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name("MyAttrType".to_owned());
-        target.as_form().mark_newly_defined();
+        target.mark_newly_defined();
         let mut implement = Implement::individuate();
         implement.set_target(target);
         implement.set_config(ImplementConfig::default());
@@ -337,7 +337,7 @@ mod tests {
         initialize_kb();
         let mut target = AttributeArchetype::from(Tao::archetype().individuate_as_archetype().id());
         target.set_internal_name("MyAttrType".to_owned());
-        target.as_form().mark_newly_defined();
+        target.mark_newly_defined();
         target.activate_attribute_logic();
         target.set_owner_archetype(Tao::archetype());
         target.set_value_archetype(Form::archetype());

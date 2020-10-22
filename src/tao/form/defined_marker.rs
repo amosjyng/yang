@@ -1,6 +1,6 @@
 use crate::tao::NewlyDefined;
 use zamm_yin::node_wrappers::BaseNodeTrait;
-use zamm_yin::tao::archetype::ArchetypeTrait;
+use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::{Form, FormTrait};
 
 /// Define new concept when reading from a Yin.md
@@ -17,6 +17,8 @@ pub trait DefinedMarker: FormTrait {
 }
 
 impl DefinedMarker for Form {}
+impl DefinedMarker for Archetype {}
+impl DefinedMarker for AttributeArchetype {}
 
 #[cfg(test)]
 mod tests {
@@ -38,11 +40,11 @@ mod tests {
     #[test]
     fn test_activation_inherited() {
         initialize_kb();
-        let new_attr = Tao::archetype().individuate_as_archetype();
+        let mut new_attr = Tao::archetype().individuate_as_archetype();
         let sub_attr = new_attr.individuate_as_form();
         assert!(!sub_attr.is_newly_defined());
 
-        new_attr.as_form().mark_newly_defined();
+        new_attr.mark_newly_defined();
         assert!(sub_attr.is_newly_defined());
     }
 }
