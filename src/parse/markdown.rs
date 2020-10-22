@@ -1,7 +1,7 @@
 use super::parse_yaml;
 use crate::codegen::{add_indent, count_indent};
 use pulldown_cmark::{CodeBlockKind, Event, Parser, Tag};
-use zamm_yin::tao::Form;
+use zamm_yin::tao::form::Form;
 
 /// Extracts and concatenates YAML code blocks from the markdown.
 fn extract_yaml(markdown: &str) -> String {
@@ -70,7 +70,7 @@ mod tests {
     use std::rc::Rc;
     use zamm_yin::node_wrappers::CommonNodeTrait;
     use zamm_yin::tao::archetype::ArchetypeTrait;
-    use zamm_yin::tao::FormTrait;
+    use zamm_yin::tao::form::FormTrait;
 
     #[test]
     fn test_yaml_extraction_nothing() {

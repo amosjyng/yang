@@ -7,8 +7,9 @@ use std::convert::TryFrom;
 use yaml_rust::{Yaml, YamlLoader};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
-use zamm_yin::tao::attribute::Attribute;
-use zamm_yin::tao::{Form, FormTrait, Tao};
+use zamm_yin::tao::form::{Form, FormTrait};
+use zamm_yin::tao::relation::attribute::Attribute;
+use zamm_yin::tao::Tao;
 
 fn parse_attr_info(new_subtype: &mut Archetype, entry: &HashMap<String, Yaml>) {
     let mut attr_subtype = AttributeArchetype::from(new_subtype.id());
@@ -138,8 +139,9 @@ mod tests {
     use crate::tao::{initialize_kb, Implement};
     use indoc::indoc;
     use std::rc::Rc;
-    use zamm_yin::tao::attribute::{Attribute, Owner, OwnerArchetype};
-    use zamm_yin::tao::{FormTrait, Tao};
+    use zamm_yin::tao::form::FormTrait;
+    use zamm_yin::tao::relation::attribute::{Attribute, Owner, OwnerArchetype};
+    use zamm_yin::tao::Tao;
 
     #[test]
     fn test_parse_archetype() {

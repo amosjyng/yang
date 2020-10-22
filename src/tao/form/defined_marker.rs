@@ -1,7 +1,7 @@
 use crate::tao::NewlyDefined;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
-use zamm_yin::tao::{Form, FormTrait};
+use zamm_yin::tao::form::{Form, FormTrait};
 
 /// Define new concept when reading from a Yin.md
 pub trait DefinedMarker: FormTrait {

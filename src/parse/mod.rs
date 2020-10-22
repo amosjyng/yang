@@ -11,7 +11,7 @@ use std::env;
 use std::fs::read_to_string;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
-use zamm_yin::tao::Form;
+use zamm_yin::tao::form::Form;
 
 /// All supported input filename extensions.
 pub const SUPPORTED_EXTENSIONS: &[&str] = &["md", "yml", "yaml"];

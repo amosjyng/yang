@@ -9,8 +9,9 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
-use zamm_yin::tao::attribute::{Attribute, OwnerArchetype, ValueArchetype};
-use zamm_yin::tao::{Form, FormTrait, Tao};
+use zamm_yin::tao::form::{Form, FormTrait};
+use zamm_yin::tao::relation::attribute::{Attribute, OwnerArchetype, ValueArchetype};
+use zamm_yin::tao::Tao;
 
 fn in_own_submodule(target: &Archetype) -> bool {
     // todo: use children() instead of individuals(), and filter by type, once Yin has that
@@ -152,7 +153,7 @@ mod tests {
     use super::*;
     use crate::tao::initialize_kb;
     use crate::tao::ImplementConfig;
-    use zamm_yin::tao::attribute::{Attribute, Owner};
+    use zamm_yin::tao::relation::attribute::{Attribute, Owner};
     use zamm_yin::tao::Tao;
 
     #[test]

@@ -6,7 +6,8 @@ use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::{unwrap_strong, StrongValue};
 use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, CommonNodeTrait, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
-use zamm_yin::tao::{FormTrait, Tao, YIN_MAX_ID};
+use zamm_yin::tao::form::FormTrait;
+use zamm_yin::tao::{Tao, YIN_MAX_ID};
 
 /// Represents a command to implement something.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -124,7 +125,7 @@ impl FormTrait for Implement {
 mod tests {
     use super::*;
     use crate::tao::initialize_kb;
-    use zamm_yin::tao::attribute::Owner;
+    use zamm_yin::tao::relation::attribute::Owner;
 
     #[test]
     fn check_type_created() {

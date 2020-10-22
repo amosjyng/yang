@@ -7,7 +7,7 @@ I've [mentioned](https://github.com/amosjyng/yin/blob/master/yin.md) Yang a lot 
 Here's what Yang knows: implementations are lower-level concepts that *target* specific higher-level concepts.
 
 ```yaml
-- name: Target
+- define: Target
   parent: Attribute
 ```
 
@@ -18,8 +18,8 @@ Now, not every noun corresponds directly to something physical. We have words th
 The same can be said for the bits in Yin and Yang's world. Everything is ultimately bits for these programs -- even a video feed hooked up to the physical world only ever comes in as a stream of bits. If we really wanted to fool a program, it should be theoretically impossible for the program [to tell](https://en.wikipedia.org/wiki/Brain_in_a_vat) that it's actually running in a hermetically sealed continuous integration test environment instead of production. But it still makes sense to speak of pieces of data versus the relations between the data, even if the relations themselves can rightfully be considered data as well:
 
 ```yaml
-- name: Data
-  parent: Tao
+- define: Data
+  parent: Form
 ```
 
 In a sense, it's all about framing. Every series of bits forms a number, but unless you're Gödel and you're trying to establish an equivalence between a mathematical proof and an integer, reasoning about "a series of bits" is going to be quite different from reasoning about "a number."
@@ -27,7 +27,7 @@ In a sense, it's all about framing. Every series of bits forms a number, but unl
 One type of data is a "string":
 
 ```yaml
-- name: StringConcept
+- define: StringConcept
   parent: Data
 ```
 
@@ -36,27 +36,23 @@ When Yin tells us about herself, we must forget all preconceptions we have about
 However, this also means that Yin's new attribute node won't be the same `Attribute` node that Yang ties all his custom attribute generation code to. Until all of the logic that goes into generating attributes becomes fully defined in graph form, we're going to need some way of telling Yang to activate that custom logic for newly defined nodes that don't inherit from the existing `Attribute` node:
 
 ```yaml
-- name: Flag
-  parent: Tao
-- name: UsesAttributeLogic
-  parent: Tao
+- define: UsesAttributeLogic
+  parent: Flag
 ```
 
 Due to current limitations with Yang, we cannot set Tao as the parent here. We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
 
 ```yaml
-- name: NewlyDefined
-  parent: Tao
+- define: NewlyDefined
+  parent: Flag
 ```
 
 During implementation, we should be able to force a new attribute to live inside its own module. This override should take place even if the concept doesn't have any child archetypes yet, so that any concepts in downstream packages that depend on it will know where to look:
 
 ```yaml
-- name: OwnModule
-  parent: Tao
+- define: OwnModule
+  parent: Flag
 ```
-
-
 
 ### Implementation
 
@@ -73,17 +69,8 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 
 ```yaml
 - parent: Implement
-  target: Flag
-  output_id: 3
-  documentation: |-
-```
-
-> Unary relations.
-
-```yaml
-- parent: Implement
   target: UsesAttributeLogic
-  output_id: 4
+  output_id: 3
   documentation: |-
 ```
 
@@ -92,7 +79,7 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 ```yaml
 - parent: Implement
   target: NewlyDefined
-  output_id: 5
+  output_id: 4
   documentation: |-
 ```
 
@@ -101,7 +88,7 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 ```yaml
 - parent: Implement
   target: OwnModule
-  output_id: 6
+  output_id: 5
   documentation: |-
 ```
 
@@ -110,7 +97,7 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 ```yaml
 - parent: Implement
   target: data
-  output_id: 7
+  output_id: 6
   documentation: |-
 ```
 
@@ -119,8 +106,9 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 ```yaml
 - parent: Implement
   target: StringConcept
-  output_id: 8
+  output_id: 7
   documentation: |-
 ```
 
 > The concept of a string of characters.
+
