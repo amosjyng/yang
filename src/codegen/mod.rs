@@ -4,7 +4,7 @@ mod code;
 mod docstring;
 /// Actual changes to the filesystem.
 pub mod filesystem;
-/// High-level planning for what the final generation configs will look like. All logic that touch 
+/// High-level planning for what the final generation configs will look like. All logic that touch
 /// Yin concepts in the codegen module should live inside of this sub-module.
 pub mod planning;
 /// Finalized code generation.
