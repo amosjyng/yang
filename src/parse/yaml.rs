@@ -229,7 +229,7 @@ mod tests {
         assert!(implement.has_ancestor(Implement::archetype()));
         let target = implement.target().unwrap();
         assert_eq!(target.internal_name(), Some(Rc::new("target".to_owned())));
-        assert!(target.as_form().is_newly_defined());
+        assert!(target.is_newly_defined());
         assert!(!target.attribute_logic_activated());
         let cfg = implement.config().unwrap();
         assert_eq!(cfg.id, 2);
