@@ -90,7 +90,6 @@ fn or_form_default(archetype: Archetype) -> Archetype {
 /// Generate the CodeConfig for a given implementation request.
 pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConfig {
     let target = request.target().unwrap();
-    let target_name = target.internal_name().unwrap();
     let ancestors = target.ancestry();
     let parent = ancestors.iter().last().unwrap();
     let parent_struct = concept_to_struct(parent, codegen_cfg.yin);
@@ -139,7 +138,7 @@ pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConf
     }
 
     CodeConfig {
-        name: target_name,
+        target: concept_to_struct(&target, codegen_cfg.yin),
         parent: parent_struct,
         activate_attribute,
         activate_data,

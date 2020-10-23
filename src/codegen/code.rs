@@ -6,7 +6,6 @@ use crate::codegen::string_format::tao::code_tao;
 use crate::codegen::string_format::{AttributeFormatConfig, FormatConfig};
 use crate::tao::ImplementConfig;
 use std::collections::HashMap;
-use std::rc::Rc;
 
 /// Config representing an imported struct.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -27,9 +26,10 @@ impl Default for StructConfig {
 }
 
 /// Configuration settings for generating a single concept's contents.
+#[derive(Default)]
 pub struct CodeConfig<'a> {
-    /// Name of the concept to generate.
-    pub name: Rc<String>,
+    /// The target to generate.
+    pub target: StructConfig,
     /// The concept's parent.
     pub parent: StructConfig,
     /// Whether or not to use attribute generation logic for this one.
@@ -46,22 +46,6 @@ pub struct CodeConfig<'a> {
     pub impl_cfg: ImplementConfig,
     /// Code generation settings for all concepts.
     pub codegen_cfg: CodegenConfig,
-}
-
-impl<'a> Default for CodeConfig<'a> {
-    fn default() -> Self {
-        Self {
-            name: Rc::new("dummy".to_owned()),
-            parent: StructConfig::default(),
-            activate_attribute: false,
-            activate_data: false,
-            all_attributes: Vec::default(),
-            introduced_attributes: Vec::default(),
-            attribute_structs: HashMap::default(),
-            impl_cfg: ImplementConfig::default(),
-            codegen_cfg: CodegenConfig::default(),
-        }
-    }
 }
 
 /// Generate the final version of code, to be output to a file as-is.
