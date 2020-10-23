@@ -63,7 +63,12 @@ During implementation, we should be able to force a new attribute to live inside
   parent: Tao
 ```
 
+Once built, structs have a certain import path:
 
+```yaml
+- name: StructPath
+  parent: Attribute
+```
 
 ### Implementation
 
@@ -142,3 +147,12 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 ```
 
 > Marks an archetype and all its descendants as requiring data-specific logic during generation.
+
+```yaml
+- parent: Implement
+  target: StructPath
+  output_id: 10
+  documentation: |-
+```
+
+> Describes the import path of a defined struct.
