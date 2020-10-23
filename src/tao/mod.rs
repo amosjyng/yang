@@ -16,8 +16,9 @@ pub mod form;
 mod implement;
 mod newly_defined_form;
 mod own_module_form;
-mod uses_attribute_logic_form;
 mod string_concept_form;
+mod uses_attribute_logic_form;
+mod uses_data_logic_form;
 
 use attribute::Target;
 use data::Data;
@@ -25,12 +26,13 @@ pub use flag_form::Flag;
 pub use implement::{Implement, ImplementConfig};
 pub use newly_defined_form::NewlyDefined;
 pub use own_module_form::OwnModule;
+pub use string_concept_form::StringConcept;
 pub use uses_attribute_logic_form::UsesAttributeLogic;
+pub use uses_data_logic_form::UsesDataLogic;
 use zamm_yin::graph::{Graph, InjectionGraph};
 use zamm_yin::initialize_type;
 use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::attribute::Inherits;
-pub use string_concept_form::StringConcept;
 
 /// Initialize Yin, including with Yang-specific concepts.
 pub fn initialize_kb() {
@@ -46,7 +48,8 @@ pub fn initialize_kb() {
             NewlyDefined,
             OwnModule,
             Data,
-            StringConcept
+            StringConcept,
+            UsesDataLogic
         )
     );
 }

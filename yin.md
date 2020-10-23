@@ -42,6 +42,13 @@ However, this also means that Yin's new attribute node won't be the same `Attrib
   parent: Tao
 ```
 
+The same is true of Data:
+
+```yaml
+- name: UsesDataLogic
+  parent: Tao
+```
+
 Due to current limitations with Yang, we cannot set Tao as the parent here. We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
 
 ```yaml
@@ -120,7 +127,18 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 - parent: Implement
   target: StringConcept
   output_id: 8
+  uses_data_logic: true
   documentation: |-
 ```
 
 > The concept of a string of characters.
+
+```yaml
+- parent: Implement
+  target: UsesDataLogic
+  output_id: 9
+  uses_data_logic: true
+  documentation: |-
+```
+
+> Marks an archetype and all its descendants as requiring data-specific logic during generation.
