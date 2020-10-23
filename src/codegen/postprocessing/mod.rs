@@ -25,7 +25,7 @@ mod tests {
     use super::*;
     use crate::codegen::string_format::tao::code_tao;
     use crate::codegen::string_format::FormatConfig;
-    use crate::codegen::{StructConfig, CodeConfig};
+    use crate::codegen::{CodeConfig, StructConfig};
     use mark_autogen::AUTOGENERATION_MARKER;
     use mark_fmt::FMT_SKIP_MARKER;
 

@@ -20,6 +20,7 @@ mod uses_data_logic_form;
 use attribute::{StructPath, Target};
 pub use data_form::Data;
 pub use flag_form::Flag;
+use form::BuildInfo;
 pub use implement::{Implement, ImplementConfig};
 pub use newly_defined_form::NewlyDefined;
 pub use own_module_form::OwnModule;
@@ -47,7 +48,8 @@ pub fn initialize_kb() {
             Data,
             StringConcept,
             UsesDataLogic,
-            StructPath
+            StructPath,
+            BuildInfo
         )
     );
 }
