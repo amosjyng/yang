@@ -17,7 +17,7 @@ mod string_concept_form;
 mod uses_attribute_logic_form;
 mod uses_data_logic_form;
 
-use attribute::Target;
+use attribute::{StructPath, Target};
 pub use data_form::Data;
 pub use flag_form::Flag;
 pub use implement::{Implement, ImplementConfig};
@@ -46,7 +46,8 @@ pub fn initialize_kb() {
             OwnModule,
             Data,
             StringConcept,
-            UsesDataLogic
+            UsesDataLogic,
+            StructPath
         )
     );
 }
