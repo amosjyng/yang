@@ -28,7 +28,7 @@ One type of data is a "string":
 
 ```yaml
 - name: StringConcept
-  parent: Data
+  parent: Tao
 ```
 
 When Yin tells us about herself, we must forget all preconceptions we have about the world and listen to what she has to say. That means when she speaks of what an attribute is, we *listen* instead of shoehorning her description into what we already think of as an attribute.
@@ -39,6 +39,13 @@ However, this also means that Yin's new attribute node won't be the same `Attrib
 - name: Flag
   parent: Tao
 - name: UsesAttributeLogic
+  parent: Tao
+```
+
+The same is true of Data:
+
+```yaml
+- name: UsesDataLogic
   parent: Tao
 ```
 
@@ -109,18 +116,29 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 
 ```yaml
 - parent: Implement
-  target: data
+  target: Data
   output_id: 7
   documentation: |-
 ```
 
-> Structures that can ultimately be compiled down to bits.
+> Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea.
 
 ```yaml
 - parent: Implement
   target: StringConcept
   output_id: 8
+  uses_data_logic: true
   documentation: |-
 ```
 
 > The concept of a string of characters.
+
+```yaml
+- parent: Implement
+  target: UsesDataLogic
+  output_id: 9
+  uses_data_logic: true
+  documentation: |-
+```
+
+> Marks an archetype and all its descendants as requiring data-specific logic during generation.

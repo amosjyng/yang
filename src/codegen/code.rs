@@ -32,8 +32,10 @@ pub struct CodeConfig<'a> {
     pub name: Rc<String>,
     /// The concept's parent.
     pub parent: StructConfig,
-    /// Whether or not to use attribute for this one.
+    /// Whether or not to use attribute generation logic for this one.
     pub activate_attribute: bool,
+    /// Whether or not to use data generation logic for this one.
+    pub activate_data: bool,
     /// List of all attributes that this concept has.
     pub all_attributes: Vec<StructConfig>,
     /// List of all attributes introduced by this concept.
@@ -52,6 +54,7 @@ impl<'a> Default for CodeConfig<'a> {
             name: Rc::new("dummy".to_owned()),
             parent: StructConfig::default(),
             activate_attribute: false,
+            activate_data: false,
             all_attributes: Vec::default(),
             introduced_attributes: Vec::default(),
             attribute_structs: HashMap::default(),
@@ -65,7 +68,7 @@ impl<'a> Default for CodeConfig<'a> {
 pub fn code(cfg: &CodeConfig) -> String {
     let initial_code = if cfg.activate_attribute {
         code_attribute(&AttributeFormatConfig::from(cfg))
-    } else if cfg.parent.name.to_lowercase() == "data" {
+    } else if cfg.activate_data {
         code_string_concept(&FormatConfig::from(cfg))
     } else {
         code_tao(&FormatConfig::from(cfg))
