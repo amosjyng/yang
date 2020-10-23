@@ -109,6 +109,15 @@ pub fn parse_yaml(yaml: &str) -> Vec<Form> {
             }
 
             if entry
+                .get("uses_data_logic")
+                .map(|y| y.as_bool())
+                .flatten()
+                .unwrap_or(false)
+            {
+                target.activate_data_logic();
+            }
+
+            if entry
                 .get("force_own_module")
                 .map(|y| y.as_bool())
                 .flatten()
@@ -231,6 +240,7 @@ mod tests {
         assert_eq!(target.internal_name(), Some(Rc::new("target".to_owned())));
         assert!(target.is_newly_defined());
         assert!(!target.attribute_logic_activated());
+        assert!(!target.data_logic_activated());
         let cfg = implement.config().unwrap();
         assert_eq!(cfg.id, 2);
         assert_eq!(cfg.doc, Some("Howdy, how ya doing?".to_owned()));
@@ -252,6 +262,29 @@ mod tests {
         let implement = Implement::from(concepts[1].id());
         let target = implement.target().unwrap();
         assert!(target.attribute_logic_activated());
+        assert!(!target.data_logic_activated());
+        let cfg = implement.config().unwrap();
+        assert_eq!(cfg.id, 2);
+        assert_eq!(cfg.doc, None);
+    }
+
+    #[test]
+    fn test_parse_implement_data() {
+        initialize_kb();
+
+        let concepts = parse_yaml(indoc! {"
+            - define: MyStrConcept
+              parent: Data
+            - parent: Implement
+              target: MyStrConcept
+              output_id: 2
+              uses_data_logic: true
+        "});
+        assert_eq!(concepts.len(), 2);
+        let implement = Implement::from(concepts[1].id());
+        let target = implement.target().unwrap();
+        assert!(!target.attribute_logic_activated());
+        assert!(target.data_logic_activated());
         let cfg = implement.config().unwrap();
         assert_eq!(cfg.id, 2);
         assert_eq!(cfg.doc, None);

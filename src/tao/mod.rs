@@ -5,10 +5,7 @@ pub mod attribute;
 /// Callbacks that should be triggered upon certain conditions in Yin being met.
 pub mod callbacks;
 /// Data that actually exists as bits on the machine.
-pub mod data {
-    mod data_form;
-    pub use data_form::Data;
-}
+mod data_form;
 mod flag_form;
 /// Form-related attributes.
 pub mod form;
@@ -21,7 +18,7 @@ mod uses_attribute_logic_form;
 mod uses_data_logic_form;
 
 use attribute::Target;
-use data::Data;
+pub use data_form::Data;
 pub use flag_form::Flag;
 pub use implement::{Implement, ImplementConfig};
 pub use newly_defined_form::NewlyDefined;

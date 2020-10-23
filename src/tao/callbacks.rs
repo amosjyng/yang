@@ -84,7 +84,25 @@ mod tests {
     }
 
     #[test]
-    fn integration_test_non_attribute_generation() {
+    fn integration_test_data_generation() {
+        let code = code(&CodeConfig {
+            name: Rc::new("MyStr".to_owned()),
+            parent: StructConfig {
+                name: "MyData".to_owned(),
+                ..StructConfig::default()
+            },
+            activate_data: true,
+            codegen_cfg: CodegenConfig {
+                comment_autogen: false,
+                ..CodegenConfig::default()
+            },
+            ..CodeConfig::default()
+        });
+        assert!(code.contains("set_value"));
+    }
+
+    #[test]
+    fn integration_test_regular_generation() {
         assert!(!code(&CodeConfig {
             parent: StructConfig {
                 name: "Tao".to_owned(),
