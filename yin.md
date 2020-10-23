@@ -28,7 +28,7 @@ One type of data is a "string":
 
 ```yaml
 - name: StringConcept
-  parent: Data
+  parent: Tao
 ```
 
 When Yin tells us about herself, we must forget all preconceptions we have about the world and listen to what she has to say. That means when she speaks of what an attribute is, we *listen* instead of shoehorning her description into what we already think of as an attribute.
