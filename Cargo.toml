@@ -1,6 +1,6 @@
 [package]
 name = "zamm_yang"
-version = "0.0.7-beta"
+version = "0.0.11-beta"
 authors = ["Amos Jun-yeung Ng <me@amos.ng>"]
 edition = "2018"
 description = "A basic, experimental code generator"
@@ -17,16 +17,15 @@ path = "src/main.rs"
 [dependencies]
 clap = { version = "^2.33.3", features = ["color", "wrap_help"] }
 colored = "^2"
+heck = "0.3.1"
+indoc = "^1.0"
 itertools = "^0.9.0"
 path_abs = "^0.5.0"
 pulldown-cmark = "^0.8.0"
 textwrap = "^0.12.1"
 toml = "^0.5.7"
 yaml-rust = "^0.4"
-zamm_yin = "0.0.6"
-
-[dev-dependencies]
-indoc = "^1.0"
+zamm_yin = "0.0.12"
 
 [build-dependencies]
 reqwest = { version = "^0.10.8", features = ["blocking"] }

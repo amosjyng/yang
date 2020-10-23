@@ -1,4 +1,4 @@
-use super::{add_indent, count_indent, CODE_WIDTH};
+use crate::codegen::{add_indent, count_indent, CODE_WIDTH};
 
 /// Marker for getting rustfmt to skip over this line.
 pub const FMT_SKIP_MARKER: &str = "#[rustfmt::skip]";

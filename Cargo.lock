@@ -300,6 +300,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
 
 [[package]]
+name = "heck"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "20564e78d53d2bb135c343b3f47714a56af2061f1c928fdb541dc7b9fdd94205"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "hermit-abi"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1324,6 +1333,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "unicode-segmentation"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e83e153d1053cbb5a118eeff7fd5be06ed99153f00dbcd8ae310c5fb2b22edc0"
+
+[[package]]
 name = "unicode-width"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1557,10 +1572,11 @@ dependencies = [
 
 [[package]]
 name = "zamm_yang"
-version = "0.0.7-beta"
+version = "0.0.11-beta"
 dependencies = [
  "clap",
  "colored",
+ "heck",
  "indoc",
  "itertools",
  "path_abs",
@@ -1574,9 +1590,9 @@ dependencies = [
 
 [[package]]
 name = "zamm_yin"
-version = "0.0.6"
+version = "0.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c77586e300a29d3f88fbf3b5826fee41a9945f427fc2c12a93e897c595e409cf"
+checksum = "ee318aff2ffc15905c6a4f9478f7f5d86bfb12977512aba3feb8d56572fcc80d"
 dependencies = [
  "petgraph",
  "reqwest",

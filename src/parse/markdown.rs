@@ -1,7 +1,7 @@
 use super::parse_yaml;
 use crate::codegen::{add_indent, count_indent};
 use pulldown_cmark::{CodeBlockKind, Event, Parser, Tag};
-use zamm_yin::concepts::Tao;
+use zamm_yin::tao::Form;
 
 /// Extracts and concatenates YAML code blocks from the markdown.
 fn extract_yaml(markdown: &str) -> String {
@@ -58,18 +58,19 @@ fn extract_yaml(markdown: &str) -> String {
 }
 
 /// Extract YAML code blocks from Markdown and then extract concepts from those YAML code blocks.
-pub fn parse_md(markdown: &str) -> Vec<Tao> {
+pub fn parse_md(markdown: &str) -> Vec<Form> {
     parse_yaml(&extract_yaml(markdown))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::concepts::{initialize_kb, Implement};
+    use crate::tao::{initialize_kb, Implement};
     use indoc::indoc;
     use std::rc::Rc;
-    use zamm_yin::concepts::{ArchetypeTrait, FormTrait};
     use zamm_yin::node_wrappers::CommonNodeTrait;
+    use zamm_yin::tao::archetype::ArchetypeTrait;
+    use zamm_yin::tao::FormTrait;
 
     #[test]
     fn test_yaml_extraction_nothing() {
@@ -243,11 +244,11 @@ mod tests {
             ```
         "#});
         assert_eq!(concepts.len(), 2);
-        let implement = Implement::from(concepts[1]);
+        let implement = Implement::from(concepts[1].id());
         assert!(implement.has_ancestor(Implement::archetype()));
         assert_eq!(
             implement.target().map(|t| t.internal_name()).flatten(),
-            Some(Rc::new("Target".to_owned()))
+            Some(Rc::new("target".to_owned()))
         );
         let cfg = implement.config().unwrap();
         assert_eq!(cfg.id, 2);
