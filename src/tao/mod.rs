@@ -11,6 +11,7 @@ mod flag_form;
 pub mod form;
 /// Command to implement something.
 mod implement;
+mod lens_form;
 mod newly_defined_form;
 mod own_module_form;
 mod string_concept_form;
@@ -22,6 +23,7 @@ pub use data_form::Data;
 pub use flag_form::Flag;
 use form::BuildInfo;
 pub use implement::{Implement, ImplementConfig};
+pub use lens_form::Lens;
 pub use newly_defined_form::NewlyDefined;
 pub use own_module_form::OwnModule;
 pub use string_concept_form::StringConcept;
@@ -49,7 +51,8 @@ pub fn initialize_kb() {
             StringConcept,
             UsesDataLogic,
             StructPath,
-            BuildInfo
+            BuildInfo,
+            Lens
         )
     );
 }
