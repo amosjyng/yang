@@ -88,6 +88,13 @@ If we're talking about build information, structs will be built as part of a new
   parent: Attribute
 ```
 
+And might also have their own implementation name:
+
+```yaml
+- name: ImplementationName
+  parent: Attribute
+```
+
 ### Implementation
 
 Unlike with Yin, we don't actually want to implement *everything* we know, because everything we know about Yin is already implemented inside her physical body. We only want to implement the things that we learned about Yang here:
@@ -192,3 +199,12 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 ```
 
 > Crate that a concept was built as a part of.
+
+```yaml
+- parent: Implement
+  target: ImplementationName
+  output_id: 14
+  documentation: |-
+```
+
+> Name the concept actually took on when implemented.

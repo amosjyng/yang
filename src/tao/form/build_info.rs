@@ -1,4 +1,4 @@
-use crate::tao::attribute::{CrateName, ImportPath};
+use crate::tao::attribute::{CrateName, ImplementationName, ImportPath};
 use crate::tao::StringConcept;
 use std::convert::TryFrom;
 use std::fmt;
@@ -47,6 +47,25 @@ impl BuildInfo {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.base
             .outgoing_nodes(ImportPath::TYPE_ID)
+            .first()
+            .map(|s| unwrap_strong::<String>(&s.value()).cloned())
+            .flatten()
+    }
+
+    /// Set name the concept took on for its actual implementation.
+    pub fn set_implementation_name(&mut self, path: String) {
+        let mut s = StringConcept::individuate();
+        // todo: set using StringConcept API once that is correctly generated once more
+        s.essence_mut().set_value(Rc::new(StrongValue::new(path)));
+        self.base
+            .add_outgoing(ImplementationName::TYPE_ID, s.essence());
+    }
+
+    /// Retrieve name the concept took on for its actual implementation.
+    pub fn implementation_name(&self) -> Option<String> {
+        // todo: retrieve using StringConcept API once that is correctly generated once more
+        self.base
+            .outgoing_nodes(ImplementationName::TYPE_ID)
             .first()
             .map(|s| unwrap_strong::<String>(&s.value()).cloned())
             .flatten()
@@ -172,6 +191,14 @@ mod tests {
         );
     }
 
+    #[test]
+    fn set_and_retrieve_implementation_name() {
+        initialize_kb();
+        let mut info = BuildInfo::individuate();
+        info.set_implementation_name("Yolo".to_owned());
+        assert_eq!(info.implementation_name(), Some("Yolo".to_owned()));
+    }
+
     /// Test that the attributes don't get mixed up.
     #[test]
     fn set_and_retrieve_all() {
@@ -179,10 +206,13 @@ mod tests {
         let mut info = BuildInfo::individuate();
         info.set_crate_name("zamm_yang".to_owned());
         info.set_import_path("zamm_yang::import::path".to_owned());
+        info.set_implementation_name("Yolo".to_owned());
+
         assert_eq!(info.crate_name(), Some("zamm_yang".to_owned()));
         assert_eq!(
             info.import_path(),
             Some("zamm_yang::import::path".to_owned())
         );
+        assert_eq!(info.implementation_name(), Some("Yolo".to_owned()));
     }
 }
