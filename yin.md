@@ -66,7 +66,7 @@ During implementation, we should be able to force a new attribute to live inside
 Once built, structs have a certain import path:
 
 ```yaml
-- name: StructPath
+- name: ImportPath
   parent: Attribute
 ```
 
@@ -79,6 +79,13 @@ What *does* make sense is distinguishing context-dependent lens from universal o
 ```yaml
 - name: Lens
   parent: Tao
+```
+
+If we're talking about build information, structs will be built as part of a new file:
+
+```yaml
+- name: CrateName
+  parent: Attribute
 ```
 
 ### Implementation
@@ -161,7 +168,7 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 
 ```yaml
 - parent: Implement
-  target: StructPath
+  target: ImportPath
   output_id: 10
   documentation: |-
 ```
@@ -176,3 +183,12 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 ```
 
 > Describes a way of looking at things that is only well-defined within a specific context.
+
+```yaml
+- parent: Implement
+  target: CrateName
+  output_id: 13
+  documentation: |-
+```
+
+> Crate that a concept was built as a part of.

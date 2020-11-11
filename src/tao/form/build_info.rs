@@ -1,3 +1,5 @@
+use crate::tao::attribute::{CrateName, ImportPath};
+use crate::tao::StringConcept;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
@@ -13,28 +15,41 @@ pub struct BuildInfo {
     base: FinalNode,
 }
 
-/// Contains all information about a generated concept. Because it's too difficult to store things
-/// in the KB right now, we'll use a custom struct for now.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct BuildInfoConfig {
-    /// Crate this concept was built as a part of.
-    pub crate_name: String,
-    /// Import path the concept ended up at, relative to the crate.
-    pub struct_path: String,
-    /// Absolute file path for the generated concept.
-    pub file_path: String,
-}
-
 impl BuildInfo {
-    /// Set the build config.
-    pub fn set_config(&mut self, config: BuildInfoConfig) {
-        self.essence_mut()
-            .set_value(Rc::new(StrongValue::new(config)));
+    /// Set crate which the object was built as a part of.
+    pub fn set_crate_name(&mut self, name: String) {
+        let mut s = StringConcept::individuate();
+        // todo: set using StringConcept API once that is correctly generated once more
+        s.essence_mut().set_value(Rc::new(StrongValue::new(name)));
+        self.base.add_outgoing(CrateName::TYPE_ID, s.essence());
     }
 
-    /// Retrieve the config stored for this BuildInfo.
-    pub fn config(&self) -> Option<BuildInfoConfig> {
-        unwrap_strong::<BuildInfoConfig>(&self.essence().value()).cloned()
+    /// Retrieve crate which the object was built as a part of.
+    pub fn crate_name(&self) -> Option<String> {
+        // todo: retrieve using StringConcept API once that is correctly generated once more
+        self.base
+            .outgoing_nodes(CrateName::TYPE_ID)
+            .first()
+            .map(|s| unwrap_strong::<String>(&s.value()).cloned())
+            .flatten()
+    }
+
+    /// Set import path the concept ended up at, relative to the crate.
+    pub fn set_import_path(&mut self, path: String) {
+        let mut s = StringConcept::individuate();
+        // todo: set using StringConcept API once that is correctly generated once more
+        s.essence_mut().set_value(Rc::new(StrongValue::new(path)));
+        self.base.add_outgoing(ImportPath::TYPE_ID, s.essence());
+    }
+
+    /// Retrieve import path the concept ended up at, relative to the crate.
+    pub fn import_path(&self) -> Option<String> {
+        // todo: retrieve using StringConcept API once that is correctly generated once more
+        self.base
+            .outgoing_nodes(ImportPath::TYPE_ID)
+            .first()
+            .map(|s| unwrap_strong::<String>(&s.value()).cloned())
+            .flatten()
     }
 }
 
@@ -139,21 +154,35 @@ mod tests {
     }
 
     #[test]
-    fn set_and_retrieve_config() {
+    fn set_and_retrieve_crate_name() {
         initialize_kb();
         let mut info = BuildInfo::individuate();
-        info.set_config(BuildInfoConfig {
-            crate_name: "zamm_yang".to_owned(),
-            struct_path: "here::Yo".to_owned(),
-            file_path: "/home/zamm/Documents/zamm/yang/src/here/yo.rs".to_owned(),
-        });
+        info.set_crate_name("zamm_yang".to_owned());
+        assert_eq!(info.crate_name(), Some("zamm_yang".to_owned()));
+    }
+
+    #[test]
+    fn set_and_retrieve_import_path() {
+        initialize_kb();
+        let mut info = BuildInfo::individuate();
+        info.set_import_path("zamm_yang::import::path".to_owned());
         assert_eq!(
-            info.config(),
-            Some(BuildInfoConfig {
-                crate_name: "zamm_yang".to_owned(),
-                struct_path: "here::Yo".to_owned(),
-                file_path: "/home/zamm/Documents/zamm/yang/src/here/yo.rs".to_owned(),
-            })
+            info.import_path(),
+            Some("zamm_yang::import::path".to_owned())
+        );
+    }
+
+    /// Test that the attributes don't get mixed up.
+    #[test]
+    fn set_and_retrieve_all() {
+        initialize_kb();
+        let mut info = BuildInfo::individuate();
+        info.set_crate_name("zamm_yang".to_owned());
+        info.set_import_path("zamm_yang::import::path".to_owned());
+        assert_eq!(info.crate_name(), Some("zamm_yang".to_owned()));
+        assert_eq!(
+            info.import_path(),
+            Some("zamm_yang::import::path".to_owned())
         );
     }
 }
