@@ -1,7 +1,7 @@
 use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
 use crate::codegen::{CodeConfig, CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
-use crate::tao::form::DefinedMarker;
+use crate::tao::form::{BuildInfo, DefinedMarker};
 pub use crate::tao::Data;
 use crate::tao::Implement;
 use heck::{CamelCase, SnakeCase};
@@ -73,10 +73,14 @@ fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -
 
 /// Turns a concept into a struct to be imported.
 fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig {
-    StructConfig {
-        name: target.internal_name().unwrap().as_str().to_camel_case(),
-        import: import_path(target, target.force_own_module(), yin_override),
-    }
+    let build_info = BuildInfo::from(*target.essence());
+    let name = build_info
+        .implementation_name()
+        .unwrap_or_else(|| target.internal_name().unwrap().as_str().to_camel_case());
+    let import = build_info
+        .import_path()
+        .unwrap_or_else(|| import_path(target, target.force_own_module(), yin_override));
+    StructConfig { name, import }
 }
 
 fn or_form_default(archetype: Archetype) -> Archetype {
@@ -318,6 +322,21 @@ mod tests {
             StructConfig {
                 name: "Owner".to_owned(),
                 import: "crate::tao::attribute::Owner".to_owned(),
+            }
+        );
+    }
+
+    #[test]
+    fn struct_config_override() {
+        initialize_kb();
+        let mut tao_build = BuildInfo::from(Tao::TYPE_ID);
+        tao_build.set_implementation_name("TaoStruct".to_owned());
+        tao_build.set_import_path("crate::TaoStruct".to_owned());
+        assert_eq!(
+            concept_to_struct(&Tao::archetype(), false),
+            StructConfig {
+                name: "TaoStruct".to_owned(),
+                import: "crate::TaoStruct".to_owned(),
             }
         );
     }
