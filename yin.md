@@ -81,12 +81,16 @@ What *does* make sense is distinguishing context-dependent lens from universal o
   parent: Tao
 ```
 
-If we're talking about build information, structs will be built as part of a new file:
+So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate:
 
 ```yaml
-- name: CrateName
+- name: Crate
   parent: Attribute
 ```
+
+Technically, this should instead be a `part-of-crate` relation between the crate (as its own separate concept apart from the part-of-crate relationship) and the implementation of the concept (as its own separate concept apart from the original concept). Furthermore, as it stands right now this relation points only to the name of the crate, as opposed to the crate itself. However, these distinctions don't matter right now.
+
+Besides, it is only natural for the human mind to use the name of the crate as a metonymy for the crate itself, just as humans also tend to use a filename or a file icon as a metonymy for the inode that points to the actual blocks of data on disk. How often do we stop to remind ourselves that the filename is only a symbolic handle for the actual data, or that when we're dragging a file icon from one folder to another, we're not dragging the data but only the visual representation of the data? We don't do so very often, because such details usually don't matter, and so we will also skip them here.
 
 And might also have their own implementation name:
 
@@ -193,7 +197,7 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 
 ```yaml
 - parent: Implement
-  target: CrateName
+  target: Crate
   output_id: 13
   documentation: |-
 ```

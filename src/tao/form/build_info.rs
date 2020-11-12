@@ -1,4 +1,4 @@
-use crate::tao::attribute::{CrateName, ImplementationName, ImportPath};
+use crate::tao::attribute::{Crate, ImplementationName, ImportPath};
 use crate::tao::StringConcept;
 use std::convert::TryFrom;
 use std::fmt;
@@ -21,14 +21,15 @@ impl BuildInfo {
         let mut s = StringConcept::individuate();
         // todo: set using StringConcept API once that is correctly generated once more
         s.essence_mut().set_value(Rc::new(StrongValue::new(name)));
-        self.base.add_outgoing(CrateName::TYPE_ID, s.essence());
+        self.base.add_outgoing(Crate::TYPE_ID, s.essence());
     }
 
-    /// Retrieve crate which the object was built as a part of.
+    /// Retrieve crate which the object was built as a part of. This is called `crate_name` instead
+    /// of just `crate` because `crate` is a reserved keyword in Rust.
     pub fn crate_name(&self) -> Option<String> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.base
-            .outgoing_nodes(CrateName::TYPE_ID)
+            .outgoing_nodes(Crate::TYPE_ID)
             .first()
             .map(|s| unwrap_strong::<String>(&s.value()).cloned())
             .flatten()
@@ -173,7 +174,7 @@ mod tests {
     }
 
     #[test]
-    fn set_and_retrieve_crate_name() {
+    fn set_and_retrieve_crate() {
         initialize_kb();
         let mut info = BuildInfo::individuate();
         info.set_crate_name("zamm_yang".to_owned());

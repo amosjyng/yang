@@ -18,7 +18,7 @@ mod string_concept_form;
 mod uses_attribute_logic_form;
 mod uses_data_logic_form;
 
-use attribute::{CrateName, ImplementationName, ImportPath, Target};
+use attribute::{Crate, ImplementationName, ImportPath, Target};
 pub use data_form::Data;
 pub use flag_form::Flag;
 use form::BuildInfo;
@@ -53,7 +53,7 @@ pub fn initialize_kb() {
             ImportPath,
             BuildInfo,
             Lens,
-            CrateName,
+            Crate,
             ImplementationName
         )
     );
