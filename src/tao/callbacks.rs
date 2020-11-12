@@ -21,7 +21,6 @@ mod tests {
     use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
     use crate::codegen::{CodeConfig, CodegenConfig, StructConfig};
     use std::collections::HashMap;
-    use std::rc::Rc;
     use zamm_yin::tao::archetype::ArchetypeTrait;
     use zamm_yin::tao::attribute::OwnerArchetype;
     use zamm_yin::tao::attribute::ValueArchetype;
@@ -58,7 +57,10 @@ mod tests {
             },
         );
         let code = code(&CodeConfig {
-            name: Rc::new("MyNewAttr".to_owned()),
+            target: StructConfig {
+                name: "MyNewAttr".to_owned(),
+                ..StructConfig::default()
+            },
             parent: StructConfig {
                 name: "MyAttr".to_owned(),
                 ..StructConfig::default()
@@ -86,7 +88,10 @@ mod tests {
     #[test]
     fn integration_test_data_generation() {
         let code = code(&CodeConfig {
-            name: Rc::new("MyStr".to_owned()),
+            target: StructConfig {
+                name: "MyStr".to_owned(),
+                ..StructConfig::default()
+            },
             parent: StructConfig {
                 name: "MyData".to_owned(),
                 ..StructConfig::default()

@@ -66,7 +66,36 @@ During implementation, we should be able to force a new attribute to live inside
 Once built, structs have a certain import path:
 
 ```yaml
-- name: StructPath
+- name: ImportPath
+  parent: Attribute
+```
+
+All this can apply to any concept at all that's being implemented. However, these attributes are only meaningful within the context of code generation. As such, they should live inside a build config lens -- a way of viewing concepts through a different perspective than usual.
+
+Everything is a lens. The `relation` branch of the knowledge base's inheritance tree views all nodes through the lens of relating other nodes to each other (even forms with multiple attributes can be considered higher n-ary relations), the `form` branch views all its leaf nodes as instances of their ancestor chain, the `archetype` branch views all non-leaf nodes as types to be reasoned with ala type theory. We don't put all these under a root `Lens` node because when everything is a lens, the distinction ceases to be meaningful. Alternatively, the only lens that applies to everything is the `Tao` node, the lens through which everything is only just a number or a string label.
+
+What *does* make sense is distinguishing context-dependent lens from universal ones. There will always be forms and relations no matter which subject you look at; there will not always be build-related information outside of the context of a software build. We should define the lens accordingly:
+
+```yaml
+- name: Lens
+  parent: Tao
+```
+
+So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate:
+
+```yaml
+- name: Crate
+  parent: Attribute
+```
+
+Technically, this should instead be a `part-of-crate` relation between the crate (as its own separate concept apart from the part-of-crate relationship) and the implementation of the concept (as its own separate concept apart from the original concept). Furthermore, as it stands right now this relation points only to the name of the crate, as opposed to the crate itself. However, these distinctions don't matter right now.
+
+Besides, it is only natural for the human mind to use the name of the crate as a metonymy for the crate itself, just as humans also tend to use a filename or a file icon as a metonymy for the inode that points to the actual blocks of data on disk. How often do we stop to remind ourselves that the filename is only a symbolic handle for the actual data, or that when we're dragging a file icon from one folder to another, we're not dragging the data but only the visual representation of the data? We don't do so very often, because such details usually don't matter, and so we will also skip them here.
+
+And might also have their own implementation name:
+
+```yaml
+- name: ImplementationName
   parent: Attribute
 ```
 
@@ -150,9 +179,36 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 
 ```yaml
 - parent: Implement
-  target: StructPath
+  target: ImportPath
   output_id: 10
   documentation: |-
 ```
 
 > Describes the import path of a defined struct.
+
+```yaml
+- parent: Implement
+  target: Lens
+  output_id: 12
+  documentation: |-
+```
+
+> Describes a way of looking at things that is only well-defined within a specific context.
+
+```yaml
+- parent: Implement
+  target: Crate
+  output_id: 13
+  documentation: |-
+```
+
+> Crate that a concept was built as a part of.
+
+```yaml
+- parent: Implement
+  target: ImplementationName
+  output_id: 14
+  documentation: |-
+```
+
+> Name the concept actually took on when implemented.

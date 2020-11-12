@@ -46,8 +46,7 @@ impl Implement {
             .map(Archetype::from)
     }
 
-    /// Set the config for this Implement. Note that this cannot be used at the same time with
-    /// Documentable functions, at least for now.
+    /// Set the config for this Implement.
     pub fn set_config(&mut self, config: ImplementConfig) {
         self.essence_mut()
             .set_value(Rc::new(StrongValue::new(config)));
