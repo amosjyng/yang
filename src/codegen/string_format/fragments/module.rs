@@ -11,7 +11,7 @@ pub struct ModuleFragment {
 }
 
 impl ModuleFragment {
-    /// Create a new module with the given name
+    /// Create a new module with the given name.
     pub fn new(name: String) -> Self {
         Self {
             name,
