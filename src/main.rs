@@ -1,27 +1,25 @@
 use clap::{crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
 use colored::*;
+use indoc::formatdoc;
 use std::env;
 use std::fs;
 use std::fs::read_to_string;
 use std::io::Error;
 use std::process::exit;
 use toml::Value;
-use zamm_yang::codegen::track_autogen::{clean_autogen, save_autogen};
+use zamm_yang::codegen::string_format::MainConfig;
+use zamm_yang::codegen::track_autogen::clean_autogen;
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::commands::run_command;
+use zamm_yang::main_build::generate_final_code;
 use zamm_yang::parse::{find_file, parse_input};
-use zamm_yang::tao::callbacks::handle_implementation;
-use zamm_yang::tao::{initialize_kb, Implement};
-use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
+use zamm_yang::tao::initialize_kb;
 
 /// Help text to display for the input file argument.
 const INPUT_HELP_TEXT: &str =
-    "The input file containing relevant information to generate code for. \
-    Currently only Markdown (extension .md) and YAML (extensions .yml or \
-    .yaml) are supported. If no input file is provided, yang will look for a \
-    file named `yin` with one of the above extensions, in the current \
-    directory.";
+    "The input file containing relevant information to generate code for. Currently only Markdown \
+    (extension .md) is supported. If no input file is provided, yang will look for a file named \
+    `yin` with one of the above extensions, in the current directory.";
 
 struct BuildConfig<'a> {
     input_file: Option<&'a str>,
@@ -101,16 +99,52 @@ fn release_post_build() -> Result<(), Error> {
 
 fn generate_code(build_cfg: &BuildConfig) -> Result<(), Error> {
     let found_input = find_file(build_cfg.input_file)?;
-    parse_input(found_input)?;
+    let literate_rust_code = parse_input(found_input)?;
 
-    for implement_command in Implement::archetype().individuals() {
-        handle_implementation(
-            Implement::from(implement_command.id()),
-            &build_cfg.codegen_cfg,
-        );
-    }
+    let define_codegen_cfg = formatdoc! {r#"
+        let codegen_cfg = CodegenConfig {{
+            comment_autogen: {comment_autogen},
+            add_rustfmt_attributes: {add_rustfmt_attributes},
+            track_autogen: {track_autogen},
+            yin: {yin},
+            release: {release},
+        }};
+    "#, comment_autogen = build_cfg.codegen_cfg.comment_autogen,
+    add_rustfmt_attributes = build_cfg.codegen_cfg.add_rustfmt_attributes,
+    track_autogen = build_cfg.codegen_cfg.track_autogen,
+    yin = build_cfg.codegen_cfg.yin,
+    release = build_cfg.codegen_cfg.release};
 
-    save_autogen();
+    let kb_init = formatdoc! {r#"
+        initialize_kb();
+        // ------------------------ START OF LITERATE RUST -------------------------
+        {}
+        // -------------------------- END OF LITERATE RUST -------------------------
+        handle_all_implementations(&codegen_cfg);
+    "#, literate_rust_code.trim()};
+
+    generate_final_code(&MainConfig {
+        imports: vec![
+            "zamm_yin::tao::Tao".to_owned(),
+            "zamm_yin::tao::archetype::ArchetypeTrait".to_owned(),
+            "zamm_yin::tao::archetype::ArchetypeFormTrait".to_owned(),
+            "zamm_yin::node_wrappers::CommonNodeTrait".to_owned(),
+            "zamm_yin::tao::FormTrait".to_owned(),
+            "zamm_yin::tao::attribute::Attribute".to_owned(),
+            "zamm_yin::tao::archetype::AttributeArchetype".to_owned(),
+            "zamm_yang::codegen::CodegenConfig".to_owned(),
+            "zamm_yang::tao::callbacks::handle_all_implementations".to_owned(),
+            "zamm_yang::tao::initialize_kb".to_owned(),
+            "zamm_yang::tao::Implement".to_owned(),
+            "zamm_yang::tao::ImplementConfig".to_owned(),
+            "zamm_yang::tao::archetype::CodegenFlags".to_owned(),
+            "zamm_yang::tao::archetype::CreateImplementation".to_owned(),
+            "zamm_yang::define".to_owned(),
+            "zamm_yang::helper::aa".to_owned(),
+        ],
+        lines: vec![define_codegen_cfg, kb_init],
+    });
+
     Ok(())
 }
 
@@ -124,6 +158,7 @@ fn build(args: &ArgMatches) -> Result<(), Error> {
                 .unwrap_or("true")
                 .parse::<bool>()
                 .unwrap(),
+            add_rustfmt_attributes: true,
             track_autogen: args.is_present("TRACK_AUTOGEN"),
             yin: args.is_present("YIN"),
             release: false,
@@ -139,6 +174,7 @@ fn release(args: &ArgMatches) -> Result<(), Error> {
         input_file: args.value_of("INPUT"),
         codegen_cfg: CodegenConfig {
             comment_autogen: false,
+            add_rustfmt_attributes: true,
             track_autogen: false,
             yin: args.is_present("YIN"),
             release: true,

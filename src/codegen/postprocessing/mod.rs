@@ -12,7 +12,11 @@ use mark_fmt::add_fmt_skips;
 /// Do post-processing on generated code. Includes marking lines with autogeneration comments, or
 /// marking lines as requiring formatting skips.
 pub fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
-    let formatted = add_fmt_skips(&code);
+    let formatted = if options.add_rustfmt_attributes {
+        add_fmt_skips(&code)
+    } else {
+        code.to_owned()
+    };
     if options.comment_autogen && !options.release {
         add_autogeneration_comments(&formatted)
     } else {
