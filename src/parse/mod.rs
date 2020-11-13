@@ -1,20 +1,15 @@
-/// Parses Markdown into concepts.
+/// Literate programming support - extracts relevant code from Markdown file.
 pub mod markdown;
-/// Parses YAML into concepts.
-pub mod yaml;
 
-pub use markdown::parse_md;
-pub use yaml::parse_yaml;
-
+pub use markdown::extract_rust;
 use path_abs::{PathAbs, PathInfo};
 use std::env;
 use std::fs::read_to_string;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
-use zamm_yin::tao::Form;
 
 /// All supported input filename extensions.
-pub const SUPPORTED_EXTENSIONS: &[&str] = &["md", "yml", "yaml"];
+pub const SUPPORTED_EXTENSIONS: &[&str] = &["md"];
 
 /// Find the right input file.
 pub fn find_file(specified_file: Option<&str>) -> Result<PathAbs, Error> {
@@ -58,7 +53,7 @@ pub fn find_file(specified_file: Option<&str>) -> Result<PathAbs, Error> {
 }
 
 /// Parse the giveninput file.
-pub fn parse_input(found_input: PathAbs) -> Result<Vec<Form>, Error> {
+pub fn parse_input(found_input: PathAbs) -> Result<String, Error> {
     println!(
         "cargo:rerun-if-changed={}",
         found_input.as_os_str().to_str().unwrap()
@@ -69,9 +64,7 @@ pub fn parse_input(found_input: PathAbs) -> Result<Vec<Form>, Error> {
         .map(|e| e.to_str().unwrap())
         .unwrap_or("");
     match extension {
-        "md" => Ok(parse_md(&contents)),
-        "yaml" => Ok(parse_yaml(&contents)),
-        "yml" => Ok(parse_yaml(&contents)),
+        "md" => Ok(extract_rust(&contents)),
         _ => Err(Error::new(
             ErrorKind::NotFound,
             format!(

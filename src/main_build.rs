@@ -19,6 +19,12 @@ fn toml_code() -> String {
         Ok(dir) => format!("{{path = \"{}\"}}", dir).replace('\\', "/"),
         Err(_) => "0.0.10".to_owned(),
     };
+    // note that zamm_yin must be running on the same version as whatever version yang is built on,
+    // *not* whatever version the user is building for, because otherwise different graphs will be
+    // used and it won't be initialized properly.
+    //
+    // Put another way, the intermediate exe depends on this particular version of yang, which
+    // depends on this version of yin, not the version that the user is building for.
     formatdoc! {r#"
         [package]
         name = "intermediate-code-generator"
@@ -26,7 +32,7 @@ fn toml_code() -> String {
         edition = "2018"
 
         [dependencies]
-        zamm_yin = "0.0.13"
+        zamm_yin = "0.0.12"
         zamm_yang = {}
     "#, yang_version}
 }
