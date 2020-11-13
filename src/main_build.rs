@@ -52,7 +52,12 @@ fn output_main(cfg: &MainConfig) {
         &main_rs.to_str().unwrap(),
         // no settings matter, we're generating an intermediate build file that then generates the
         // final code files
-        &CodegenConfig::default(),
+        &CodegenConfig {
+            // skip because this gets applied to long doc strings, and attributes on expressions
+            // are not supported. see https://github.com/rust-lang/rust/issues/15701
+            add_rustfmt_attributes: false,
+            ..CodegenConfig::default()
+        },
     );
 }
 
@@ -64,6 +69,9 @@ fn output_cargo_toml() {
         &toml_code(),
         &cargo_toml.to_str().unwrap(),
         &CodegenConfig {
+            // skip because this gets applied to long doc strings, and attributes on expressions
+            // are not supported. see https://github.com/rust-lang/rust/issues/15701
+            add_rustfmt_attributes: false,
             comment_autogen: false, // only Rust-style comments supported at the moment
             ..CodegenConfig::default()
         },

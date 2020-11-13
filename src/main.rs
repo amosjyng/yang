@@ -104,11 +104,13 @@ fn generate_code(build_cfg: &BuildConfig) -> Result<(), Error> {
     let define_codegen_cfg = formatdoc! {r#"
         let codegen_cfg = CodegenConfig {{
             comment_autogen: {comment_autogen},
+            add_rustfmt_attributes: {add_rustfmt_attributes},
             track_autogen: {track_autogen},
             yin: {yin},
             release: {release},
         }};
     "#, comment_autogen = build_cfg.codegen_cfg.comment_autogen,
+    add_rustfmt_attributes = build_cfg.codegen_cfg.add_rustfmt_attributes,
     track_autogen = build_cfg.codegen_cfg.track_autogen,
     yin = build_cfg.codegen_cfg.yin,
     release = build_cfg.codegen_cfg.release};
@@ -133,6 +135,10 @@ fn generate_code(build_cfg: &BuildConfig) -> Result<(), Error> {
             "zamm_yang::codegen::CodegenConfig".to_owned(),
             "zamm_yang::tao::callbacks::handle_all_implementations".to_owned(),
             "zamm_yang::tao::initialize_kb".to_owned(),
+            "zamm_yang::tao::Implement".to_owned(),
+            "zamm_yang::tao::ImplementConfig".to_owned(),
+            "zamm_yang::tao::archetype::CodegenFlags".to_owned(),
+            "zamm_yang::tao::archetype::CreateImplementation".to_owned(),
             "zamm_yang::define".to_owned(),
         ],
         lines: vec![define_codegen_cfg, kb_init],
@@ -151,6 +157,7 @@ fn build(args: &ArgMatches) -> Result<(), Error> {
                 .unwrap_or("true")
                 .parse::<bool>()
                 .unwrap(),
+            add_rustfmt_attributes: true,
             track_autogen: args.is_present("TRACK_AUTOGEN"),
             yin: args.is_present("YIN"),
             release: false,
@@ -166,6 +173,7 @@ fn release(args: &ArgMatches) -> Result<(), Error> {
         input_file: args.value_of("INPUT"),
         codegen_cfg: CodegenConfig {
             comment_autogen: false,
+            add_rustfmt_attributes: true,
             track_autogen: false,
             yin: args.is_present("YIN"),
             release: true,
