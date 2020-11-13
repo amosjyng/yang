@@ -6,14 +6,13 @@ use std::fs::read_to_string;
 use std::io::Error;
 use std::process::exit;
 use toml::Value;
-use zamm_yang::codegen::track_autogen::{clean_autogen, save_autogen};
+use zamm_yang::codegen::string_format::MainConfig;
+use zamm_yang::codegen::track_autogen::clean_autogen;
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::commands::run_command;
+use zamm_yang::main_build::output_build_dir;
 use zamm_yang::parse::{find_file, parse_input};
-use zamm_yang::tao::callbacks::handle_implementation;
-use zamm_yang::tao::{initialize_kb, Implement};
-use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
+use zamm_yang::tao::initialize_kb;
 
 /// Help text to display for the input file argument.
 const INPUT_HELP_TEXT: &str =
@@ -103,14 +102,13 @@ fn generate_code(build_cfg: &BuildConfig) -> Result<(), Error> {
     let found_input = find_file(build_cfg.input_file)?;
     parse_input(found_input)?;
 
-    for implement_command in Implement::archetype().individuals() {
-        handle_implementation(
-            Implement::from(implement_command.id()),
-            &build_cfg.codegen_cfg,
-        );
-    }
+    // todo: generate a call to zamm_yang::tao::callbacks::handle_all_implementations using
+    // build_cfg.codegen_cfg
+    output_build_dir(&MainConfig {
+        imports: vec![],
+        lines: vec!["println!(\"Hello world!\");".to_owned()],
+    });
 
-    save_autogen();
     Ok(())
 }
 

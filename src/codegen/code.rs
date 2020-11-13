@@ -1,5 +1,4 @@
 use super::CodegenConfig;
-use crate::codegen::postprocessing::post_process_generation;
 use crate::codegen::string_format::attribute::code_attribute;
 use crate::codegen::string_format::code_string_concept;
 use crate::codegen::string_format::tao::code_tao;
@@ -48,14 +47,13 @@ pub struct CodeConfig<'a> {
     pub codegen_cfg: CodegenConfig,
 }
 
-/// Generate the final version of code, to be output to a file as-is.
+/// Generate code for a given concept. Post-processing still needed.
 pub fn code(cfg: &CodeConfig) -> String {
-    let initial_code = if cfg.activate_attribute {
+    if cfg.activate_attribute {
         code_attribute(&AttributeFormatConfig::from(cfg))
     } else if cfg.activate_data {
         code_string_concept(&FormatConfig::from(cfg))
     } else {
         code_tao(&FormatConfig::from(cfg))
-    };
-    post_process_generation(&initial_code, &cfg.codegen_cfg)
+    }
 }

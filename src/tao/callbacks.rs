@@ -1,18 +1,23 @@
 use super::Implement;
-use crate::codegen::filesystem::{output_code, OutputConfig};
 use crate::codegen::planning::{code_cfg_for, file_path};
-use crate::codegen::{code, CodegenConfig};
+use crate::codegen::track_autogen::save_autogen;
+use crate::codegen::{code, output_code, CodegenConfig};
+use zamm_yin::node_wrappers::CommonNodeTrait;
+use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
 
-/// Handle the implementation request for a new attribute archetype.
+/// Handle the implementation request for a new archetype.
 pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
     let code = code(&code_cfg_for(request, codegen_cfg));
+    output_code(&code, &file_path(&request.target().unwrap()), codegen_cfg);
+}
 
-    output_code(&OutputConfig {
-        code: &code,
-        file_path: &file_path(&request.target().unwrap()),
-        git_ignore: !codegen_cfg.release,
-        cargo_track: codegen_cfg.track_autogen,
-    });
+/// Handle all defined implementation requests.
+pub fn handle_all_implementations(codegen_cfg: &CodegenConfig) {
+    for implement_command in Implement::archetype().individuals() {
+        handle_implementation(Implement::from(implement_command.id()), codegen_cfg);
+    }
+
+    save_autogen();
 }
 
 #[cfg(test)]
