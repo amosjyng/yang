@@ -30,17 +30,25 @@ impl FileFragment {
             combined.append(t.clone());
         }
 
-        format!(
-            "{}\n\n{}\n",
-            imports_as_str(
-                &combined
-                    .imports()
-                    .iter()
-                    .map(|s| s.as_str())
-                    .collect::<Vec<&str>>()
-            ),
-            combined.body()
-        )
+        let imports = imports_as_str(
+            &combined
+                .imports()
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<&str>>(),
+        );
+
+        let body = combined.body();
+
+        if imports.is_empty() {
+            if body.is_empty() {
+                String::default()
+            } else {
+                format!("{}\n", body)
+            }
+        } else {
+            format!("{}\n\n{}\n", imports, body)
+        }
     }
 }
 
@@ -49,6 +57,11 @@ mod tests {
     use super::super::{AtomicFragment, ModuleFragment};
     use super::*;
     use indoc::indoc;
+
+    #[test]
+    fn test_empty_file() {
+        assert_eq!(FileFragment::default().generate_code(), "");
+    }
 
     #[test]
     fn test_file_with_tests() {

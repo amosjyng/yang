@@ -8,6 +8,16 @@ pub struct AtomicFragment {
     pub atom: String,
 }
 
+impl AtomicFragment {
+    /// Create a new AtomicFragment with no imports.
+    pub fn new(atom: String) -> Self {
+        Self {
+            imports: Vec::<String>::default(),
+            atom,
+        }
+    }
+}
+
 impl CodeFragment for AtomicFragment {
     fn body(&self) -> String {
         self.atom.trim().to_string()

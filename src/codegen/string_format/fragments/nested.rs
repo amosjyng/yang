@@ -33,8 +33,12 @@ impl CodeFragment for NestedFragment {
     fn body(&self) -> String {
         let mut result = self.preamble.trim().to_owned() + "\n";
         if let Some(n) = self.nesting.as_ref() {
-            for line in n.borrow().body().trim().split('\n') {
-                result += &(add_indent(RUST_INDENTATION, line) + "\n");
+            let body = n.borrow().body();
+            let trimmed_body = body.trim();
+            if !trimmed_body.is_empty() {
+                for line in trimmed_body.split('\n') {
+                    result += &(add_indent(RUST_INDENTATION, line) + "\n");
+                }
             }
         }
         result + self.postamble.trim()
@@ -101,6 +105,28 @@ mod tests {
             imports: vec!["std::official::RustStruct".to_owned()],
             preamble: "RustStruct {".to_owned(),
             nesting: None,
+            postamble: "}".to_owned(),
+        };
+        assert_eq!(
+            nested.imports(),
+            vec!["std::official::RustStruct".to_owned(),]
+        );
+        assert_eq!(
+            nested.body(),
+            indoc! {"
+                RustStruct {
+                }
+            "}
+            .trim()
+        );
+    }
+
+    #[test]
+    fn test_nest_empty_contents() {
+        let nested = NestedFragment {
+            imports: vec!["std::official::RustStruct".to_owned()],
+            preamble: "RustStruct {".to_owned(),
+            nesting: Some(Rc::new(RefCell::new(AppendedFragment::default()))),
             postamble: "}".to_owned(),
         };
         assert_eq!(
