@@ -1,10 +1,15 @@
 use crate::codegen::string_format::{code_main, MainConfig};
 use crate::codegen::{output_code, CodegenConfig};
+use crate::commands::run_command;
 use std::env;
 use std::path::PathBuf;
+use std::process::exit;
 
 /// Name to use for the subdirectory of the temp directory where we're outputting things.
 const YANG_BUILD_SUBDIR: &str = "yang";
+
+/// Name for the codegen binary. Be sure to change BUILD_TOML as well when changing this.
+const CODEGEN_BINARY: &str = "intermediate-code-generator";
 
 /// File contents for the intermediate cargo.toml that is only meant for generating the actual code
 /// at the end.
@@ -52,7 +57,51 @@ fn output_cargo_toml() {
 
 /// Set up the build directory for compilation of a program that will then go on to generate the
 /// final code files.
-pub fn output_build_dir(cfg: &MainConfig) {
+fn output_build_dir(cfg: &MainConfig) {
     output_main(cfg);
     output_cargo_toml();
+    println!("Finished generating codegen files.");
+}
+
+fn build_codegen_binary() -> String {
+    let src_dir = env::current_dir().unwrap();
+    let subdir = build_subdir();
+    env::set_current_dir(&subdir).unwrap();
+
+    println!(
+        "Now building codegen binary in {} ...",
+        subdir.to_str().unwrap()
+    );
+    let build_result = run_command("cargo", vec!["build"]);
+
+    // Verify successful build
+    let mut binary = subdir.clone();
+    binary.push(format!("target/debug/{}", CODEGEN_BINARY));
+    if cfg!(windows) {
+        binary.set_extension("exe");
+    }
+    let binary_path = binary.to_str().unwrap();
+    if !binary.exists() {
+        println!(
+            "Codegen binary was not found at expected location {}. Build output was:\n\n{}",
+            binary_path, build_result
+        );
+        exit(1);
+    }
+    println!("Binary successfully built at {}.", binary_path);
+    println!(
+        "Returning to {} and running codegen...",
+        src_dir.to_str().unwrap()
+    );
+    env::set_current_dir(&src_dir).unwrap();
+
+    binary_path.to_owned()
+}
+
+/// Generate code using the code specified in `cfg`.
+pub fn generate_final_code(cfg: &MainConfig) {
+    output_build_dir(cfg);
+    let binary_path = build_codegen_binary();
+    println!("==================== RUNNING CODEGEN ====================");
+    print!("{}", run_command(&binary_path, Vec::<&str>::new()));
 }

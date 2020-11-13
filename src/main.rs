@@ -10,7 +10,7 @@ use zamm_yang::codegen::string_format::MainConfig;
 use zamm_yang::codegen::track_autogen::clean_autogen;
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::commands::run_command;
-use zamm_yang::main_build::output_build_dir;
+use zamm_yang::main_build::generate_final_code;
 use zamm_yang::parse::{find_file, parse_input};
 use zamm_yang::tao::initialize_kb;
 
@@ -104,7 +104,7 @@ fn generate_code(build_cfg: &BuildConfig) -> Result<(), Error> {
 
     // todo: generate a call to zamm_yang::tao::callbacks::handle_all_implementations using
     // build_cfg.codegen_cfg
-    output_build_dir(&MainConfig {
+    generate_final_code(&MainConfig {
         imports: vec![],
         lines: vec!["println!(\"Hello world!\");".to_owned()],
     });
