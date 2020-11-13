@@ -1,5 +1,6 @@
 use clap::{crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
 use colored::*;
+use indoc::formatdoc;
 use std::env;
 use std::fs;
 use std::fs::read_to_string;
@@ -102,11 +103,23 @@ fn generate_code(build_cfg: &BuildConfig) -> Result<(), Error> {
     let found_input = find_file(build_cfg.input_file)?;
     parse_input(found_input)?;
 
+    let define_codegen_cfg = formatdoc! {r#"
+        let codegen_cfg = CodegenConfig {{
+            comment_autogen: {comment_autogen},
+            track_autogen: {track_autogen},
+            yin: {yin},
+            release: {release},
+        }};
+    "#, comment_autogen = build_cfg.codegen_cfg.comment_autogen,
+    track_autogen = build_cfg.codegen_cfg.track_autogen,
+    yin = build_cfg.codegen_cfg.yin,
+    release = build_cfg.codegen_cfg.release};
+
     // todo: generate a call to zamm_yang::tao::callbacks::handle_all_implementations using
     // build_cfg.codegen_cfg
     generate_final_code(&MainConfig {
-        imports: vec![],
-        lines: vec!["println!(\"Hello world!\");".to_owned()],
+        imports: vec!["zamm_yang::codegen::CodegenConfig".to_owned()],
+        lines: vec![define_codegen_cfg],
     });
 
     Ok(())

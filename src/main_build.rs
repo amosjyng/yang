@@ -1,6 +1,7 @@
 use crate::codegen::string_format::{code_main, MainConfig};
 use crate::codegen::{output_code, CodegenConfig};
 use crate::commands::run_command;
+use indoc::formatdoc;
 use std::env;
 use std::path::PathBuf;
 use std::process::exit;
@@ -13,14 +14,22 @@ const CODEGEN_BINARY: &str = "intermediate-code-generator";
 
 /// File contents for the intermediate cargo.toml that is only meant for generating the actual code
 /// at the end.
-const BUILD_TOML: &str = r#"[package]
-name = "intermediate-code-generator"
-version = "1.0.0"
+fn toml_code() -> String {
+    let yang_version = match env::var("YANG_DEV_DIR") {
+        Ok(dir) => format!("{{path = \"{}\"}}", dir).replace('\\', "/"),
+        Err(_) => "0.0.10".to_owned(),
+    };
+    formatdoc! {r#"
+        [package]
+        name = "intermediate-code-generator"
+        version = "1.0.0"
+        edition = "2018"
 
-[dependencies]
-zamm_yin = "0.0.13"
-zamm_yang = "0.0.10"
-"#;
+        [dependencies]
+        zamm_yin = "0.0.13"
+        zamm_yang = {}
+    "#, yang_version}
+}
 
 fn build_subdir() -> PathBuf {
     let mut tmp = env::temp_dir();
@@ -46,7 +55,7 @@ fn output_cargo_toml() {
     let mut cargo_toml = build_subdir();
     cargo_toml.push("Cargo.toml"); // Cargo files are somehow uppercased by default
     output_code(
-        BUILD_TOML,
+        &toml_code(),
         &cargo_toml.to_str().unwrap(),
         &CodegenConfig {
             comment_autogen: false, // only Rust-style comments supported at the moment
