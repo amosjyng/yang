@@ -75,7 +75,7 @@ fn build_codegen_binary() -> String {
     let build_result = run_command("cargo", vec!["build"]);
 
     // Verify successful build
-    let mut binary = subdir.clone();
+    let mut binary = subdir;
     binary.push(format!("target/debug/{}", CODEGEN_BINARY));
     if cfg!(windows) {
         binary.set_extension("exe");
