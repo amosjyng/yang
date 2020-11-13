@@ -115,11 +115,22 @@ fn generate_code(build_cfg: &BuildConfig) -> Result<(), Error> {
     yin = build_cfg.codegen_cfg.yin,
     release = build_cfg.codegen_cfg.release};
 
-    // todo: generate a call to zamm_yang::tao::callbacks::handle_all_implementations using
-    // build_cfg.codegen_cfg
+    let literate_rust_code = ""; // todo: actually extract rust code
+    let kb_init = formatdoc! {r#"
+        initialize_kb();
+        // ------------------------ START OF LITERATE RUST -------------------------
+        {}
+        // -------------------------- END OF LITERATE RUST -------------------------
+        handle_all_implementations(&codegen_cfg);
+    "#, literate_rust_code};
+
     generate_final_code(&MainConfig {
-        imports: vec!["zamm_yang::codegen::CodegenConfig".to_owned()],
-        lines: vec![define_codegen_cfg],
+        imports: vec![
+            "zamm_yang::codegen::CodegenConfig".to_owned(),
+            "zamm_yang::tao::callbacks::handle_all_implementations".to_owned(),
+            "zamm_yang::tao::initialize_kb".to_owned(),
+        ],
+        lines: vec![define_codegen_cfg, kb_init],
     });
 
     Ok(())
