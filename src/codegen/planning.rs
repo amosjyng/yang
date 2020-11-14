@@ -1,8 +1,8 @@
 use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
 use crate::codegen::{CodeConfig, CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
+pub use crate::tao::form::data::Data;
 use crate::tao::form::{BuildInfo, DefinedMarker};
-pub use crate::tao::Data;
 use crate::tao::Implement;
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;

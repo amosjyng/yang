@@ -115,6 +115,8 @@ First, we tell Yang about the newer version of Yin that we'll be building for:
 Attribute::archetype()
     .build_info()
     .set_import_path("zamm_yin::tao::relation::attribute::Attribute");
+
+flag.build_info().set_crate_name("zamm_yin");
 ```
 
 Now we can implement the other things:

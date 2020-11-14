@@ -5,8 +5,9 @@ use zamm_yang::tao::callbacks::handle_implementation;
 use zamm_yang::tao::{initialize_kb, Implement, ImplementConfig};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
-use zamm_yin::tao::attribute::Attribute;
-use zamm_yin::tao::{FormTrait, Tao};
+use zamm_yin::tao::form::FormTrait;
+use zamm_yin::tao::relation::attribute::Attribute;
+use zamm_yin::tao::Tao;
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");

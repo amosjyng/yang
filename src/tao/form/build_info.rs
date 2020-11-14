@@ -1,4 +1,4 @@
-use crate::tao::attribute::{Crate, ImplementationName, ImportPath};
+use crate::tao::relation::attribute::{Crate, ImplementationName, ImportPath};
 use crate::tao::StringConcept;
 use std::convert::TryFrom;
 use std::fmt;
@@ -7,7 +7,8 @@ use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::{unwrap_strong, StrongValue};
 use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, CommonNodeTrait, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
-use zamm_yin::tao::{FormTrait, Tao, YIN_MAX_ID};
+use zamm_yin::tao::form::FormTrait;
+use zamm_yin::tao::{Tao, YIN_MAX_ID};
 
 /// Represents build information about a generated concept.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

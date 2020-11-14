@@ -5,7 +5,7 @@ pub mod attribute {
 
 use zamm_yin::graph::{Graph, InjectionGraph};
 use zamm_yin::tao::archetype::ArchetypeTrait;
-use zamm_yin::tao::attribute::Inherits;
+use zamm_yin::tao::relation::attribute::Inherits;
 
 pub fn initialize_kb() {
     zamm_yin::tao::initialize_kb();
