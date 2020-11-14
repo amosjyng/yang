@@ -42,7 +42,7 @@ fn toml_code() -> String {
         edition = "2018"
 
         [dependencies]
-        zamm_yin = "0.0.12"
+        zamm_yin = "0.0.13"
         zamm_yang = {}
     "#, yang_version}
 }
