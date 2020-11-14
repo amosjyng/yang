@@ -4,6 +4,7 @@ use crate::tao::{Implement, ImplementConfig};
 pub use attribute_activation::CodegenFlags;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::FormTrait;
+use crate::tao::BuildInfo;
 
 /// Convenience trait for creating a new implementation of a concept.
 pub trait CreateImplementation: FormTrait {
@@ -22,6 +23,11 @@ pub trait CreateImplementation: FormTrait {
             doc: Some(doc.to_owned()),
         });
         implementation
+    }
+
+    /// Look at this concept through the BuildInfo lens.
+    fn build_info(&self) -> BuildInfo {
+        BuildInfo::from(self.id())
     }
 }
 
