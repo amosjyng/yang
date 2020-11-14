@@ -7,9 +7,6 @@ use std::env;
 use std::path::PathBuf;
 use std::process::exit;
 
-/// Name to use for the subdirectory of the temp directory where we're outputting things.
-const YANG_BUILD_SUBDIR: &str = "yang";
-
 /// Default version of Yang to use if no local dev version found.
 const YANG_BUILD_VERSION: &str = "0.0.12";
 
@@ -47,9 +44,10 @@ fn toml_code() -> String {
     "#, yang_version}
 }
 
+/// Directory where we're outputting things.
 fn build_subdir() -> PathBuf {
-    let mut tmp = env::temp_dir();
-    tmp.push(PathBuf::from(YANG_BUILD_SUBDIR));
+    let mut tmp = env::current_dir().unwrap();
+    tmp.push(".yang");
     tmp
 }
 
