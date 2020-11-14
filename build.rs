@@ -20,7 +20,7 @@ const BINARY_EXT: &str = "";
 const BINARY_EXT: &str = ".exe";
 
 /// The version of the Yang that will be used to generate build files.
-const YANG_DEP_VERSION: &str = "0.0.10";
+const YANG_DEP_VERSION: &str = "0.0.11";
 
 /// Call out to the commandline version of yang.
 fn run_yang<I, S>(yang_binary: &str, args: I)
