@@ -1,10 +1,10 @@
 mod attribute_activation;
 
+use crate::tao::BuildInfo;
 use crate::tao::{Implement, ImplementConfig};
 pub use attribute_activation::CodegenFlags;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::FormTrait;
-use crate::tao::BuildInfo;
 
 /// Convenience trait for creating a new implementation of a concept.
 pub trait CreateImplementation: FormTrait {

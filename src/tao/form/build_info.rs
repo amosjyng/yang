@@ -39,7 +39,8 @@ impl BuildInfo {
     pub fn set_import_path(&mut self, path: &str) {
         let mut s = StringConcept::individuate();
         // todo: set using StringConcept API once that is correctly generated once more
-        s.essence_mut().set_value(Rc::new(StrongValue::new(path.to_owned())));
+        s.essence_mut()
+            .set_value(Rc::new(StrongValue::new(path.to_owned())));
         self.base.add_outgoing(ImportPath::TYPE_ID, s.essence());
     }
 

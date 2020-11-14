@@ -331,7 +331,7 @@ mod tests {
         initialize_kb();
         let mut tao_build = BuildInfo::from(Tao::TYPE_ID);
         tao_build.set_implementation_name("TaoStruct".to_owned());
-        tao_build.set_import_path("crate::TaoStruct".to_owned());
+        tao_build.set_import_path("crate::TaoStruct");
         assert_eq!(
             concept_to_struct(&Tao::archetype(), false),
             StructConfig {
