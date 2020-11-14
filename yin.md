@@ -8,7 +8,7 @@ Here's what Yang knows: implementations are lower-level concepts that *target* s
 
 ```rust
 define!(target);
-use zamm_yin::tao::attribute::Attribute;
+use zamm_yin::tao::relation::attribute::Attribute;
 target.add_parent(Attribute::archetype().as_archetype());
 ```
 
@@ -20,7 +20,7 @@ The same can be said for the bits in Yin and Yang's world. Everything is ultimat
 
 ```rust
 define!(data);
-use zamm_yin::tao::Form;
+use zamm_yin::tao::form::Form;
 data.add_parent(Form::archetype());
 ```
 
@@ -39,34 +39,30 @@ When Yin tells us about herself, we must forget all preconceptions we have about
 However, this also means that Yin's new attribute node won't be the same `Attribute` node that Yang ties all his custom attribute generation code to. Until all of the logic that goes into generating attributes becomes fully defined in graph form, we're going to need some way of telling Yang to activate that custom logic for newly defined nodes that don't inherit from the existing `Attribute` node:
 
 ```rust
-// redefine relation and flag because they don't exist yet in the current version of Yin used by Yang
-define!(relation);
-define!(flag);
-flag.add_parent(relation);
-
 define!(uses_attribute_logic);
-uses_attribute_logic.add_parent(flag);
+use zamm_yin::tao::relation::flag::Flag;
+uses_attribute_logic.add_parent(Flag::archetype());
 ```
 
 The same is true of Data:
 
 ```rust
 define!(uses_data_logic);
-uses_data_logic.add_parent(flag);
+uses_data_logic.add_parent(Flag::archetype());
 ```
 
 Due to current limitations with Yang, we cannot set Tao as the parent here. We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
 
 ```rust
 define!(newly_defined);
-newly_defined.add_parent(flag);
+newly_defined.add_parent(Flag::archetype());
 ```
 
 During implementation, we should be able to force a new attribute to live inside its own module. This override should take place even if the concept doesn't have any child archetypes yet, so that any concepts in downstream packages that depend on it will know where to look:
 
 ```rust
 define!(own_module);
-own_module.add_parent(flag);
+own_module.add_parent(Flag::archetype());
 ```
 
 Once built, structs have a certain import path:
@@ -107,19 +103,7 @@ implementation_name.add_parent(Attribute::archetype().as_archetype());
 
 ### Implementation
 
-Unlike with Yin, we don't actually want to implement *everything* we know, because everything we know about Yin is already implemented inside her physical body. We only want to implement the things that we learned about Yang here.
-
-First, we tell Yang about the newer version of Yin that we'll be building for:
-
-```rust
-Attribute::archetype()
-    .build_info()
-    .set_import_path("zamm_yin::tao::relation::attribute::Attribute");
-
-flag.build_info().set_crate_name("zamm_yin");
-```
-
-Now we can implement the other things:
+Unlike with Yin, we don't actually want to implement *everything* we know, because everything we know about Yin is already implemented inside her physical body. We only want to implement the things that we learned about Yang here:
 
 ```rust
 target.implement_with(
