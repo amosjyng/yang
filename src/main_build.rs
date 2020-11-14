@@ -89,11 +89,11 @@ fn output_cargo_toml() {
 
 /// Set up the build directory for compilation of a program that will then go on to generate the
 /// final code files.
-fn output_build_dir(cfg: &MainConfig) {
+fn output_build_dir(imports: Vec<&str>, code: Vec<String>) {
     // coalesce into lines first, in case of multiline chunks
-    let mut separated_cfg = separate_imports(&cfg.lines.iter().format("\n").to_string());
-    for import in &cfg.imports {
-        separated_cfg.imports.push(import.clone());
+    let mut separated_cfg = separate_imports(&code.iter().format("\n").to_string());
+    for import in imports {
+        separated_cfg.imports.push(import.to_owned());
     }
     output_main(&separated_cfg);
     output_cargo_toml();
@@ -123,6 +123,7 @@ fn separate_imports(code: &str) -> MainConfig {
         combined_lines.push(lines.iter().format("\n").to_string());
     }
     MainConfig {
+        ignore_dead_code: true, // code quality doesn't matter for intermediate builds
         imports,
         lines: combined_lines,
     }
@@ -158,7 +159,7 @@ fn build_codegen_binary() -> String {
         );
         exit(1);
     }
-    println!("Binary successfully built at {}.", binary_path);
+    println!("Binary successfully built at {}", binary_path);
     println!(
         "Returning to {} and running codegen...",
         src_dir.to_str().unwrap()
@@ -168,9 +169,9 @@ fn build_codegen_binary() -> String {
     binary_path.to_owned()
 }
 
-/// Generate code using the code specified in `cfg`.
-pub fn generate_final_code(cfg: &MainConfig) {
-    output_build_dir(cfg);
+/// Generate code using the specified code and imports.
+pub fn generate_final_code(imports: Vec<&str>, code: Vec<String>) {
+    output_build_dir(imports, code);
     let binary_path = build_codegen_binary();
     println!("==================== RUNNING CODEGEN ====================");
     run_streamed_command(&binary_path, Vec::<&str>::new());
@@ -186,6 +187,7 @@ mod tests {
         assert_eq!(
             separate_imports(""),
             MainConfig {
+                ignore_dead_code: true,
                 imports: vec![],
                 lines: vec![],
             }
@@ -199,6 +201,7 @@ mod tests {
             let x = 1;
             let y = x + 1;"}),
             MainConfig {
+                ignore_dead_code: true,
                 imports: vec![],
                 lines: vec!["let x = 1;\nlet y = x + 1;".to_owned()],
             }
@@ -212,6 +215,7 @@ mod tests {
             use std::rc::Rc;
             use crate::my::Struct;"}),
             MainConfig {
+                ignore_dead_code: true,
                 imports: vec!["std::rc::Rc".to_owned(), "crate::my::Struct".to_owned()],
                 lines: vec![],
             }
@@ -228,6 +232,7 @@ mod tests {
             let x = 1;
             let y = x + 1;"}),
             MainConfig {
+                ignore_dead_code: true,
                 imports: vec!["std::rc::Rc".to_owned(), "crate::my::Struct".to_owned()],
                 lines: vec!["let x = 1;\nlet y = x + 1;".to_owned()],
             }
@@ -244,6 +249,7 @@ mod tests {
             use crate::my::Struct;
             let y = x + 1;"}),
             MainConfig {
+                ignore_dead_code: true,
                 imports: vec!["std::rc::Rc".to_owned(), "crate::my::Struct".to_owned()],
                 lines: vec!["let x = 1;\nlet y = x + 1;".to_owned()],
             }
