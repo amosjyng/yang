@@ -10,6 +10,9 @@ use std::process::exit;
 /// Name to use for the subdirectory of the temp directory where we're outputting things.
 const YANG_BUILD_SUBDIR: &str = "yang";
 
+/// Default version of Yang to use if no local dev version found.
+const YANG_BUILD_VERSION: &str = "0.0.12";
+
 /// Name for the codegen binary. Be sure to change BUILD_TOML as well when changing this.
 const CODEGEN_BINARY: &str = "intermediate-code-generator";
 
@@ -17,8 +20,14 @@ const CODEGEN_BINARY: &str = "intermediate-code-generator";
 /// at the end.
 fn toml_code() -> String {
     let yang_version = match env::var("YANG_DEV_DIR") {
-        Ok(dir) => format!("{{path = \"{}\"}}", dir).replace('\\', "/"),
-        Err(_) => "0.0.10".to_owned(),
+        Ok(dir) => {
+            println!("Linking intermediate binary to local yang dev.");
+            format!("{{path = \"{}\"}}", dir).replace('\\', "/")
+        }
+        Err(_) => {
+            println!("Linking intermediate binary to yang {}", YANG_BUILD_VERSION);
+            format!("\"{}\"", YANG_BUILD_VERSION)
+        }
     };
     // note that zamm_yin must be running on the same version as whatever version yang is built on,
     // *not* whatever version the user is building for, because otherwise different graphs will be
