@@ -1,6 +1,7 @@
 use crate::codegen::string_format::{code_main, MainConfig};
 use crate::codegen::{output_code, CodegenConfig};
-use crate::commands::run_command;
+use crate::commands::run_streamed_command;
+use colored::*;
 use indoc::formatdoc;
 use itertools::Itertools;
 use std::env;
@@ -136,7 +137,7 @@ fn build_codegen_binary() -> String {
         "Now building codegen binary in {} ...",
         subdir.to_str().unwrap()
     );
-    let build_result = run_command("cargo", vec!["build"]);
+    run_streamed_command("cargo", vec!["build"]);
 
     // Verify successful build
     let mut binary = subdir;
@@ -146,9 +147,14 @@ fn build_codegen_binary() -> String {
     }
     let binary_path = binary.to_str().unwrap();
     if !binary.exists() {
-        println!(
-            "Codegen binary was not found at expected location {}. Build output was:\n\n{}",
-            binary_path, build_result
+        eprintln!(
+            "{}",
+            format!(
+                "Codegen binary was not found at expected location {}",
+                binary_path
+            )
+            .red()
+            .bold()
         );
         exit(1);
     }
@@ -167,7 +173,7 @@ pub fn generate_final_code(cfg: &MainConfig) {
     output_build_dir(cfg);
     let binary_path = build_codegen_binary();
     println!("==================== RUNNING CODEGEN ====================");
-    print!("{}", run_command(&binary_path, Vec::<&str>::new()));
+    run_streamed_command(&binary_path, Vec::<&str>::new());
 }
 
 #[cfg(test)]
