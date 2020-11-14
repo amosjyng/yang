@@ -91,10 +91,12 @@ fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -
     match build_info.import_path() {
         Some(existing_path) => existing_path,
         None => {
-            let yin_crate = if yin_override || target.is_newly_defined() {
-                "crate"
+            let yin_crate = if build_info.crate_name().is_some() {
+                build_info.crate_name().unwrap()
+            } else if yin_override || target.is_newly_defined() {
+                "crate".to_owned()
             } else {
-                "zamm_yin"
+                "zamm_yin".to_owned()
             };
             let struct_name = target.internal_name().unwrap().as_str().to_camel_case();
             format!(
@@ -326,6 +328,38 @@ mod tests {
     }
 
     #[test]
+    fn import_path_custom_crate() {
+        initialize_kb();
+        BuildInfo::from(Attribute::TYPE_ID)
+            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
+        let mut owner = Owner::archetype();
+        owner.mark_own_module();
+        owner.mark_newly_defined();
+        // possible if we've defined a new type, but we did so only to tell yang that it's already
+        // been implemented as part of a dependency
+        BuildInfo::from(owner.id()).set_crate_name("mycrate");
+        assert_eq!(
+            import_path(&owner.as_archetype(), true, false),
+            "mycrate::tao::newfangled::module::attribute::owner::Owner"
+        );
+    }
+
+    #[test]
+    fn import_path_multiple_descendants() {
+        initialize_kb();
+        let mut type1 = Tao::archetype().individuate_as_archetype();
+        type1.set_internal_name("hello".to_owned());
+        type1.mark_newly_defined();
+        let mut type2 = type1.individuate_as_archetype();
+        type2.set_internal_name("world".to_owned());
+        type2.mark_newly_defined();
+        assert_eq!(
+            import_path(&type2, true, false),
+            "crate::tao::hello::world::World"
+        );
+    }
+
+    #[test]
     fn struct_config_tao() {
         initialize_kb();
         assert_eq!(
@@ -393,7 +427,7 @@ mod tests {
     fn struct_config_override() {
         initialize_kb();
         let mut tao_build = BuildInfo::from(Tao::TYPE_ID);
-        tao_build.set_implementation_name("TaoStruct".to_owned());
+        tao_build.set_implementation_name("TaoStruct");
         tao_build.set_import_path("crate::TaoStruct");
         assert_eq!(
             concept_to_struct(&Tao::archetype(), false),

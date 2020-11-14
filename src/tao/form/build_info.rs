@@ -17,10 +17,11 @@ pub struct BuildInfo {
 
 impl BuildInfo {
     /// Set crate which the object was built as a part of.
-    pub fn set_crate_name(&mut self, name: String) {
+    pub fn set_crate_name(&mut self, name: &str) {
         let mut s = StringConcept::individuate();
         // todo: set using StringConcept API once that is correctly generated once more
-        s.essence_mut().set_value(Rc::new(StrongValue::new(name)));
+        s.essence_mut()
+            .set_value(Rc::new(StrongValue::new(name.to_owned())));
         self.base.add_outgoing(Crate::TYPE_ID, s.essence());
     }
 
@@ -59,10 +60,11 @@ impl BuildInfo {
     }
 
     /// Set name the concept took on for its actual implementation.
-    pub fn set_implementation_name(&mut self, path: String) {
+    pub fn set_implementation_name(&mut self, name: &str) {
         let mut s = StringConcept::individuate();
         // todo: set using StringConcept API once that is correctly generated once more
-        s.essence_mut().set_value(Rc::new(StrongValue::new(path)));
+        s.essence_mut()
+            .set_value(Rc::new(StrongValue::new(name.to_owned())));
         self.base
             .add_outgoing(ImplementationName::TYPE_ID, s.essence());
     }
@@ -185,7 +187,7 @@ mod tests {
     fn set_and_retrieve_crate() {
         initialize_kb();
         let mut info = BuildInfo::individuate();
-        info.set_crate_name("zamm_yang".to_owned());
+        info.set_crate_name("zamm_yang");
         assert_eq!(info.crate_name(), Some("zamm_yang".to_owned()));
     }
 
@@ -204,7 +206,7 @@ mod tests {
     fn set_and_retrieve_implementation_name() {
         initialize_kb();
         let mut info = BuildInfo::individuate();
-        info.set_implementation_name("Yolo".to_owned());
+        info.set_implementation_name("Yolo");
         assert_eq!(info.implementation_name(), Some("Yolo".to_owned()));
     }
 
@@ -213,9 +215,9 @@ mod tests {
     fn set_and_retrieve_all() {
         initialize_kb();
         let mut info = BuildInfo::individuate();
-        info.set_crate_name("zamm_yang".to_owned());
+        info.set_crate_name("zamm_yang");
         info.set_import_path("zamm_yang::import::path");
-        info.set_implementation_name("Yolo".to_owned());
+        info.set_implementation_name("Yolo");
 
         assert_eq!(info.crate_name(), Some("zamm_yang".to_owned()));
         assert_eq!(
@@ -231,9 +233,9 @@ mod tests {
         initialize_kb();
         let type1 = Tao::archetype().individuate_as_archetype();
         let mut info = BuildInfo::from(type1.id());
-        info.set_crate_name("zamm_yang".to_owned());
+        info.set_crate_name("zamm_yang");
         info.set_import_path("zamm_yang::import::path");
-        info.set_implementation_name("Yolo".to_owned());
+        info.set_implementation_name("Yolo");
 
         let type2 = type1.individuate_as_archetype();
         let info2 = BuildInfo::from(type2.id());
