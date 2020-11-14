@@ -17,10 +17,11 @@ pub struct BuildInfo {
 
 impl BuildInfo {
     /// Set crate which the object was built as a part of.
-    pub fn set_crate_name(&mut self, name: String) {
+    pub fn set_crate_name(&mut self, name: &str) {
         let mut s = StringConcept::individuate();
         // todo: set using StringConcept API once that is correctly generated once more
-        s.essence_mut().set_value(Rc::new(StrongValue::new(name)));
+        s.essence_mut()
+            .set_value(Rc::new(StrongValue::new(name.to_owned())));
         self.base.add_outgoing(Crate::TYPE_ID, s.essence());
     }
 
@@ -29,6 +30,8 @@ impl BuildInfo {
     pub fn crate_name(&self) -> Option<String> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.base
+            .inheritance_wrapper()
+            .base_wrapper()
             .outgoing_nodes(Crate::TYPE_ID)
             .first()
             .map(|s| unwrap_strong::<String>(&s.value()).cloned())
@@ -36,10 +39,11 @@ impl BuildInfo {
     }
 
     /// Set import path the concept ended up at, relative to the crate.
-    pub fn set_import_path(&mut self, path: String) {
+    pub fn set_import_path(&mut self, path: &str) {
         let mut s = StringConcept::individuate();
         // todo: set using StringConcept API once that is correctly generated once more
-        s.essence_mut().set_value(Rc::new(StrongValue::new(path)));
+        s.essence_mut()
+            .set_value(Rc::new(StrongValue::new(path.to_owned())));
         self.base.add_outgoing(ImportPath::TYPE_ID, s.essence());
     }
 
@@ -47,6 +51,8 @@ impl BuildInfo {
     pub fn import_path(&self) -> Option<String> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.base
+            .inheritance_wrapper()
+            .base_wrapper()
             .outgoing_nodes(ImportPath::TYPE_ID)
             .first()
             .map(|s| unwrap_strong::<String>(&s.value()).cloned())
@@ -54,10 +60,11 @@ impl BuildInfo {
     }
 
     /// Set name the concept took on for its actual implementation.
-    pub fn set_implementation_name(&mut self, path: String) {
+    pub fn set_implementation_name(&mut self, name: &str) {
         let mut s = StringConcept::individuate();
         // todo: set using StringConcept API once that is correctly generated once more
-        s.essence_mut().set_value(Rc::new(StrongValue::new(path)));
+        s.essence_mut()
+            .set_value(Rc::new(StrongValue::new(name.to_owned())));
         self.base
             .add_outgoing(ImplementationName::TYPE_ID, s.essence());
     }
@@ -66,6 +73,8 @@ impl BuildInfo {
     pub fn implementation_name(&self) -> Option<String> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.base
+            .inheritance_wrapper()
+            .base_wrapper()
             .outgoing_nodes(ImplementationName::TYPE_ID)
             .first()
             .map(|s| unwrap_strong::<String>(&s.value()).cloned())
@@ -138,6 +147,7 @@ impl FormTrait for BuildInfo {
 mod tests {
     use super::*;
     use crate::tao::initialize_kb;
+    use zamm_yin::tao::archetype::ArchetypeFormTrait;
 
     #[test]
     fn check_type_created() {
@@ -177,7 +187,7 @@ mod tests {
     fn set_and_retrieve_crate() {
         initialize_kb();
         let mut info = BuildInfo::individuate();
-        info.set_crate_name("zamm_yang".to_owned());
+        info.set_crate_name("zamm_yang");
         assert_eq!(info.crate_name(), Some("zamm_yang".to_owned()));
     }
 
@@ -185,7 +195,7 @@ mod tests {
     fn set_and_retrieve_import_path() {
         initialize_kb();
         let mut info = BuildInfo::individuate();
-        info.set_import_path("zamm_yang::import::path".to_owned());
+        info.set_import_path("zamm_yang::import::path");
         assert_eq!(
             info.import_path(),
             Some("zamm_yang::import::path".to_owned())
@@ -196,7 +206,7 @@ mod tests {
     fn set_and_retrieve_implementation_name() {
         initialize_kb();
         let mut info = BuildInfo::individuate();
-        info.set_implementation_name("Yolo".to_owned());
+        info.set_implementation_name("Yolo");
         assert_eq!(info.implementation_name(), Some("Yolo".to_owned()));
     }
 
@@ -205,9 +215,9 @@ mod tests {
     fn set_and_retrieve_all() {
         initialize_kb();
         let mut info = BuildInfo::individuate();
-        info.set_crate_name("zamm_yang".to_owned());
-        info.set_import_path("zamm_yang::import::path".to_owned());
-        info.set_implementation_name("Yolo".to_owned());
+        info.set_crate_name("zamm_yang");
+        info.set_import_path("zamm_yang::import::path");
+        info.set_implementation_name("Yolo");
 
         assert_eq!(info.crate_name(), Some("zamm_yang".to_owned()));
         assert_eq!(
@@ -215,5 +225,22 @@ mod tests {
             Some("zamm_yang::import::path".to_owned())
         );
         assert_eq!(info.implementation_name(), Some("Yolo".to_owned()));
+    }
+
+    /// Build info should never be inherited
+    #[test]
+    fn test_no_build_info_inherited() {
+        initialize_kb();
+        let type1 = Tao::archetype().individuate_as_archetype();
+        let mut info = BuildInfo::from(type1.id());
+        info.set_crate_name("zamm_yang");
+        info.set_import_path("zamm_yang::import::path");
+        info.set_implementation_name("Yolo");
+
+        let type2 = type1.individuate_as_archetype();
+        let info2 = BuildInfo::from(type2.id());
+        assert_eq!(info2.crate_name(), None);
+        assert_eq!(info2.import_path(), None);
+        assert_eq!(info2.implementation_name(), None);
     }
 }
