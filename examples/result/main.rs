@@ -1,6 +1,6 @@
 mod tao;
 
-use tao::attribute::Target;
+use tao::relation::attribute::Target;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::ArchetypeTrait;
 
