@@ -25,7 +25,7 @@ pulldown-cmark = "^0.8.0"
 textwrap = "^0.12.1"
 toml = "^0.5.7"
 yaml-rust = "^0.4"
-zamm_yin = "0.0.12"
+zamm_yin = "0.0.13"
 
 [build-dependencies]
 reqwest = { version = "^0.10.8", features = ["blocking"] }

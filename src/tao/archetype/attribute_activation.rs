@@ -2,7 +2,7 @@ use crate::tao::UsesDataLogic;
 use crate::tao::{OwnModule, UsesAttributeLogic};
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
-use zamm_yin::tao::FormTrait;
+use zamm_yin::tao::form::FormTrait;
 
 /// Archetype code generation flags defined when reading from a Yin.md
 pub trait CodegenFlags: FormTrait {

@@ -1,8 +1,8 @@
 use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
 use crate::codegen::{CodeConfig, CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
+pub use crate::tao::form::data::Data;
 use crate::tao::form::{BuildInfo, DefinedMarker};
-pub use crate::tao::Data;
 use crate::tao::Implement;
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
@@ -10,8 +10,9 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
-use zamm_yin::tao::attribute::{Attribute, OwnerArchetype, ValueArchetype};
-use zamm_yin::tao::{Form, FormTrait, Tao};
+use zamm_yin::tao::form::{Form, FormTrait};
+use zamm_yin::tao::relation::attribute::{Attribute, OwnerArchetype, ValueArchetype};
+use zamm_yin::tao::Tao;
 
 fn in_own_submodule(target: &Archetype) -> bool {
     // todo: filter by type, once Yin has that functionality
@@ -197,7 +198,7 @@ mod tests {
     use super::*;
     use crate::tao::initialize_kb;
     use crate::tao::ImplementConfig;
-    use zamm_yin::tao::attribute::{Attribute, Owner};
+    use zamm_yin::tao::relation::attribute::{Attribute, Owner};
     use zamm_yin::tao::Tao;
 
     #[test]
@@ -229,7 +230,7 @@ mod tests {
         initialize_kb();
         assert_eq!(
             file_path(&Attribute::archetype().as_archetype()),
-            "src/tao/attribute/attribute_form.rs"
+            "src/tao/relation/attribute/attribute_form.rs"
         );
     }
 
@@ -238,7 +239,7 @@ mod tests {
         initialize_kb();
         assert_eq!(
             file_path(&Owner::archetype().as_archetype()),
-            "src/tao/attribute/owner_form.rs"
+            "src/tao/relation/attribute/owner_form.rs"
         );
     }
 
@@ -249,7 +250,7 @@ mod tests {
         owner.mark_own_module();
         assert_eq!(
             file_path(&owner.as_archetype()),
-            "src/tao/attribute/owner/owner_form.rs"
+            "src/tao/relation/attribute/owner/owner_form.rs"
         );
     }
 
@@ -280,7 +281,7 @@ mod tests {
         initialize_kb();
         assert_eq!(
             import_path(&Attribute::archetype().as_archetype(), false, false),
-            "zamm_yin::tao::attribute::Attribute"
+            "zamm_yin::tao::relation::attribute::Attribute"
         );
     }
 
@@ -289,7 +290,7 @@ mod tests {
         initialize_kb();
         assert_eq!(
             import_path(&Owner::archetype().as_archetype(), false, false),
-            "zamm_yin::tao::attribute::Owner"
+            "zamm_yin::tao::relation::attribute::Owner"
         );
     }
 
@@ -298,7 +299,7 @@ mod tests {
         initialize_kb();
         assert_eq!(
             import_path(&Owner::archetype().as_archetype(), true, false),
-            "zamm_yin::tao::attribute::owner::Owner"
+            "zamm_yin::tao::relation::attribute::owner::Owner"
         );
     }
 
@@ -309,7 +310,7 @@ mod tests {
         owner.mark_newly_defined();
         assert_eq!(
             import_path(&owner.as_archetype(), false, false),
-            "crate::tao::attribute::Owner"
+            "crate::tao::relation::attribute::Owner"
         );
     }
 
@@ -378,7 +379,7 @@ mod tests {
             concept_to_struct(&Attribute::archetype().as_archetype(), false),
             StructConfig {
                 name: "Attribute".to_owned(),
-                import: "zamm_yin::tao::attribute::Attribute".to_owned(),
+                import: "zamm_yin::tao::relation::attribute::Attribute".to_owned(),
             }
         );
     }
@@ -390,7 +391,7 @@ mod tests {
             concept_to_struct(&Owner::archetype().as_archetype(), false),
             StructConfig {
                 name: "Owner".to_owned(),
-                import: "zamm_yin::tao::attribute::Owner".to_owned(),
+                import: "zamm_yin::tao::relation::attribute::Owner".to_owned(),
             }
         );
     }
@@ -404,7 +405,7 @@ mod tests {
             concept_to_struct(&owner.as_archetype(), false),
             StructConfig {
                 name: "Owner".to_owned(),
-                import: "zamm_yin::tao::attribute::owner::Owner".to_owned(),
+                import: "zamm_yin::tao::relation::attribute::owner::Owner".to_owned(),
             }
         );
     }
@@ -418,7 +419,7 @@ mod tests {
             concept_to_struct(&owner.as_archetype(), false),
             StructConfig {
                 name: "Owner".to_owned(),
-                import: "crate::tao::attribute::Owner".to_owned(),
+                import: "crate::tao::relation::attribute::Owner".to_owned(),
             }
         );
     }

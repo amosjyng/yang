@@ -27,8 +27,7 @@ mod tests {
     use crate::codegen::{CodeConfig, CodegenConfig, StructConfig};
     use std::collections::HashMap;
     use zamm_yin::tao::archetype::ArchetypeTrait;
-    use zamm_yin::tao::attribute::OwnerArchetype;
-    use zamm_yin::tao::attribute::ValueArchetype;
+    use zamm_yin::tao::relation::attribute::{OwnerArchetype, ValueArchetype};
 
     #[test]
     fn integration_test_attribute_generation() {

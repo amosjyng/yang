@@ -1,38 +1,66 @@
 /// Extensions to Yin archetypes.
 pub mod archetype;
-/// Yang-specific attribute concepts.
-pub mod attribute;
 /// Callbacks that should be triggered upon certain conditions in Yin being met.
 pub mod callbacks;
-/// Data that actually exists as bits on the machine.
-mod data_form;
-mod flag_form;
+/// Yang-specific relations that link any number of nodes together
+pub mod relation {
+    /// Unary relations.
+    pub mod flag {
+        mod newly_defined_form;
+        mod own_module_form;
+        mod uses_attribute_logic_form;
+        mod uses_data_logic_form;
+
+        pub use newly_defined_form::NewlyDefined;
+        pub use own_module_form::OwnModule;
+        pub use uses_attribute_logic_form::UsesAttributeLogic;
+        pub use uses_data_logic_form::UsesDataLogic;
+    }
+
+    /// Binary relations.
+    pub mod attribute {
+        mod crate_form;
+        mod implementation_name_form;
+        mod import_path_form;
+        mod target_form;
+
+        pub use crate_form::Crate;
+        pub use implementation_name_form::ImplementationName;
+        pub use import_path_form::ImportPath;
+        pub use target_form::Target;
+    }
+}
 /// Form-related attributes.
-pub mod form;
+pub mod form {
+    /// Concepts that exist explicitly as bits.
+    pub mod data {
+        mod data_form;
+        mod string_concept_form;
+
+        pub use data_form::Data;
+        pub use string_concept_form::StringConcept;
+    }
+
+    mod build_info;
+    mod defined_marker;
+
+    pub use build_info::BuildInfo;
+    pub use defined_marker::DefinedMarker;
+}
 /// Command to implement something.
 mod implement;
 mod lens_form;
-mod newly_defined_form;
-mod own_module_form;
-mod string_concept_form;
-mod uses_attribute_logic_form;
-mod uses_data_logic_form;
 
-use attribute::{Crate, ImplementationName, ImportPath, Target};
-pub use data_form::Data;
-pub use flag_form::Flag;
+use form::data::{Data, StringConcept};
 use form::BuildInfo;
 pub use implement::{Implement, ImplementConfig};
 pub use lens_form::Lens;
-pub use newly_defined_form::NewlyDefined;
-pub use own_module_form::OwnModule;
-pub use string_concept_form::StringConcept;
-pub use uses_attribute_logic_form::UsesAttributeLogic;
-pub use uses_data_logic_form::UsesDataLogic;
+use relation::attribute::{Crate, ImplementationName, ImportPath, Target};
+use relation::flag::{NewlyDefined, OwnModule, UsesAttributeLogic, UsesDataLogic};
 use zamm_yin::graph::{Graph, InjectionGraph};
 use zamm_yin::initialize_type;
 use zamm_yin::tao::archetype::ArchetypeTrait;
-use zamm_yin::tao::attribute::Inherits;
+use zamm_yin::tao::relation::attribute::Inherits;
 
 /// Initialize Yin, including with Yang-specific concepts.
 pub fn initialize_kb() {
@@ -43,7 +71,6 @@ pub fn initialize_kb() {
         (
             Implement,
             Target,
-            Flag,
             UsesAttributeLogic,
             NewlyDefined,
             OwnModule,
