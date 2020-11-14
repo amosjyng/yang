@@ -1,3 +1,5 @@
 /target
-.autogen.txt
+/.autogen.txt
+/.yang
 *.log
+.autogen.txt

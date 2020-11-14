@@ -1,14 +1,12 @@
 use crate::codegen::string_format::{code_main, MainConfig};
 use crate::codegen::{output_code, CodegenConfig};
-use crate::commands::run_command;
+use crate::commands::run_streamed_command;
+use colored::*;
 use indoc::formatdoc;
 use itertools::Itertools;
 use std::env;
 use std::path::PathBuf;
 use std::process::exit;
-
-/// Name to use for the subdirectory of the temp directory where we're outputting things.
-const YANG_BUILD_SUBDIR: &str = "yang";
 
 /// Default version of Yang to use if no local dev version found.
 const YANG_BUILD_VERSION: &str = "0.0.12";
@@ -42,14 +40,15 @@ fn toml_code() -> String {
         edition = "2018"
 
         [dependencies]
-        zamm_yin = "0.0.12"
+        zamm_yin = "0.0.13"
         zamm_yang = {}
     "#, yang_version}
 }
 
+/// Directory where we're outputting things.
 fn build_subdir() -> PathBuf {
-    let mut tmp = env::temp_dir();
-    tmp.push(PathBuf::from(YANG_BUILD_SUBDIR));
+    let mut tmp = env::current_dir().unwrap();
+    tmp.push(".yang");
     tmp
 }
 
@@ -138,7 +137,7 @@ fn build_codegen_binary() -> String {
         "Now building codegen binary in {} ...",
         subdir.to_str().unwrap()
     );
-    let build_result = run_command("cargo", vec!["build"]);
+    run_streamed_command("cargo", vec!["build"]);
 
     // Verify successful build
     let mut binary = subdir;
@@ -148,9 +147,14 @@ fn build_codegen_binary() -> String {
     }
     let binary_path = binary.to_str().unwrap();
     if !binary.exists() {
-        println!(
-            "Codegen binary was not found at expected location {}. Build output was:\n\n{}",
-            binary_path, build_result
+        eprintln!(
+            "{}",
+            format!(
+                "Codegen binary was not found at expected location {}",
+                binary_path
+            )
+            .red()
+            .bold()
         );
         exit(1);
     }
@@ -169,7 +173,7 @@ pub fn generate_final_code(cfg: &MainConfig) {
     output_build_dir(cfg);
     let binary_path = build_codegen_binary();
     println!("==================== RUNNING CODEGEN ====================");
-    print!("{}", run_command(&binary_path, Vec::<&str>::new()));
+    run_streamed_command(&binary_path, Vec::<&str>::new());
 }
 
 #[cfg(test)]
