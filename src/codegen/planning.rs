@@ -1,7 +1,8 @@
 use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
 use crate::codegen::{CodeConfig, CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
-use crate::tao::form::DefinedMarker;
+use crate::tao::form::{BuildInfo, DefinedMarker};
+pub use crate::tao::Data;
 use crate::tao::Implement;
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
@@ -73,10 +74,14 @@ fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -
 
 /// Turns a concept into a struct to be imported.
 fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig {
-    StructConfig {
-        name: target.internal_name().unwrap().as_str().to_camel_case(),
-        import: import_path(target, target.force_own_module(), yin_override),
-    }
+    let build_info = BuildInfo::from(*target.essence());
+    let name = build_info
+        .implementation_name()
+        .unwrap_or_else(|| target.internal_name().unwrap().as_str().to_camel_case());
+    let import = build_info
+        .import_path()
+        .unwrap_or_else(|| import_path(target, target.force_own_module(), yin_override));
+    StructConfig { name, import }
 }
 
 fn or_form_default(archetype: Archetype) -> Archetype {
@@ -90,13 +95,14 @@ fn or_form_default(archetype: Archetype) -> Archetype {
 /// Generate the CodeConfig for a given implementation request.
 pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConfig {
     let target = request.target().unwrap();
-    let target_name = target.internal_name().unwrap();
     let ancestors = target.ancestry();
     let parent = ancestors.iter().last().unwrap();
     let parent_struct = concept_to_struct(parent, codegen_cfg.yin);
     let activate_attribute = target == Attribute::archetype().as_archetype()
         || parent.has_ancestor(Attribute::archetype().as_archetype())
         || target.attribute_logic_activated();
+    let activate_data =
+        target.has_ancestor(Data::archetype().as_archetype()) || target.data_logic_activated();
 
     let all_attributes = target
         .attribute_archetypes()
@@ -137,9 +143,10 @@ pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConf
     }
 
     CodeConfig {
-        name: target_name,
+        target: concept_to_struct(&target, codegen_cfg.yin),
         parent: parent_struct,
         activate_attribute,
+        activate_data,
         all_attributes,
         introduced_attributes,
         attribute_structs: attr_structs,
@@ -321,7 +328,22 @@ mod tests {
     }
 
     #[test]
-    fn code_cfg_for_attribute_not_activated() {
+    fn struct_config_override() {
+        initialize_kb();
+        let mut tao_build = BuildInfo::from(Tao::TYPE_ID);
+        tao_build.set_implementation_name("TaoStruct".to_owned());
+        tao_build.set_import_path("crate::TaoStruct".to_owned());
+        assert_eq!(
+            concept_to_struct(&Tao::archetype(), false),
+            StructConfig {
+                name: "TaoStruct".to_owned(),
+                import: "crate::TaoStruct".to_owned(),
+            }
+        );
+    }
+
+    #[test]
+    fn code_cfg_for_not_activated() {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name("MyAttrType".to_owned());
@@ -330,7 +352,10 @@ mod tests {
         implement.set_target(target);
         implement.set_config(ImplementConfig::default());
 
-        assert!(!code_cfg_for(implement, &CodegenConfig::default()).activate_attribute);
+        let codegen_cfg = CodegenConfig::default();
+        let cfg = code_cfg_for(implement, &codegen_cfg);
+        assert!(!cfg.activate_attribute);
+        assert!(!cfg.activate_data);
     }
 
     #[test]
@@ -361,5 +386,19 @@ mod tests {
                 .map(|a| a.name.as_str()),
             Some("Form")
         );
+    }
+
+    #[test]
+    fn code_cfg_for_data_activated() {
+        initialize_kb();
+        let mut target = Tao::archetype().individuate_as_archetype();
+        target.set_internal_name("MyDataType".to_owned());
+        target.mark_newly_defined();
+        target.activate_data_logic();
+        let mut implement = Implement::individuate();
+        implement.set_target(target);
+        implement.set_config(ImplementConfig::default());
+
+        assert!(code_cfg_for(implement, &CodegenConfig::default()).activate_data);
     }
 }

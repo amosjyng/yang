@@ -12,7 +12,11 @@ use mark_fmt::add_fmt_skips;
 /// Do post-processing on generated code. Includes marking lines with autogeneration comments, or
 /// marking lines as requiring formatting skips.
 pub fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
-    let formatted = add_fmt_skips(&code);
+    let formatted = if options.add_rustfmt_attributes {
+        add_fmt_skips(&code)
+    } else {
+        code.to_owned()
+    };
     if options.comment_autogen && !options.release {
         add_autogeneration_comments(&formatted)
     } else {
@@ -25,10 +29,9 @@ mod tests {
     use super::*;
     use crate::codegen::string_format::tao::code_tao;
     use crate::codegen::string_format::FormatConfig;
-    use crate::codegen::CodeConfig;
+    use crate::codegen::{CodeConfig, StructConfig};
     use mark_autogen::AUTOGENERATION_MARKER;
     use mark_fmt::FMT_SKIP_MARKER;
-    use std::rc::Rc;
 
     #[test]
     fn test_post_process_comments() {
@@ -69,7 +72,10 @@ mod tests {
     #[test]
     fn test_post_process_fmt_not_skip() {
         let code_cfg = &CodeConfig {
-            name: Rc::new("S".to_owned()), // short
+            target: StructConfig {
+                name: "S".to_owned(), // short
+                ..StructConfig::default()
+            },
             ..CodeConfig::default()
         };
         let code = code_tao(&FormatConfig::from(code_cfg));
@@ -80,7 +86,10 @@ mod tests {
     #[test]
     fn test_post_process_fmt_skip() {
         let code_cfg = &CodeConfig {
-            name: Rc::new("ReallySuperLongClassNameOhBoy".to_owned()),
+            target: StructConfig {
+                name: "ReallySuperLongClassNameOhBoy".to_owned(), // short
+                ..StructConfig::default()
+            },
             codegen_cfg: CodegenConfig {
                 release: false,
                 ..CodegenConfig::default()
@@ -95,7 +104,10 @@ mod tests {
     #[test]
     fn test_post_process_fmt_skip_release() {
         let code_cfg = &CodeConfig {
-            name: Rc::new("ReallySuperLongClassNameOhBoy".to_owned()),
+            target: StructConfig {
+                name: "ReallySuperLongClassNameOhBoy".to_owned(), // short
+                ..StructConfig::default()
+            },
             codegen_cfg: CodegenConfig {
                 release: true,
                 ..CodegenConfig::default()

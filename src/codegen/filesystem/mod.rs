@@ -20,7 +20,7 @@ pub struct OutputConfig<'a> {
 }
 
 /// Output code to filename
-pub fn output_code(cfg: &OutputConfig) {
+pub fn output_code_verbatim(cfg: &OutputConfig) {
     let file_pathabs = PathAbs::new(Path::new(cfg.file_path))
         .unwrap_or_else(|_| panic!("Could not get absolute path for {}", cfg.file_path));
     let file_absolute = file_pathabs.as_path().to_str().unwrap();

@@ -1,18 +1,23 @@
 use super::Implement;
-use crate::codegen::filesystem::{output_code, OutputConfig};
 use crate::codegen::planning::{code_cfg_for, file_path};
-use crate::codegen::{code, CodegenConfig};
+use crate::codegen::track_autogen::save_autogen;
+use crate::codegen::{code, output_code, CodegenConfig};
+use zamm_yin::node_wrappers::CommonNodeTrait;
+use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
 
-/// Handle the implementation request for a new attribute archetype.
+/// Handle the implementation request for a new archetype.
 pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
     let code = code(&code_cfg_for(request, codegen_cfg));
+    output_code(&code, &file_path(&request.target().unwrap()), codegen_cfg);
+}
 
-    output_code(&OutputConfig {
-        code: &code,
-        file_path: &file_path(&request.target().unwrap()),
-        git_ignore: !codegen_cfg.release,
-        cargo_track: codegen_cfg.track_autogen,
-    });
+/// Handle all defined implementation requests.
+pub fn handle_all_implementations(codegen_cfg: &CodegenConfig) {
+    for implement_command in Implement::archetype().individuals() {
+        handle_implementation(Implement::from(implement_command.id()), codegen_cfg);
+    }
+
+    save_autogen();
 }
 
 #[cfg(test)]
@@ -21,7 +26,6 @@ mod tests {
     use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
     use crate::codegen::{CodeConfig, CodegenConfig, StructConfig};
     use std::collections::HashMap;
-    use std::rc::Rc;
     use zamm_yin::tao::archetype::ArchetypeTrait;
     use zamm_yin::tao::relation::attribute::{OwnerArchetype, ValueArchetype};
 
@@ -57,7 +61,10 @@ mod tests {
             },
         );
         let code = code(&CodeConfig {
-            name: Rc::new("MyNewAttr".to_owned()),
+            target: StructConfig {
+                name: "MyNewAttr".to_owned(),
+                ..StructConfig::default()
+            },
             parent: StructConfig {
                 name: "MyAttr".to_owned(),
                 ..StructConfig::default()
@@ -83,7 +90,28 @@ mod tests {
     }
 
     #[test]
-    fn integration_test_non_attribute_generation() {
+    fn integration_test_data_generation() {
+        let code = code(&CodeConfig {
+            target: StructConfig {
+                name: "MyStr".to_owned(),
+                ..StructConfig::default()
+            },
+            parent: StructConfig {
+                name: "MyData".to_owned(),
+                ..StructConfig::default()
+            },
+            activate_data: true,
+            codegen_cfg: CodegenConfig {
+                comment_autogen: false,
+                ..CodegenConfig::default()
+            },
+            ..CodeConfig::default()
+        });
+        assert!(code.contains("set_value"));
+    }
+
+    #[test]
+    fn integration_test_regular_generation() {
         assert!(!code(&CodeConfig {
             parent: StructConfig {
                 name: "Tao".to_owned(),

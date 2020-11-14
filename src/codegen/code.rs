@@ -1,12 +1,10 @@
 use super::CodegenConfig;
-use crate::codegen::postprocessing::post_process_generation;
 use crate::codegen::string_format::attribute::code_attribute;
 use crate::codegen::string_format::code_string_concept;
 use crate::codegen::string_format::tao::code_tao;
 use crate::codegen::string_format::{AttributeFormatConfig, FormatConfig};
 use crate::tao::ImplementConfig;
 use std::collections::HashMap;
-use std::rc::Rc;
 
 /// Config representing an imported struct.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -27,13 +25,16 @@ impl Default for StructConfig {
 }
 
 /// Configuration settings for generating a single concept's contents.
+#[derive(Default)]
 pub struct CodeConfig<'a> {
-    /// Name of the concept to generate.
-    pub name: Rc<String>,
+    /// The target to generate.
+    pub target: StructConfig,
     /// The concept's parent.
     pub parent: StructConfig,
-    /// Whether or not to use attribute for this one.
+    /// Whether or not to use attribute generation logic for this one.
     pub activate_attribute: bool,
+    /// Whether or not to use data generation logic for this one.
+    pub activate_data: bool,
     /// List of all attributes that this concept has.
     pub all_attributes: Vec<StructConfig>,
     /// List of all attributes introduced by this concept.
@@ -46,29 +47,13 @@ pub struct CodeConfig<'a> {
     pub codegen_cfg: CodegenConfig,
 }
 
-impl<'a> Default for CodeConfig<'a> {
-    fn default() -> Self {
-        Self {
-            name: Rc::new("dummy".to_owned()),
-            parent: StructConfig::default(),
-            activate_attribute: false,
-            all_attributes: Vec::default(),
-            introduced_attributes: Vec::default(),
-            attribute_structs: HashMap::default(),
-            impl_cfg: ImplementConfig::default(),
-            codegen_cfg: CodegenConfig::default(),
-        }
-    }
-}
-
-/// Generate the final version of code, to be output to a file as-is.
+/// Generate code for a given concept. Post-processing still needed.
 pub fn code(cfg: &CodeConfig) -> String {
-    let initial_code = if cfg.activate_attribute {
+    if cfg.activate_attribute {
         code_attribute(&AttributeFormatConfig::from(cfg))
-    } else if cfg.parent.name.to_lowercase() == "data" {
+    } else if cfg.activate_data {
         code_string_concept(&FormatConfig::from(cfg))
     } else {
         code_tao(&FormatConfig::from(cfg))
-    };
-    post_process_generation(&initial_code, &cfg.codegen_cfg)
+    }
 }

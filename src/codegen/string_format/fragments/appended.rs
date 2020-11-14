@@ -92,4 +92,11 @@ mod tests {
             .trim()
         );
     }
+
+    #[test]
+    fn test_append_empty() {
+        let appended = AppendedFragment::default();
+        assert_eq!(appended.imports(), Vec::<String>::default());
+        assert_eq!(appended.body(), "");
+    }
 }

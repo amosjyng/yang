@@ -1,52 +1,32 @@
-use super::parse_yaml;
-use crate::codegen::{add_indent, count_indent};
 use pulldown_cmark::{CodeBlockKind, Event, Parser, Tag};
-use zamm_yin::tao::form::Form;
 
-/// Extracts and concatenates YAML code blocks from the markdown.
-fn extract_yaml(markdown: &str) -> String {
+/// Extracts Rust code blocks from the markdown.
+pub fn extract_rust(markdown: &str) -> String {
+    // note: go back to commit 158f648 to retrieve YAML-parsing code, including markdown quote
+    // extraction
     let mut code = String::new();
-    let mut in_yaml_block = false;
-    let mut in_documentation_block = false;
-    let mut doc_indent = 0;
+    let mut in_rust_block = false;
     for event in Parser::new(markdown) {
         match event {
             Event::Start(tag) => {
                 if let Tag::CodeBlock(kind) = tag {
                     if let CodeBlockKind::Fenced(cow) = kind {
-                        match cow.to_string().as_str() {
-                            "yaml" => in_yaml_block = true,
-                            "yml" => in_yaml_block = true,
-                            _ => (),
+                        if let "rust" = cow.to_string().as_str() {
+                            in_rust_block = true
                         }
                     }
                 }
             }
             Event::Text(content) => {
-                if in_yaml_block {
-                    let trimmed = content.trim_end();
-                    if trimmed.ends_with("|-") {
-                        in_documentation_block = true;
-                        let (existing_indent, _) =
-                            count_indent(trimmed.split('\n').last().unwrap());
-                        doc_indent = existing_indent + 2; // +2 for YAML quote indent
-                    }
-                    code += &content.into_string();
-                } else if in_documentation_block {
-                    code += &add_indent(doc_indent, &content);
-                    code += "\n";
+                if in_rust_block {
+                    code += &content;
                 }
             }
-            Event::End(tag) => match tag {
-                Tag::CodeBlock(_) => in_yaml_block = false,
-                Tag::BlockQuote => in_documentation_block = false,
-                Tag::Paragraph => {
-                    if in_documentation_block {
-                        code += "\n";
-                    }
+            Event::End(tag) => {
+                if let Tag::CodeBlock(_) = tag {
+                    in_rust_block = false
                 }
-                _ => (),
-            },
+            }
             _ => (),
         }
     }
@@ -57,25 +37,15 @@ fn extract_yaml(markdown: &str) -> String {
     code
 }
 
-/// Extract YAML code blocks from Markdown and then extract concepts from those YAML code blocks.
-pub fn parse_md(markdown: &str) -> Vec<Form> {
-    parse_yaml(&extract_yaml(markdown))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tao::{initialize_kb, Implement};
     use indoc::indoc;
-    use std::rc::Rc;
-    use zamm_yin::node_wrappers::CommonNodeTrait;
-    use zamm_yin::tao::archetype::ArchetypeTrait;
-    use zamm_yin::tao::form::FormTrait;
 
     #[test]
-    fn test_yaml_extraction_nothing() {
+    fn test_rust_extraction_nothing() {
         assert_eq!(
-            extract_yaml(indoc! {"
+            extract_rust(indoc! {"
             # Some document
 
             No code in here.
@@ -85,31 +55,31 @@ mod tests {
     }
 
     #[test]
-    fn test_yaml_extraction_one_block() {
+    fn test_rust_extraction_one_block() {
         assert_eq!(
-            extract_yaml(indoc! {"
+            extract_rust(indoc! {"
             # Some document
 
-            ```yaml
-            - name: Yin
+            ```rust
+            let x = 5;
             ```
 
             Aha! We have some code.
         "}),
             indoc! {"
-            - name: Yin
+            let x = 5;
         "}
         );
     }
 
     #[test]
-    fn test_yaml_extraction_multiple_blocks() {
+    fn test_rust_extraction_multiple_blocks() {
         assert_eq!(
-            extract_yaml(indoc! {r#"
+            extract_rust(indoc! {r#"
             # Some document
 
-            ```yaml
-            - name: Yin
+            ```rust
+            let x = 5;
             ```
 
             Aha! We have some code. More?
@@ -126,143 +96,16 @@ mod tests {
             And this too?
             ```
 
-            ```yml
-            - name: Yang
-              parent: Tao
+            ```rust
+            let y = x + 1;
+            println!("One more than x is {}", y);
             ```
         "#}),
-            indoc! {"
-            - name: Yin
-            - name: Yang
-              parent: Tao
-        "}
-        );
-    }
-
-    #[test]
-    fn test_yaml_extraction_multiline_string() {
-        assert_eq!(
-            extract_yaml(indoc! {r#"
-            # O rly?
-
-            ```yml
-            - name: Yang
-              documentation: |-
-                Like, here's one line.
-
-                And now here's another.
-            ```
-        "#}),
-            indoc! {"
-            - name: Yang
-              documentation: |-
-                Like, here's one line.
-
-                And now here's another.
-        "}
-        );
-    }
-
-    #[test]
-    fn test_yaml_extraction_multiline_string_as_quote() {
-        assert_eq!(
-            extract_yaml(indoc! {r#"
-            # O rly?
-
-            ```yml
-            - name: Yang
-              documentation: |-
-            ```
-
-            > Like, here's one line.
-            > Part of the same line.
-            >
-            > And now here's another.
-        "#}),
-            indoc! {"
-            - name: Yang
-              documentation: |-
-                Like, here's one line.
-                Part of the same line.
-
-                And now here's another.
-        "}
-        );
-    }
-
-    #[test]
-    fn test_yaml_extraction_regular_text_after_quote() {
-        assert_eq!(
-            extract_yaml(indoc! {r#"
-            # O rly?
-
-            ```yml
-            - name: Yang
-              documentation: |-
-            ```
-
-            > Like, here's one line.
-            > Part of the same line.
-            >
-            > And now here's another.
-
-            Regular text, please ignore.
-        "#}),
-            indoc! {"
-            - name: Yang
-              documentation: |-
-                Like, here's one line.
-                Part of the same line.
-
-                And now here's another.
-        "}
-        );
-    }
-
-    #[test]
-    fn test_yaml_extraction_full() {
-        initialize_kb();
-
-        let concepts = parse_md(indoc! {r#"
-            # Let's try this
-
-            ```yaml
-            - name: Target
-              parent: Attribute
-            ```
-
-            Wait a second... this is just what we have in the yaml.rs test!
-
-            ```yml
-            - parent: Implement
-              target: Target
-              output_id: 2
-              documentation: |-
-                Howdy, how ya doing?
-
-                I'm doing fine, you?
-            ```
-        "#});
-        assert_eq!(concepts.len(), 2);
-        let implement = Implement::from(concepts[1].id());
-        assert!(implement.has_ancestor(Implement::archetype()));
-        assert_eq!(
-            implement.target().map(|t| t.internal_name()).flatten(),
-            Some(Rc::new("target".to_owned()))
-        );
-        let cfg = implement.config().unwrap();
-        assert_eq!(cfg.id, 2);
-        assert_eq!(
-            cfg.doc,
-            Some(
-                indoc! {"
-            Howdy, how ya doing?
-            
-            I'm doing fine, you?
-            "}
-                .trim_end()
-                .to_owned()
-            )
+            indoc! {r#"
+            let x = 5;
+            let y = x + 1;
+            println!("One more than x is {}", y);
+        "#}
         );
     }
 }

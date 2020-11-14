@@ -108,7 +108,7 @@ impl<'a> From<&'a CodeConfig<'a>> for FormatConfig {
         Self {
             yin_crate: yin_crate.to_owned(),
             imports,
-            name: cfg.name.to_camel_case(),
+            name: cfg.target.name.to_camel_case(),
             parent_name: cfg.parent.name.clone(),
             parent_import: cfg.parent.import.clone(),
             all_attributes,
@@ -116,7 +116,7 @@ impl<'a> From<&'a CodeConfig<'a>> for FormatConfig {
             introduced_attributes,
             introduced_attribute_imports,
             archetype_name,
-            internal_name: cfg.name.to_kebab_case(),
+            internal_name: cfg.target.name.to_kebab_case(),
             doc,
             id,
         }
