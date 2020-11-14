@@ -18,7 +18,7 @@ const CODEGEN_BINARY: &str = "intermediate-code-generator";
 fn toml_code() -> String {
     let yang_version = match env::var("YANG_DEV_DIR") {
         Ok(dir) => format!("{{path = \"{}\"}}", dir).replace('\\', "/"),
-        Err(_) => "0.0.10".to_owned(),
+        Err(_) => "\"0.0.10\"".to_owned(),
     };
     // note that zamm_yin must be running on the same version as whatever version yang is built on,
     // *not* whatever version the user is building for, because otherwise different graphs will be
