@@ -120,7 +120,7 @@ impl<'a> ArchetypeTrait<'a> for BuildInfo {
     type ArchetypeForm = Archetype;
     type Form = BuildInfo;
 
-    const TYPE_ID: usize = YIN_MAX_ID + 11;
+    const TYPE_ID: usize = YIN_MAX_ID + 10;
     const TYPE_NAME: &'static str = "build-info";
     const PARENT_TYPE_ID: usize = Tao::TYPE_ID;
 }

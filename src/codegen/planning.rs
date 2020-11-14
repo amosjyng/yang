@@ -192,7 +192,7 @@ mod tests {
         initialize_kb();
         assert_eq!(
             file_path(&Attribute::archetype().as_archetype()),
-            "src/tao/attribute/attribute_form.rs"
+            "src/tao/relation/attribute/attribute_form.rs"
         );
     }
 
@@ -201,7 +201,7 @@ mod tests {
         initialize_kb();
         assert_eq!(
             file_path(&Owner::archetype().as_archetype()),
-            "src/tao/attribute/owner_form.rs"
+            "src/tao/relation/attribute/owner_form.rs"
         );
     }
 
@@ -212,7 +212,7 @@ mod tests {
         owner.mark_own_module();
         assert_eq!(
             file_path(&owner.as_archetype()),
-            "src/tao/attribute/owner/owner_form.rs"
+            "src/tao/relation/attribute/owner/owner_form.rs"
         );
     }
 
@@ -230,7 +230,7 @@ mod tests {
         initialize_kb();
         assert_eq!(
             import_path(&Attribute::archetype().as_archetype(), false, false),
-            "zamm_yin::tao::attribute::Attribute"
+            "zamm_yin::tao::relation::attribute::Attribute"
         );
     }
 
@@ -239,7 +239,7 @@ mod tests {
         initialize_kb();
         assert_eq!(
             import_path(&Owner::archetype().as_archetype(), false, false),
-            "zamm_yin::tao::attribute::Owner"
+            "zamm_yin::tao::relation::attribute::Owner"
         );
     }
 
@@ -248,7 +248,7 @@ mod tests {
         initialize_kb();
         assert_eq!(
             import_path(&Owner::archetype().as_archetype(), true, false),
-            "zamm_yin::tao::attribute::owner::Owner"
+            "zamm_yin::tao::relation::attribute::owner::Owner"
         );
     }
 
@@ -259,7 +259,7 @@ mod tests {
         owner.mark_newly_defined();
         assert_eq!(
             import_path(&owner.as_archetype(), false, false),
-            "crate::tao::attribute::Owner"
+            "crate::tao::relation::attribute::Owner"
         );
     }
 
@@ -282,7 +282,7 @@ mod tests {
             concept_to_struct(&Attribute::archetype().as_archetype(), false),
             StructConfig {
                 name: "Attribute".to_owned(),
-                import: "zamm_yin::tao::attribute::Attribute".to_owned(),
+                import: "zamm_yin::tao::relation::attribute::Attribute".to_owned(),
             }
         );
     }
@@ -294,7 +294,7 @@ mod tests {
             concept_to_struct(&Owner::archetype().as_archetype(), false),
             StructConfig {
                 name: "Owner".to_owned(),
-                import: "zamm_yin::tao::attribute::Owner".to_owned(),
+                import: "zamm_yin::tao::relation::attribute::Owner".to_owned(),
             }
         );
     }
@@ -308,7 +308,7 @@ mod tests {
             concept_to_struct(&owner.as_archetype(), false),
             StructConfig {
                 name: "Owner".to_owned(),
-                import: "zamm_yin::tao::attribute::owner::Owner".to_owned(),
+                import: "zamm_yin::tao::relation::attribute::owner::Owner".to_owned(),
             }
         );
     }
@@ -322,7 +322,7 @@ mod tests {
             concept_to_struct(&owner.as_archetype(), false),
             StructConfig {
                 name: "Owner".to_owned(),
-                import: "crate::tao::attribute::Owner".to_owned(),
+                import: "crate::tao::relation::attribute::Owner".to_owned(),
             }
         );
     }
