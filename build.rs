@@ -102,4 +102,6 @@ fn main() {
         .expect("Could not add execute permissions to yang binary");
 
     println!("==================== RUNNING YANG ====================");
+
+    run_yang(&yang_binary, &["build"]);
 }
