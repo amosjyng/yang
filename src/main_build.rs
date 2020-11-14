@@ -11,7 +11,7 @@ use std::process::exit;
 const YANG_BUILD_SUBDIR: &str = "yang";
 
 /// Default version of Yang to use if no local dev version found.
-const YANG_BUILD_VERSION: &str = "0.0.11";
+const YANG_BUILD_VERSION: &str = "0.0.12";
 
 /// Name for the codegen binary. Be sure to change BUILD_TOML as well when changing this.
 const CODEGEN_BINARY: &str = "intermediate-code-generator";
