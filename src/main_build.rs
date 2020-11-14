@@ -2,6 +2,7 @@ use crate::codegen::string_format::{code_main, MainConfig};
 use crate::codegen::{output_code, CodegenConfig};
 use crate::commands::run_command;
 use indoc::formatdoc;
+use itertools::Itertools;
 use std::env;
 use std::path::PathBuf;
 use std::process::exit;
@@ -81,9 +82,33 @@ fn output_cargo_toml() {
 /// Set up the build directory for compilation of a program that will then go on to generate the
 /// final code files.
 fn output_build_dir(cfg: &MainConfig) {
-    output_main(cfg);
+    // coalesce into lines first, in case of multiline chunks
+    let mut separated_cfg = separate_imports(&cfg.lines.iter().format("\n").to_string());
+    for import in &cfg.imports {
+        separated_cfg.imports.push(import.clone());
+    }
+    output_main(&separated_cfg);
     output_cargo_toml();
     println!("Finished generating codegen files.");
+}
+
+/// Separate imports embedded in the code, similar to how `rustdoc` does it.
+fn separate_imports(code: &str) -> MainConfig {
+    let mut imports = vec![];
+    let mut lines = vec![];
+    for line in code.split('\n') {
+        if line.starts_with("use ") {
+            imports.push(
+                line.chars()
+                    .skip(4)
+                    .take(line.chars().count() - 5)
+                    .collect(),
+            );
+        } else if !line.is_empty() {
+            lines.push(line.to_owned());
+        }
+    }
+    MainConfig { imports, lines }
 }
 
 fn build_codegen_binary() -> String {
@@ -127,4 +152,79 @@ pub fn generate_final_code(cfg: &MainConfig) {
     let binary_path = build_codegen_binary();
     println!("==================== RUNNING CODEGEN ====================");
     print!("{}", run_command(&binary_path, Vec::<&str>::new()));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use indoc::indoc;
+
+    #[test]
+    fn test_separate_imports_empty() {
+        assert_eq!(
+            separate_imports(""),
+            MainConfig {
+                imports: vec![],
+                lines: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn test_separate_imports_no_imports() {
+        assert_eq!(
+            separate_imports(indoc! {"
+            let x = 1;
+            let y = x + 1;"}),
+            MainConfig {
+                imports: vec![],
+                lines: vec!["let x = 1;".to_owned(), "let y = x + 1;".to_owned()],
+            }
+        );
+    }
+
+    #[test]
+    fn test_separate_imports_imports_only() {
+        assert_eq!(
+            separate_imports(indoc! {"
+            use std::rc::Rc;
+            use crate::my::Struct;"}),
+            MainConfig {
+                imports: vec!["std::rc::Rc".to_owned(), "crate::my::Struct".to_owned()],
+                lines: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn test_separate_imports_subsequent() {
+        assert_eq!(
+            separate_imports(indoc! {"
+            use std::rc::Rc;
+            use crate::my::Struct;
+            
+            let x = 1;
+            let y = x + 1;"}),
+            MainConfig {
+                imports: vec!["std::rc::Rc".to_owned(), "crate::my::Struct".to_owned()],
+                lines: vec!["let x = 1;".to_owned(), "let y = x + 1;".to_owned()],
+            }
+        );
+    }
+
+    #[test]
+    fn test_separate_imports_mixed() {
+        assert_eq!(
+            separate_imports(indoc! {"
+            use std::rc::Rc;
+            
+            let x = 1;
+            use crate::my::Struct;
+            let y = x + 1;"}),
+            MainConfig {
+                imports: vec!["std::rc::Rc".to_owned(), "crate::my::Struct".to_owned()],
+                lines: vec!["let x = 1;".to_owned(), "let y = x + 1;".to_owned()],
+            }
+        );
+    }
 }

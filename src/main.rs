@@ -130,7 +130,6 @@ fn generate_code(build_cfg: &BuildConfig) -> Result<(), Error> {
             "zamm_yin::tao::archetype::ArchetypeFormTrait".to_owned(),
             "zamm_yin::node_wrappers::CommonNodeTrait".to_owned(),
             "zamm_yin::tao::FormTrait".to_owned(),
-            "zamm_yin::tao::attribute::Attribute".to_owned(),
             "zamm_yin::tao::archetype::AttributeArchetype".to_owned(),
             "zamm_yang::codegen::CodegenConfig".to_owned(),
             "zamm_yang::tao::callbacks::handle_all_implementations".to_owned(),
