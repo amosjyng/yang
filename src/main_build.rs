@@ -108,7 +108,16 @@ fn separate_imports(code: &str) -> MainConfig {
             lines.push(line.to_owned());
         }
     }
-    MainConfig { imports, lines }
+
+    let mut combined_lines = vec![];
+    if !lines.is_empty() {
+        // combine lines together into one fragment to preserve indentation
+        combined_lines.push(lines.iter().format("\n").to_string());
+    }
+    MainConfig {
+        imports,
+        lines: combined_lines,
+    }
 }
 
 fn build_codegen_binary() -> String {
@@ -178,7 +187,7 @@ mod tests {
             let y = x + 1;"}),
             MainConfig {
                 imports: vec![],
-                lines: vec!["let x = 1;".to_owned(), "let y = x + 1;".to_owned()],
+                lines: vec!["let x = 1;\nlet y = x + 1;".to_owned()],
             }
         );
     }
@@ -207,7 +216,7 @@ mod tests {
             let y = x + 1;"}),
             MainConfig {
                 imports: vec!["std::rc::Rc".to_owned(), "crate::my::Struct".to_owned()],
-                lines: vec!["let x = 1;".to_owned(), "let y = x + 1;".to_owned()],
+                lines: vec!["let x = 1;\nlet y = x + 1;".to_owned()],
             }
         );
     }
@@ -223,7 +232,7 @@ mod tests {
             let y = x + 1;"}),
             MainConfig {
                 imports: vec!["std::rc::Rc".to_owned(), "crate::my::Struct".to_owned()],
-                lines: vec!["let x = 1;".to_owned(), "let y = x + 1;".to_owned()],
+                lines: vec!["let x = 1;\nlet y = x + 1;".to_owned()],
             }
         );
     }

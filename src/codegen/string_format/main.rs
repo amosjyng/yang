@@ -7,7 +7,8 @@ use std::rc::Rc;
 pub struct MainConfig {
     /// Imports that the main function uses
     pub imports: Vec<String>,
-    /// Lines of code to include in the main function.
+    /// Lines of code to include in the main function. Should really be additional fragments to
+    /// include.
     pub lines: Vec<String>,
 }
 
