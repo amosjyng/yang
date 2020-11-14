@@ -23,11 +23,11 @@ fn toml_code() -> String {
         Ok(dir) => {
             println!("Linking intermediate binary to local yang dev.");
             format!("{{path = \"{}\"}}", dir).replace('\\', "/")
-        },
+        }
         Err(_) => {
             println!("Linking intermediate binary to yang {}", YANG_BUILD_VERSION);
             format!("\"{}\"", YANG_BUILD_VERSION)
-        },
+        }
     };
     // note that zamm_yin must be running on the same version as whatever version yang is built on,
     // *not* whatever version the user is building for, because otherwise different graphs will be
