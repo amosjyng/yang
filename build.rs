@@ -7,6 +7,12 @@ use std::str;
 /// The version of the Yang that will be used to generate build files.
 const YANG_DEP_VERSION: &str = "0.0.11";
 
+/// The filename extension for the yang executable.
+#[cfg(target_family = "unix")]
+const BINARY_EXT: &str = "";
+#[cfg(target_family = "windows")]
+const BINARY_EXT: &str = ".exe";
+
 /// Call out to the commandline.
 fn run_command<I, S>(streaming: bool, command: &str, args: I) -> io::Result<Output>
 where
@@ -33,9 +39,19 @@ where
 }
 
 fn yang_path() -> String {
-    // somehow Cargo seems to add the target output directory to the PATH during builds, because
-    // the "yang" command returns the latest built binary after it's been built the first time
-    format!("{}/bin/yang", env::var("CARGO_HOME").unwrap())
+    match env::var("YANG_DEV_DIR") {
+        Ok(dev_dir) => {
+            // custom paths useful when developing on a future yang version
+            let custom_path = format!("{}/target/debug/yang{}", dev_dir, BINARY_EXT);
+            println!("Custom path for yang binary set to {}", custom_path);
+            custom_path
+        }
+        Err(_) => {
+            // somehow Cargo seems to add the target output directory to the PATH during builds,
+            // because the "yang" command returns the latest built binary after it's been built the // first time
+            format!("{}/bin/yang", env::var("CARGO_HOME").unwrap())
+        }
+    }
 }
 
 fn check_yang_version() -> bool {
@@ -67,7 +83,8 @@ fn check_yang_version() -> bool {
 
 /// Make sure the right version of yang is installed.
 fn ensure_yang_installed() {
-    if !check_yang_version() {
+    // only check yang version if custom binary is not provided
+    if env::var("YANG_DEV_DIR").is_err() && !check_yang_version() {
         println!("Installing yang v{} ...", YANG_DEP_VERSION);
         assert_command(
             true,
