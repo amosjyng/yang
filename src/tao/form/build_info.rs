@@ -5,10 +5,11 @@ use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::{unwrap_strong, StrongValue};
-use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, CommonNodeTrait, FinalNode};
+use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::{Tao, YIN_MAX_ID};
+use zamm_yin::Wrapper;
 
 /// Represents build information about a generated concept.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -111,17 +112,15 @@ impl<'a> TryFrom<&'a str> for BuildInfo {
     }
 }
 
-impl CommonNodeTrait for BuildInfo {
-    fn id(&self) -> usize {
-        self.base.id()
+impl Wrapper for BuildInfo {
+    type BaseType = FinalNode;
+
+    fn essence(&self) -> &FinalNode {
+        &self.base
     }
 
-    fn set_internal_name(&mut self, name: String) {
-        self.base.set_internal_name(name);
-    }
-
-    fn internal_name(&self) -> Option<Rc<String>> {
-        self.base.internal_name()
+    fn essence_mut(&mut self) -> &mut FinalNode {
+        &mut self.base
     }
 }
 
@@ -134,20 +133,13 @@ impl<'a> ArchetypeTrait<'a> for BuildInfo {
     const PARENT_TYPE_ID: usize = Tao::TYPE_ID;
 }
 
-impl FormTrait for BuildInfo {
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
+impl FormTrait for BuildInfo {}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::tao::initialize_kb;
+    use zamm_yin::node_wrappers::CommonNodeTrait;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
 
     #[test]
@@ -166,22 +158,6 @@ mod tests {
         let concept = BuildInfo::individuate();
         let concept_copy = BuildInfo::from(concept.id());
         assert_eq!(concept.id(), concept_copy.id());
-    }
-
-    #[test]
-    fn create_and_retrieve_node_id() {
-        initialize_kb();
-        let concept1 = BuildInfo::individuate();
-        let concept2 = BuildInfo::individuate();
-        assert_eq!(concept1.id() + 1, concept2.id());
-    }
-
-    #[test]
-    fn create_and_retrieve_node_name() {
-        initialize_kb();
-        let mut concept = BuildInfo::individuate();
-        concept.set_internal_name("A".to_string());
-        assert_eq!(concept.internal_name(), Some(Rc::new("A".to_string())));
     }
 
     #[test]

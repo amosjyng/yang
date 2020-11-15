@@ -112,7 +112,7 @@ fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -
 
 /// Turns a concept into a struct to be imported.
 fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig {
-    let build_info = BuildInfo::from(*target.essence());
+    let build_info = BuildInfo::from(target.id());
     let name = build_info
         .implementation_name()
         .unwrap_or_else(|| target.internal_name().unwrap().as_str().to_camel_case());
@@ -188,8 +188,14 @@ pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConf
         all_attributes,
         introduced_attributes,
         attribute_structs: attr_structs,
-        rust_primitive_name: target.rust_primitive().unwrap_or_default(),
-        default_value: target.default_value().unwrap_or_default(),
+        rust_primitive_name: target
+            .rust_primitive()
+            .map(|s| s.clone())
+            .unwrap_or_default(),
+        default_value: target
+            .default_value()
+            .map(|s| s.clone())
+            .unwrap_or_default(),
         impl_cfg: request.config().unwrap(),
         codegen_cfg: *codegen_cfg,
     }
