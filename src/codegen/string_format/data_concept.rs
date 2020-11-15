@@ -15,7 +15,7 @@ pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 cfg.tao_cfg.yin_crate
             ),
             format!(
-                "{}::graph::value_wrappers::unwrap_strong",
+                "{}::graph::value_wrappers::unwrap_value",
                 cfg.tao_cfg.yin_crate
             ),
             "std::rc::Rc".to_owned(),
@@ -29,8 +29,8 @@ pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 }}
 
                 /// Retrieve {primitive}-valued StrongValue.
-                pub fn value(&self) -> Option<{primitive}> {{
-                    unwrap_strong::<{primitive}>(&self.essence().value()).map(|v| v.clone())
+                pub fn value(&self) -> Option<Rc<{primitive}>> {{
+                    unwrap_value::<{primitive}>(self.essence().value())
                 }}
             }}"#, name = cfg.tao_cfg.name,
             primitive = cfg.rust_primitive_name,
@@ -55,7 +55,7 @@ pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 initialize_kb();
                 let mut concept = {name}::individuate();
                 concept.set_value({sample_value});
-                assert_eq!(concept.value(), Some({sample_value}));
+                assert_eq!(concept.value(), Some(Rc::new({sample_value})));
             }}"#, name = cfg.tao_cfg.name,
                 // todo: create a better sample value than the default. This will require an
                 // understanding of what the types actually are and how to construct them.
