@@ -36,9 +36,11 @@ pub mod relation {
 pub mod form {
     /// Concepts that exist explicitly as bits.
     pub mod data {
+        mod data_extension;
         mod data_form;
         mod string_concept_form;
 
+        pub use data_extension::DataExtension;
         pub use data_form::Data;
         pub use string_concept_form::StringConcept;
     }
