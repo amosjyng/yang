@@ -137,6 +137,7 @@ fn generate_code(build_cfg: &BuildConfig) -> Result<(), Error> {
             "zamm_yang::tao::ImplementConfig",
             "zamm_yang::tao::archetype::CodegenFlags",
             "zamm_yang::tao::form::DefinedMarker",
+            "zamm_yang::tao::form::data::DataExtension",
             "zamm_yang::tao::archetype::CreateImplementation",
             "zamm_yang::define",
             "zamm_yang::helper::aa",
