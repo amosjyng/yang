@@ -20,13 +20,17 @@ pub mod relation {
     /// Binary relations.
     pub mod attribute {
         mod crate_form;
+        mod default_value_form;
         mod implementation_name_form;
         mod import_path_form;
+        mod rust_primitive_form;
         mod target_form;
 
         pub use crate_form::Crate;
+        pub use default_value_form::DefaultValue;
         pub use implementation_name_form::ImplementationName;
         pub use import_path_form::ImportPath;
+        pub use rust_primitive_form::RustPrimitive;
         pub use target_form::Target;
     }
 }
@@ -34,9 +38,11 @@ pub mod relation {
 pub mod form {
     /// Concepts that exist explicitly as bits.
     pub mod data {
+        mod data_extension;
         mod data_form;
         mod string_concept_form;
 
+        pub use data_extension::DataExtension;
         pub use data_form::Data;
         pub use string_concept_form::StringConcept;
     }
@@ -55,7 +61,9 @@ use form::data::{Data, StringConcept};
 use form::BuildInfo;
 pub use implement::{Implement, ImplementConfig};
 pub use lens_form::Lens;
-use relation::attribute::{Crate, ImplementationName, ImportPath, Target};
+use relation::attribute::{
+    Crate, DefaultValue, ImplementationName, ImportPath, RustPrimitive, Target,
+};
 use relation::flag::{NewlyDefined, OwnModule, UsesAttributeLogic, UsesDataLogic};
 use zamm_yin::graph::{Graph, InjectionGraph};
 use zamm_yin::initialize_type;
@@ -81,7 +89,9 @@ pub fn initialize_kb() {
             BuildInfo,
             Lens,
             Crate,
-            ImplementationName
+            ImplementationName,
+            RustPrimitive,
+            DefaultValue
         )
     );
 }

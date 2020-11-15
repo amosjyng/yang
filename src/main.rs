@@ -7,7 +7,6 @@ use std::fs::read_to_string;
 use std::io::Error;
 use std::process::exit;
 use toml::Value;
-use zamm_yang::codegen::string_format::MainConfig;
 use zamm_yang::codegen::track_autogen::clean_autogen;
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::commands::run_command;
@@ -123,27 +122,28 @@ fn generate_code(build_cfg: &BuildConfig) -> Result<(), Error> {
         handle_all_implementations(&codegen_cfg);
     "#, literate_rust_code.trim()};
 
-    generate_final_code(&MainConfig {
-        imports: vec![
-            "zamm_yin::tao::Tao".to_owned(),
-            "zamm_yin::tao::archetype::ArchetypeTrait".to_owned(),
-            "zamm_yin::tao::archetype::ArchetypeFormTrait".to_owned(),
-            "zamm_yin::node_wrappers::CommonNodeTrait".to_owned(),
-            "zamm_yin::tao::FormTrait".to_owned(),
-            "zamm_yin::tao::archetype::AttributeArchetype".to_owned(),
-            "zamm_yang::codegen::CodegenConfig".to_owned(),
-            "zamm_yang::tao::callbacks::handle_all_implementations".to_owned(),
-            "zamm_yang::tao::initialize_kb".to_owned(),
-            "zamm_yang::tao::Implement".to_owned(),
-            "zamm_yang::tao::ImplementConfig".to_owned(),
-            "zamm_yang::tao::archetype::CodegenFlags".to_owned(),
-            "zamm_yang::tao::form::DefinedMarker".to_owned(),
-            "zamm_yang::tao::archetype::CreateImplementation".to_owned(),
-            "zamm_yang::define".to_owned(),
-            "zamm_yang::helper::aa".to_owned(),
+    generate_final_code(
+        vec![
+            "zamm_yin::tao::Tao",
+            "zamm_yin::tao::archetype::ArchetypeTrait",
+            "zamm_yin::tao::archetype::ArchetypeFormTrait",
+            "zamm_yin::tao::archetype::AttributeArchetype",
+            "zamm_yin::tao::form::FormTrait",
+            "zamm_yin::node_wrappers::CommonNodeTrait",
+            "zamm_yang::codegen::CodegenConfig",
+            "zamm_yang::tao::callbacks::handle_all_implementations",
+            "zamm_yang::tao::initialize_kb",
+            "zamm_yang::tao::Implement",
+            "zamm_yang::tao::ImplementConfig",
+            "zamm_yang::tao::archetype::CodegenFlags",
+            "zamm_yang::tao::form::DefinedMarker",
+            "zamm_yang::tao::form::data::DataExtension",
+            "zamm_yang::tao::archetype::CreateImplementation",
+            "zamm_yang::define",
+            "zamm_yang::helper::aa",
         ],
-        lines: vec![define_codegen_cfg, kb_init],
-    });
+        vec![define_codegen_cfg, kb_init],
+    );
 
     Ok(())
 }

@@ -1,8 +1,8 @@
 use super::CodegenConfig;
 use crate::codegen::string_format::attribute::code_attribute;
-use crate::codegen::string_format::code_string_concept;
+use crate::codegen::string_format::code_data_concept;
 use crate::codegen::string_format::tao::code_tao;
-use crate::codegen::string_format::{AttributeFormatConfig, FormatConfig};
+use crate::codegen::string_format::{AttributeFormatConfig, DataFormatConfig, FormatConfig};
 use crate::tao::ImplementConfig;
 use std::collections::HashMap;
 
@@ -41,6 +41,10 @@ pub struct CodeConfig<'a> {
     pub introduced_attributes: Vec<StructConfig>,
     /// Structs for additional attributes.
     pub attribute_structs: HashMap<&'a str, StructConfig>,
+    /// SPECIFIC to Data concepts: name of Rust primitive.
+    pub rust_primitive_name: String,
+    /// SPECIFIC to Data concepts: code representation of default value.
+    pub default_value: String,
     /// Concept-specific implementation settings.
     pub impl_cfg: ImplementConfig,
     /// Code generation settings for all concepts.
@@ -52,7 +56,7 @@ pub fn code(cfg: &CodeConfig) -> String {
     if cfg.activate_attribute {
         code_attribute(&AttributeFormatConfig::from(cfg))
     } else if cfg.activate_data {
-        code_string_concept(&FormatConfig::from(cfg))
+        code_data_concept(&DataFormatConfig::from(cfg))
     } else {
         code_tao(&FormatConfig::from(cfg))
     }

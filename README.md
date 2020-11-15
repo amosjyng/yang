@@ -9,7 +9,7 @@ This crate is named `zamm_yang` for consistency with `zamm_yin`. However, the na
 ## Install
 
 ```sh
-cargo install yang
+cargo install zamm_yang
 ```
 
 ## Usage
@@ -41,7 +41,7 @@ SUBCOMMANDS:
 See this project's very own [`yin.md`](yin.md) for an example configuration file. Run
 
 ```sh
-yang generate
+yang build
 ```
 
 and you can use the newly generated `src/concepts/attributes/target.rs` as in the [example](examples/result/main.rs). Make sure to initialize the new `Target` concept on KB startup
