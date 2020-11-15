@@ -1,8 +1,8 @@
+use std::env;
 use std::ffi::OsStr;
 use std::io;
 use std::process::{exit, Command, Output, Stdio};
 use std::str;
-use std::env;
 
 /// The version of the Yang that will be used to generate build files.
 const YANG_DEP_VERSION: &str = "0.0.11";
@@ -33,7 +33,7 @@ where
 }
 
 fn yang_path() -> String {
-    // somehow Cargo seems to add the target output directory to the PATH during builds, because 
+    // somehow Cargo seems to add the target output directory to the PATH during builds, because
     // the "yang" command returns the latest built binary after it's been built the first time
     format!("{}/bin/yang", env::var("CARGO_HOME").unwrap())
 }
@@ -46,16 +46,22 @@ fn check_yang_version() -> bool {
             let output_str = str::from_utf8(&output.stdout).unwrap();
             let verified = output.status.success() && output_str.contains(&version_str);
             if verified {
-                println!("Verified that yang v{} is installed at {}", YANG_DEP_VERSION, yang_binary);
+                println!(
+                    "Verified that yang v{} is installed at {}",
+                    YANG_DEP_VERSION, yang_binary
+                );
             } else {
-                println!("yang at {} is still a different version than v{}", yang_binary, YANG_DEP_VERSION);
+                println!(
+                    "yang at {} is still a different version than v{}",
+                    yang_binary, YANG_DEP_VERSION
+                );
             }
             verified
         }
         Err(_) => {
             println!("No yang binary found at {}", yang_binary);
             false
-        },
+        }
     }
 }
 
