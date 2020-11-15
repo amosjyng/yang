@@ -33,6 +33,13 @@ define!(string_concept);
 string_concept.add_parent(data);
 ```
 
+Every type of data usually has a "default" value that we think of when constructing one from scratch.
+
+```rust
+define!(default_value);
+default_value.add_parent(Attribute::archetype().as_archetype());
+```
+
 Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
 
 ```rust
@@ -164,6 +171,11 @@ data.implement_with(
 string_concept.implement_with(
     7,
     "The concept of a string of characters."
+);
+
+default_value.implement_with(
+    15,
+    "The default value of a data structure."
 );
 
 rust_primitive.implement_with(
