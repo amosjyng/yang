@@ -144,19 +144,10 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
             }}
 
             #[test]
-            fn create_and_retrieve_node_id() {{
+            fn test_wrapper_implemented() {{
                 initialize_kb();
-                let concept1 = {name}::individuate();
-                let concept2 = {name}::individuate();
-                assert_eq!(concept1.id() + 1, concept2.id());
-            }}
-
-            #[test]
-            fn create_and_retrieve_node_name() {{
-                initialize_kb();
-                let mut concept = {name}::individuate();
-                concept.set_internal_name("A".to_string());
-                assert_eq!(concept.internal_name(), Some(Rc::new("A".to_string())));
+                let concept = {name}::individuate();
+                assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
             }}"#,
             name = cfg.name,
             introduced_attributes = cfg.introduced_attributes,
