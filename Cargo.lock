@@ -1581,7 +1581,6 @@ dependencies = [
  "itertools",
  "path_abs",
  "pulldown-cmark",
- "reqwest",
  "textwrap 0.12.1",
  "toml",
  "yaml-rust",
