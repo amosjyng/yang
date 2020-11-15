@@ -161,7 +161,6 @@ data.implement_with(
     "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
 );
 
-string_concept.activate_data_logic();
 string_concept.implement_with(
     7,
     "The concept of a string of characters."
