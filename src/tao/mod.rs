@@ -40,10 +40,12 @@ pub mod form {
     pub mod data {
         mod data_extension;
         mod data_form;
+        mod number_form;
         mod string_concept_form;
 
         pub use data_extension::DataExtension;
         pub use data_form::Data;
+        pub use number_form::Number;
         pub use string_concept_form::StringConcept;
     }
 
@@ -57,7 +59,7 @@ pub mod form {
 mod implement;
 mod lens_form;
 
-use form::data::{Data, StringConcept};
+use form::data::{Data, Number, StringConcept};
 use form::BuildInfo;
 pub use implement::{Implement, ImplementConfig};
 pub use lens_form::Lens;
@@ -91,7 +93,8 @@ pub fn initialize_kb() {
             Crate,
             ImplementationName,
             RustPrimitive,
-            DefaultValue
+            DefaultValue,
+            Number
         )
     );
 }

@@ -33,6 +33,13 @@ define!(string_concept);
 string_concept.add_parent(data);
 ```
 
+Another type of data is a number:
+
+```rust
+define!(number);
+number.add_parent(data);
+```
+
 Every type of data usually has a "default" value that we think of when constructing one from scratch.
 
 ```rust
@@ -40,11 +47,27 @@ define!(default_value);
 default_value.add_parent(Attribute::archetype().as_archetype());
 ```
 
+For strings, this would be the empty string:
+
+```rust
+string_concept.set_default_value("String::new()");
+```
+
+For numbers, this would be zero:
+
+```rust
+number.set_default_value("0");
+```
+
 Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
 
 ```rust
 define!(rust_primitive);
 rust_primitive.add_parent(Attribute::archetype().as_archetype());
+
+string_concept.set_rust_primitive("String");
+// for now, only use positive numbers
+number.set_rust_primitive("usize");
 ```
 
 This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
@@ -155,6 +178,12 @@ data.implement_with(
 string_concept.implement_with(
     7,
     "The concept of a string of characters."
+);
+
+number.activate_data_logic();
+number.implement_with(
+    16,
+    "The concept of numbers."
 );
 
 default_value.implement_with(
