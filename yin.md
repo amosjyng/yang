@@ -31,7 +31,6 @@ One type of data is a "string":
 ```rust
 define!(string_concept);
 string_concept.add_parent(data);
-string_concept.activate_data_logic();
 ```
 
 When Yin tells us about herself, we must forget all preconceptions we have about the world and listen to what she has to say. That means when she speaks of what an attribute is, we *listen* instead of shoehorning her description into what we already think of as an attribute.
@@ -53,6 +52,12 @@ The same is true of Data:
 ```rust
 define!(uses_data_logic);
 uses_data_logic.add_parent(flag);
+```
+
+Let's apply that to the string concept we defined earlier:
+
+```rust
+string_concept.activate_data_logic();
 ```
 
 Due to current limitations with Yang, we cannot set Tao as the parent here. We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
