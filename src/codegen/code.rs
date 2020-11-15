@@ -5,6 +5,7 @@ use crate::codegen::string_format::tao::code_tao;
 use crate::codegen::string_format::{AttributeFormatConfig, DataFormatConfig, FormatConfig};
 use crate::tao::ImplementConfig;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 /// Config representing an imported struct.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -42,9 +43,9 @@ pub struct CodeConfig<'a> {
     /// Structs for additional attributes.
     pub attribute_structs: HashMap<&'a str, StructConfig>,
     /// SPECIFIC to Data concepts: name of Rust primitive.
-    pub rust_primitive_name: String,
+    pub rust_primitive_name: Option<Rc<String>>,
     /// SPECIFIC to Data concepts: code representation of default value.
-    pub default_value: String,
+    pub default_value: Option<Rc<String>>,
     /// Concept-specific implementation settings.
     pub impl_cfg: ImplementConfig,
     /// Code generation settings for all concepts.

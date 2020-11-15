@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use zamm_yin::graph::value_wrappers::{unwrap_strong, StrongValue};
+use zamm_yin::graph::value_wrappers::{unwrap_value, StrongValue};
 use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
@@ -55,8 +55,8 @@ impl Implement {
     }
 
     /// Retrieve the config stored for this Implement.
-    pub fn config(&self) -> Option<ImplementConfig> {
-        unwrap_strong::<ImplementConfig>(&self.essence().value()).cloned()
+    pub fn config(&self) -> Option<Rc<ImplementConfig>> {
+        unwrap_value::<ImplementConfig>(self.essence().value())
     }
 }
 
@@ -170,10 +170,10 @@ mod tests {
         });
         assert_eq!(
             implement.config(),
-            Some(ImplementConfig {
+            Some(Rc::new(ImplementConfig {
                 id: 2,
                 doc: Some("Hi".to_owned()),
-            })
+            }))
         );
     }
 }

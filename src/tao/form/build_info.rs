@@ -4,7 +4,7 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use zamm_yin::graph::value_wrappers::{unwrap_strong, StrongValue};
+use zamm_yin::graph::value_wrappers::{unwrap_value, StrongValue};
 use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
@@ -29,14 +29,14 @@ impl BuildInfo {
 
     /// Retrieve crate which the object was built as a part of. This is called `crate_name` instead
     /// of just `crate` because `crate` is a reserved keyword in Rust.
-    pub fn crate_name(&self) -> Option<String> {
+    pub fn crate_name(&self) -> Option<Rc<String>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.base
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(Crate::TYPE_ID)
             .first()
-            .map(|s| unwrap_strong::<String>(&s.value()).cloned())
+            .map(|s| unwrap_value::<String>(s.value()))
             .flatten()
     }
 
@@ -50,14 +50,14 @@ impl BuildInfo {
     }
 
     /// Retrieve import path the concept ended up at, relative to the crate.
-    pub fn import_path(&self) -> Option<String> {
+    pub fn import_path(&self) -> Option<Rc<String>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.base
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(ImportPath::TYPE_ID)
             .first()
-            .map(|s| unwrap_strong::<String>(&s.value()).cloned())
+            .map(|s| unwrap_value::<String>(s.value()))
             .flatten()
     }
 
@@ -72,14 +72,14 @@ impl BuildInfo {
     }
 
     /// Retrieve name the concept took on for its actual implementation.
-    pub fn implementation_name(&self) -> Option<String> {
+    pub fn implementation_name(&self) -> Option<Rc<String>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.base
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(ImplementationName::TYPE_ID)
             .first()
-            .map(|s| unwrap_strong::<String>(&s.value()).cloned())
+            .map(|s| unwrap_value::<String>(s.value()))
             .flatten()
     }
 }
@@ -165,7 +165,7 @@ mod tests {
         initialize_kb();
         let mut info = BuildInfo::individuate();
         info.set_crate_name("zamm_yang");
-        assert_eq!(info.crate_name(), Some("zamm_yang".to_owned()));
+        assert_eq!(info.crate_name(), Some(Rc::new("zamm_yang".to_owned())));
     }
 
     #[test]
@@ -175,7 +175,7 @@ mod tests {
         info.set_import_path("zamm_yang::import::path");
         assert_eq!(
             info.import_path(),
-            Some("zamm_yang::import::path".to_owned())
+            Some(Rc::new("zamm_yang::import::path".to_owned()))
         );
     }
 
@@ -184,7 +184,7 @@ mod tests {
         initialize_kb();
         let mut info = BuildInfo::individuate();
         info.set_implementation_name("Yolo");
-        assert_eq!(info.implementation_name(), Some("Yolo".to_owned()));
+        assert_eq!(info.implementation_name(), Some(Rc::new("Yolo".to_owned())));
     }
 
     /// Test that the attributes don't get mixed up.
@@ -196,12 +196,12 @@ mod tests {
         info.set_import_path("zamm_yang::import::path");
         info.set_implementation_name("Yolo");
 
-        assert_eq!(info.crate_name(), Some("zamm_yang".to_owned()));
+        assert_eq!(info.crate_name(), Some(Rc::new("zamm_yang".to_owned())));
         assert_eq!(
             info.import_path(),
-            Some("zamm_yang::import::path".to_owned())
+            Some(Rc::new("zamm_yang::import::path".to_owned()))
         );
-        assert_eq!(info.implementation_name(), Some("Yolo".to_owned()));
+        assert_eq!(info.implementation_name(), Some(Rc::new("Yolo".to_owned())));
     }
 
     /// Build info should never be inherited

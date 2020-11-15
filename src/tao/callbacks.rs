@@ -26,6 +26,7 @@ mod tests {
     use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
     use crate::codegen::{CodeConfig, CodegenConfig, StructConfig};
     use std::collections::HashMap;
+    use std::rc::Rc;
     use zamm_yin::tao::archetype::ArchetypeTrait;
     use zamm_yin::tao::relation::attribute::{OwnerArchetype, ValueArchetype};
 
@@ -105,6 +106,8 @@ mod tests {
                 comment_autogen: false,
                 ..CodegenConfig::default()
             },
+            rust_primitive_name: Some(Rc::new("asdf".to_owned())),
+            default_value: Some(Rc::new("bsdf".to_owned())),
             ..CodeConfig::default()
         });
         assert!(code.contains("set_value"));

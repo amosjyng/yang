@@ -1,5 +1,6 @@
 use crate::tao::form::data::StringConcept;
 use crate::tao::relation::attribute::{DefaultValue, RustPrimitive};
+use std::rc::Rc;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
@@ -16,11 +17,11 @@ pub trait DataExtension: FormTrait {
     }
 
     /// Get the name of the Rust primitive that this concept represents.
-    fn rust_primitive(&self) -> Option<String> {
+    fn rust_primitive(&self) -> Option<Rc<String>> {
         self.essence()
             .outgoing_nodes(RustPrimitive::TYPE_ID)
             .first()
-            .map(|p| StringConcept::from(*p).value().map(|s| s.clone()))
+            .map(|p| StringConcept::from(*p).value())
             .flatten()
     }
 
@@ -33,11 +34,11 @@ pub trait DataExtension: FormTrait {
     }
 
     /// Get the Rust code representation for the default value of this concept.
-    fn default_value(&self) -> Option<String> {
+    fn default_value(&self) -> Option<Rc<String>> {
         self.essence()
             .outgoing_nodes(DefaultValue::TYPE_ID)
             .first()
-            .map(|p| StringConcept::from(*p).value().map(|s| s.clone()))
+            .map(|p| StringConcept::from(*p).value())
             .flatten()
     }
 }
@@ -59,7 +60,7 @@ mod tests {
 
         let mut new_data = Data::archetype().individuate_as_archetype();
         new_data.set_rust_primitive("u64");
-        assert_eq!(new_data.rust_primitive(), Some("u64".to_owned()));
+        assert_eq!(new_data.rust_primitive(), Some(Rc::new("u64".to_owned())));
     }
 
     #[test]
@@ -68,6 +69,6 @@ mod tests {
 
         let mut new_data = Data::archetype().individuate_as_archetype();
         new_data.set_default_value("0");
-        assert_eq!(new_data.default_value(), Some("0".to_owned()));
+        assert_eq!(new_data.default_value(), Some(Rc::new("0".to_owned())));
     }
 }
