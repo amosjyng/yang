@@ -10,11 +10,15 @@ pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![
             format!("{}::node_wrappers::BaseNodeTrait", cfg.tao_cfg.yin_crate),
-            format!("{}::graph::value_wrappers::KBValue", cfg.tao_cfg.yin_crate),
             format!(
                 "{}::graph::value_wrappers::StrongValue",
                 cfg.tao_cfg.yin_crate
             ),
+            format!(
+                "{}::graph::value_wrappers::unwrap_strong",
+                cfg.tao_cfg.yin_crate
+            ),
+            "std::rc::Rc".to_owned(),
         ],
         atom: formatdoc! {r#"
             impl {name} {{
@@ -25,8 +29,8 @@ pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 }}
 
                 /// Retrieve {primitive}-valued StrongValue.
-                pub fn value(&self) -> Option<Rc<dyn KBValue>> {{
-                    self.essence().value()
+                pub fn value(&self) -> Option<{primitive}> {{
+                    unwrap_strong::<{primitive}>(&self.essence().value()).map(|v| v.clone())
                 }}
             }}"#, name = cfg.tao_cfg.name,
             primitive = cfg.rust_primitive_name,
@@ -37,16 +41,13 @@ pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
 /// Get the string concept test fragment.
 pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     AtomicFragment {
-        imports: vec![format!(
-            "{}::graph::value_wrappers::unwrap_strong",
-            cfg.tao_cfg.yin_crate
-        )],
+        imports: vec![],
         atom: formatdoc! {r#"
             #[test]
             fn get_value_none() {{
                 initialize_kb();
                 let concept = {name}::individuate();
-                assert_eq!(unwrap_strong::<{primitive}>(&concept.value()), None);
+                assert_eq!(concept.value(), None);
             }}
         
             #[test]
@@ -54,12 +55,8 @@ pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 initialize_kb();
                 let mut concept = {name}::individuate();
                 concept.set_value({sample_value});
-                assert_eq!(
-                    unwrap_strong::<{primitive}>(&concept.value()),
-                    Some(&{sample_value})
-                );
+                assert_eq!(concept.value(), Some({sample_value}));
             }}"#, name = cfg.tao_cfg.name,
-                primitive = cfg.rust_primitive_name,
                 // todo: create a better sample value than the default. This will require an
                 // understanding of what the types actually are and how to construct them.
                 sample_value = cfg.default_value,
