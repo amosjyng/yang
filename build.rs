@@ -4,8 +4,8 @@ use std::process::{exit, Command, Output, Stdio};
 use std::str;
 
 /// The version of the ZAMM that will be used to generate build files.
-/// 
-/// Lock this in so that if there are future releases of ZAMM that are not backwards-compatible, 
+///
+/// Lock this in so that if there are future releases of ZAMM that are not backwards-compatible,
 /// this particular commit will still build.
 const ZAMM_VERSION: &str = "0.0.1";
 
@@ -41,15 +41,9 @@ fn check_zamm_version() -> bool {
             let output_str = str::from_utf8(&output.stdout).unwrap();
             let verified = output.status.success() && output_str.contains(&version_str);
             if verified {
-                println!(
-                    "Verified that ZAMM v{} is installed.",
-                    ZAMM_VERSION
-                );
+                println!("Verified that ZAMM v{} is installed.", ZAMM_VERSION);
             } else {
-                println!(
-                    "ZAMM is installed but not at version {}.",
-                    ZAMM_VERSION
-                );
+                println!("ZAMM is installed but not at version {}.", ZAMM_VERSION);
             }
             verified
         }
