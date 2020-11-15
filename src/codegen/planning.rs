@@ -189,6 +189,7 @@ pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConf
         introduced_attributes,
         attribute_structs: attr_structs,
         rust_primitive_name: target.rust_primitive().unwrap_or_default(),
+        default_value: target.default_value().unwrap_or_default(),
         impl_cfg: request.config().unwrap(),
         codegen_cfg: *codegen_cfg,
     }

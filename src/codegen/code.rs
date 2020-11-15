@@ -43,6 +43,8 @@ pub struct CodeConfig<'a> {
     pub attribute_structs: HashMap<&'a str, StructConfig>,
     /// SPECIFIC to Data concepts: name of Rust primitive.
     pub rust_primitive_name: String,
+    /// SPECIFIC to Data concepts: code representation of default value.
+    pub default_value: String,
     /// Concept-specific implementation settings.
     pub impl_cfg: ImplementConfig,
     /// Code generation settings for all concepts.

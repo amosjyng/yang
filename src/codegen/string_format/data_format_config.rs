@@ -8,6 +8,8 @@ pub struct DataFormatConfig {
     pub tao_cfg: FormatConfig,
     /// Rust primitive that this concept represents.
     pub rust_primitive_name: String,
+    /// Rust code representation of the default value of this concept.
+    pub default_value: String,
 }
 
 impl<'a> From<&'a CodeConfig<'a>> for DataFormatConfig {
@@ -16,6 +18,7 @@ impl<'a> From<&'a CodeConfig<'a>> for DataFormatConfig {
         Self {
             tao_cfg: FormatConfig::from(cfg),
             rust_primitive_name: cfg.rust_primitive_name.clone(),
+            default_value: cfg.default_value.clone(),
         }
     }
 }

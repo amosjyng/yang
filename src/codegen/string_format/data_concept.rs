@@ -53,13 +53,16 @@ pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
             fn get_value_some() {{
                 initialize_kb();
                 let mut concept = {name}::individuate();
-                concept.set_value("value".to_owned());
+                concept.set_value({sample_value});
                 assert_eq!(
                     unwrap_strong::<{primitive}>(&concept.value()),
-                    Some(&"value".to_owned())
+                    Some(&{sample_value})
                 );
             }}"#, name = cfg.tao_cfg.name,
-            primitive = cfg.rust_primitive_name,
+                primitive = cfg.rust_primitive_name,
+                // todo: create a better sample value than the default. This will require an
+                // understanding of what the types actually are and how to construct them.
+                sample_value = cfg.default_value,
         },
     }
 }
@@ -95,7 +98,6 @@ mod tests {
             rust_primitive_name: "i64".to_owned(),
             ..DataFormatConfig::default()
         });
-        println!("{}", code);
         // todo: assert no "String" in code after CommonNodeTrait gets automatically implemented
         assert!(code.contains("i64"));
     }
