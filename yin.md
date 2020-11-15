@@ -31,8 +31,23 @@ One type of data is a "string":
 ```rust
 define!(string_concept);
 string_concept.add_parent(data);
-string_concept.activate_data_logic();
 ```
+
+Every type of data usually has a "default" value that we think of when constructing one from scratch.
+
+```rust
+define!(default_value);
+default_value.add_parent(Attribute::archetype().as_archetype());
+```
+
+Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
+
+```rust
+define!(rust_primitive);
+rust_primitive.add_parent(Attribute::archetype().as_archetype());
+```
+
+This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
 
 When Yin tells us about herself, we must forget all preconceptions we have about the world and listen to what she has to say. That means when she speaks of what an attribute is, we *listen* instead of shoehorning her description into what we already think of as an attribute.
 
@@ -53,6 +68,12 @@ The same is true of Data:
 ```rust
 define!(uses_data_logic);
 uses_data_logic.add_parent(flag);
+```
+
+Let's apply that to the string concept we defined earlier:
+
+```rust
+string_concept.activate_data_logic();
 ```
 
 Due to current limitations with Yang, we cannot set Tao as the parent here. We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
@@ -147,10 +168,19 @@ data.implement_with(
     "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
 );
 
-string_concept.activate_data_logic();
 string_concept.implement_with(
     7,
     "The concept of a string of characters."
+);
+
+default_value.implement_with(
+    15,
+    "The default value of a data structure."
+);
+
+rust_primitive.implement_with(
+    14,
+    "The Rust primitive that a Yin data concept is implemented by."
 );
 
 uses_data_logic.implement_with(

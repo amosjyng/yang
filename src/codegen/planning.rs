@@ -1,7 +1,7 @@
 use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
 use crate::codegen::{CodeConfig, CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
-pub use crate::tao::form::data::Data;
+use crate::tao::form::data::{Data, DataExtension};
 use crate::tao::form::{BuildInfo, DefinedMarker};
 use crate::tao::Implement;
 use heck::{CamelCase, SnakeCase};
@@ -188,6 +188,8 @@ pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConf
         all_attributes,
         introduced_attributes,
         attribute_structs: attr_structs,
+        rust_primitive_name: target.rust_primitive().unwrap_or_default(),
+        default_value: target.default_value().unwrap_or_default(),
         impl_cfg: request.config().unwrap(),
         codegen_cfg: *codegen_cfg,
     }
