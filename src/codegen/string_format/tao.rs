@@ -141,7 +141,7 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
                 initialize_kb();
                 let mut concept = {name}::individuate();
                 concept.set_internal_name("A".to_owned());
-                assert_eq!({name}::try_from("A"), Ok(concept));
+                assert_eq!({name}::try_from("A").map(|c| c.id()), Ok(concept.id()));
                 assert!({name}::try_from("B").is_err());
             }}
 
