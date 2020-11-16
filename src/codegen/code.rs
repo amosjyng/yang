@@ -2,7 +2,9 @@ use super::CodegenConfig;
 use crate::codegen::string_format::attribute::code_attribute;
 use crate::codegen::string_format::code_data_concept;
 use crate::codegen::string_format::tao::code_tao;
-use crate::codegen::string_format::{AttributeFormatConfig, DataFormatConfig, FormatConfig};
+use crate::codegen::string_format::{
+    code_form, AttributeFormatConfig, DataFormatConfig, FormatConfig,
+};
 use crate::tao::ImplementConfig;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -30,8 +32,12 @@ impl Default for StructConfig {
 pub struct CodeConfig<'a> {
     /// The target to generate.
     pub target: StructConfig,
+    /// The form that represents the target.
+    pub form: StructConfig,
     /// The concept's parent.
     pub parent: StructConfig,
+    /// Whether or not to use root node generation logic for this one.
+    pub activate_root_node: bool,
     /// Whether or not to use attribute generation logic for this one.
     pub activate_attribute: bool,
     /// Whether or not to use data generation logic for this one.
@@ -54,11 +60,13 @@ pub struct CodeConfig<'a> {
 
 /// Generate code for a given concept. Post-processing still needed.
 pub fn code(cfg: &CodeConfig) -> String {
-    if cfg.activate_attribute {
+    if cfg.activate_root_node {
+        code_tao(&FormatConfig::from(cfg))
+    } else if cfg.activate_attribute {
         code_attribute(&AttributeFormatConfig::from(cfg))
     } else if cfg.activate_data {
         code_data_concept(&DataFormatConfig::from(cfg))
     } else {
-        code_tao(&FormatConfig::from(cfg))
+        code_form(&FormatConfig::from(cfg))
     }
 }

@@ -1,11 +1,27 @@
 use crate::tao::UsesDataLogic;
-use crate::tao::{OwnModule, UsesAttributeLogic};
+use crate::tao::{OwnModule, UsesAttributeLogic, UsesRootNodeLogic};
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::FormTrait;
+use zamm_yin::tao::Tao;
 
 /// Archetype code generation flags defined when reading from a Yin.md
 pub trait CodegenFlags: FormTrait {
+    /// Activate root-node-specific logic for this concept during code generation.
+    fn activate_root_node_logic(&mut self) {
+        self.essence_mut().add_flag(UsesRootNodeLogic::TYPE_ID);
+    }
+
+    /// Whether this concept should have root-node-specific logic activated during code generation.
+    fn root_node_logic_activated(&self) -> bool {
+        self.id() == Tao::TYPE_ID
+            || self
+                .essence()
+                .inheritance_wrapper()
+                .base_wrapper()
+                .has_flag(UsesRootNodeLogic::TYPE_ID)
+    }
+
     /// Activate attribute-specific logic for this concept during code generation.
     fn activate_attribute_logic(&mut self) {
         self.essence_mut().add_flag(UsesAttributeLogic::TYPE_ID);
@@ -46,6 +62,33 @@ mod tests {
     use crate::tao::initialize_kb;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
     use zamm_yin::tao::Tao;
+
+    #[test]
+    fn test_root_node_logic_activation() {
+        initialize_kb();
+        let mut new_root = Tao::archetype().individuate_as_archetype();
+        assert!(!new_root.root_node_logic_activated());
+
+        new_root.activate_root_node_logic();
+        assert!(new_root.root_node_logic_activated());
+    }
+
+    #[test]
+    fn test_root_node_logic_activation_if_tao() {
+        initialize_kb();
+        assert!(Tao::archetype().root_node_logic_activated());
+    }
+
+    #[test]
+    fn test_root_node_logic_activation_not_inherited() {
+        initialize_kb();
+        let mut new_root = Tao::archetype().individuate_as_archetype();
+        let non_root = new_root.individuate_as_archetype();
+        assert!(!non_root.root_node_logic_activated());
+
+        new_root.activate_root_node_logic();
+        assert!(!non_root.root_node_logic_activated());
+    }
 
     #[test]
     fn test_attribute_logic_activation() {

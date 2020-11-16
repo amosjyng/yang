@@ -11,10 +11,10 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
         "std::fmt".to_owned(),
         "std::fmt::Debug".to_owned(),
         "std::fmt::Formatter".to_owned(),
+        cfg.form.import.clone(),
         cfg.parent_import.to_owned(),
         format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate),
         format!("{}::tao::archetype::{}", cfg.yin_crate, cfg.archetype_name),
-        format!("{}::tao::form::FormTrait", cfg.yin_crate),
         format!("{}::node_wrappers::debug_wrapper", cfg.yin_crate),
         format!("{}::Wrapper", cfg.yin_crate),
         format!("{}::node_wrappers::FinalNode", cfg.yin_crate),
@@ -22,6 +22,8 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
     if let Some(import) = &cfg.imports {
         imports.push(import.clone());
     }
+    imports.retain(|i| i != &cfg.this.import); // don't import references to self
+
     AtomicFragment {
         imports,
         atom: formatdoc! {r#"
@@ -73,16 +75,15 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
             
             impl<'a> ArchetypeTrait<'a> for {name} {{
                 type ArchetypeForm = {archetype};
-                type Form = {name};
+                type Form = {form};
 
                 const TYPE_ID: usize = {id};
                 const TYPE_NAME: &'static str = "{internal_name}";
                 const PARENT_TYPE_ID: usize = {parent}::TYPE_ID;
-            }}
-            
-            impl FormTrait for {name} {{}}"#,
+            }}"#,
             doc = cfg.doc,
-            name = cfg.name,
+            name = cfg.this.name,
+            form = cfg.form.name,
             internal_name = cfg.internal_name,
             parent = cfg.parent_name,
             archetype = cfg.archetype_name,
@@ -99,6 +100,7 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
         "std::rc::Rc".to_owned(),
         format!("{}::node_wrappers::CommonNodeTrait", cfg.yin_crate),
         format!("{}::tao::archetype::ArchetypeFormTrait", cfg.yin_crate),
+        format!("{}::tao::form::FormTrait", cfg.yin_crate),
     ];
     for attr_import in &cfg.all_attribute_imports {
         imports.push(attr_import.clone());
@@ -139,7 +141,7 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
                 initialize_kb();
                 let mut concept = {name}::individuate();
                 concept.set_internal_name("A".to_owned());
-                assert_eq!({name}::try_from("A"), Ok(concept));
+                assert_eq!({name}::try_from("A").map(|c| c.id()), Ok(concept.id()));
                 assert!({name}::try_from("B").is_err());
             }}
 
@@ -149,7 +151,7 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
                 let concept = {name}::individuate();
                 assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
             }}"#,
-            name = cfg.name,
+            name = cfg.this.name,
             introduced_attributes = cfg.introduced_attributes,
             all_attributes = cfg.all_attributes,
         },

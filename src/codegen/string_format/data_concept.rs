@@ -1,5 +1,6 @@
+use super::form_fragment;
 use super::fragments::{AtomicFragment, FileFragment};
-use super::tao::{tao_fragment, tao_test_fragment};
+use super::tao::tao_test_fragment;
 use super::DataFormatConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -32,7 +33,7 @@ pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 pub fn value(&self) -> Option<Rc<{primitive}>> {{
                     unwrap_value::<{primitive}>(self.essence().value())
                 }}
-            }}"#, name = cfg.tao_cfg.name,
+            }}"#, name = cfg.tao_cfg.this.name,
             primitive = cfg.rust_primitive_name,
         },
     }
@@ -56,7 +57,7 @@ pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 let mut concept = {name}::individuate();
                 concept.set_value({sample_value});
                 assert_eq!(concept.value(), Some(Rc::new({sample_value})));
-            }}"#, name = cfg.tao_cfg.name,
+            }}"#, name = cfg.tao_cfg.this.name,
                 // todo: create a better sample value than the default. This will require an
                 // understanding of what the types actually are and how to construct them.
                 sample_value = cfg.default_value,
@@ -64,10 +65,10 @@ pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     }
 }
 
-/// Generate code for a string concept.
+/// Generate code for a Data concept.
 pub fn code_data_concept(cfg: &DataFormatConfig) -> String {
     let mut file = FileFragment::default();
-    file.append(Rc::new(RefCell::new(tao_fragment(&cfg.tao_cfg))));
+    file.append(Rc::new(RefCell::new(form_fragment(&cfg.tao_cfg))));
     file.append(Rc::new(RefCell::new(data_concept_fragment(cfg))));
     let mut test_frag = tao_test_fragment(&cfg.tao_cfg);
     test_frag.append(Rc::new(RefCell::new(string_concept_test_fragment(cfg))));
