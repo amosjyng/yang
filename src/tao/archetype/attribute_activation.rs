@@ -1,12 +1,12 @@
 use crate::tao::UsesDataLogic;
 use crate::tao::{OwnModule, UsesAttributeLogic, UsesRootNodeLogic};
-use zamm_yin::node_wrappers::BaseNodeTrait;
+use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::Tao;
 
 /// Archetype code generation flags defined when reading from a Yin.md
-pub trait CodegenFlags: FormTrait {
+pub trait CodegenFlags: FormTrait + CommonNodeTrait {
     /// Activate root-node-specific logic for this concept during code generation.
     fn activate_root_node_logic(&mut self) {
         self.essence_mut().add_flag(UsesRootNodeLogic::TYPE_ID);
