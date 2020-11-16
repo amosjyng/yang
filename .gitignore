@@ -4,3 +4,4 @@
 /.zamm
 *.log
 .autogen.txt
+Cargo.lock
