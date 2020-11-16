@@ -1,5 +1,6 @@
 /target
 /.autogen.txt
 /.yang
+/.zamm
 *.log
 .autogen.txt
