@@ -11,21 +11,19 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
         "std::fmt".to_owned(),
         "std::fmt::Debug".to_owned(),
         "std::fmt::Formatter".to_owned(),
+        cfg.form.import.clone(),
         cfg.parent_import.to_owned(),
         format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate),
         format!("{}::tao::archetype::{}", cfg.yin_crate, cfg.archetype_name),
-        format!("{}::tao::form::FormTrait", cfg.yin_crate),
         format!("{}::node_wrappers::debug_wrapper", cfg.yin_crate),
         format!("{}::Wrapper", cfg.yin_crate),
         format!("{}::node_wrappers::FinalNode", cfg.yin_crate),
     ];
-    if cfg.name != cfg.form.name {
-        // using a separate form than the concept, need to import
-        imports.push(format!("{}::tao::form::Form", cfg.yin_crate));
-    }
     if let Some(import) = &cfg.imports {
         imports.push(import.clone());
     }
+    imports.retain(|i| i != &cfg.this.import); // don't import references to self
+
     AtomicFragment {
         imports,
         atom: formatdoc! {r#"
@@ -84,7 +82,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
                 const PARENT_TYPE_ID: usize = {parent}::TYPE_ID;
             }}"#,
             doc = cfg.doc,
-            name = cfg.name,
+            name = cfg.this.name,
             form = cfg.form.name,
             internal_name = cfg.internal_name,
             parent = cfg.parent_name,
@@ -102,6 +100,7 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
         "std::rc::Rc".to_owned(),
         format!("{}::node_wrappers::CommonNodeTrait", cfg.yin_crate),
         format!("{}::tao::archetype::ArchetypeFormTrait", cfg.yin_crate),
+        format!("{}::tao::form::FormTrait", cfg.yin_crate),
     ];
     for attr_import in &cfg.all_attribute_imports {
         imports.push(attr_import.clone());
@@ -152,7 +151,7 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
                 let concept = {name}::individuate();
                 assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
             }}"#,
-            name = cfg.name,
+            name = cfg.this.name,
             introduced_attributes = cfg.introduced_attributes,
             all_attributes = cfg.all_attributes,
         },

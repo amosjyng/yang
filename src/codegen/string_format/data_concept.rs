@@ -33,7 +33,7 @@ pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 pub fn value(&self) -> Option<Rc<{primitive}>> {{
                     unwrap_value::<{primitive}>(self.essence().value())
                 }}
-            }}"#, name = cfg.tao_cfg.name,
+            }}"#, name = cfg.tao_cfg.this.name,
             primitive = cfg.rust_primitive_name,
         },
     }
@@ -57,7 +57,7 @@ pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 let mut concept = {name}::individuate();
                 concept.set_value({sample_value});
                 assert_eq!(concept.value(), Some(Rc::new({sample_value})));
-            }}"#, name = cfg.tao_cfg.name,
+            }}"#, name = cfg.tao_cfg.this.name,
                 // todo: create a better sample value than the default. This will require an
                 // understanding of what the types actually are and how to construct them.
                 sample_value = cfg.default_value,

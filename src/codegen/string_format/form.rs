@@ -11,7 +11,7 @@ pub fn form_fragment(cfg: &FormatConfig) -> AppendedFragment {
         imports: vec![format!("{}::tao::form::FormTrait", cfg.yin_crate)],
         atom: formatdoc! {r#"
             impl FormTrait for {name} {{}}
-            "#, name = cfg.name,
+            "#, name = cfg.this.name,
         },
     };
     let mut combined_fragment = AppendedFragment::default();

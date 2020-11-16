@@ -21,7 +21,7 @@ pub fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
             impl AttributeTrait for {name} {{
                 type OwnerForm = {owner_form};
                 type ValueForm = {value_form};
-            }}"#, name = cfg.tao_cfg.name,
+            }}"#, name = cfg.tao_cfg.this.name,
             owner_form = cfg.owner_form.name,
             value_form = cfg.value_form.name,
         },
@@ -79,7 +79,7 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
                 instance.set_value(&value_of_instance);
                 assert_eq!(instance.owner(), None);
                 assert_eq!(instance.value(), Some(value_of_instance));
-            }}"#, name = cfg.tao_cfg.name,
+            }}"#, name = cfg.tao_cfg.this.name,
             owner_type = cfg.owner_type.name,
         value_type = cfg.value_type.name},
     }
