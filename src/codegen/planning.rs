@@ -133,6 +133,13 @@ fn or_form_default(archetype: Archetype) -> Archetype {
 /// Generate the CodeConfig for a given implementation request.
 pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConfig {
     let target = request.target().unwrap();
+    let target_struct = concept_to_struct(&target, codegen_cfg.yin);
+    let form = if target.root_node_logic_activated() {
+        // technically we should allow the user to customize this as well
+        concept_to_struct(&Form::archetype(), codegen_cfg.yin)
+    } else {
+        target_struct.clone()
+    };
     let ancestors = target.ancestry();
     let parent = ancestors.iter().last().unwrap();
     let parent_struct = concept_to_struct(parent, codegen_cfg.yin);
@@ -183,7 +190,8 @@ pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConf
     }
 
     CodeConfig {
-        target: concept_to_struct(&target, codegen_cfg.yin),
+        target: target_struct,
+        form,
         parent: parent_struct,
         activate_root_node,
         activate_attribute,

@@ -1,5 +1,5 @@
 use crate::codegen::docstring::into_docstring;
-use crate::codegen::CodeConfig;
+use crate::codegen::{CodeConfig, StructConfig};
 use heck::{CamelCase, KebabCase};
 use itertools::Itertools;
 
@@ -13,6 +13,8 @@ pub struct FormatConfig {
     pub name: String,
     /// Name of the concept.
     pub internal_name: String,
+    /// The form representing the concept.
+    pub form: StructConfig,
     /// Name of the parent class.
     pub parent_name: String,
     /// Import path for the parent class.
@@ -40,6 +42,10 @@ impl Default for FormatConfig {
             imports: Some("zamm_yin::tao::YIN_MAX_ID".to_owned()),
             name: "Dummy".to_owned(),
             internal_name: "dummy".to_owned(),
+            form: StructConfig {
+                name: "Dummy".to_owned(),
+                import: "crate::tao::Dummy".to_owned(),
+            },
             parent_name: "Tao".to_owned(),
             parent_import: "tao::Tao".to_owned(),
             archetype_name: "Archetype".to_owned(),
@@ -109,6 +115,7 @@ impl<'a> From<&'a CodeConfig<'a>> for FormatConfig {
             yin_crate: yin_crate.to_owned(),
             imports,
             name: cfg.target.name.to_camel_case(),
+            form: cfg.form.clone(),
             parent_name: cfg.parent.name.clone(),
             parent_import: cfg.parent.import.clone(),
             all_attributes,

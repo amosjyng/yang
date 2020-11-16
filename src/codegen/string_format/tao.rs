@@ -19,6 +19,10 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
         format!("{}::Wrapper", cfg.yin_crate),
         format!("{}::node_wrappers::FinalNode", cfg.yin_crate),
     ];
+    if cfg.name != cfg.form.name {
+        // using a separate form than the concept, need to import
+        imports.push(format!("{}::tao::form::Form", cfg.yin_crate));
+    }
     if let Some(import) = &cfg.imports {
         imports.push(import.clone());
     }
@@ -73,7 +77,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
             
             impl<'a> ArchetypeTrait<'a> for {name} {{
                 type ArchetypeForm = {archetype};
-                type Form = {name};
+                type Form = {form};
 
                 const TYPE_ID: usize = {id};
                 const TYPE_NAME: &'static str = "{internal_name}";
@@ -81,6 +85,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
             }}"#,
             doc = cfg.doc,
             name = cfg.name,
+            form = cfg.form.name,
             internal_name = cfg.internal_name,
             parent = cfg.parent_name,
             archetype = cfg.archetype_name,

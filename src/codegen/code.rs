@@ -31,6 +31,8 @@ impl Default for StructConfig {
 pub struct CodeConfig<'a> {
     /// The target to generate.
     pub target: StructConfig,
+    /// The form that represents the target.
+    pub form: StructConfig,
     /// The concept's parent.
     pub parent: StructConfig,
     /// Whether or not to use root node generation logic for this one.

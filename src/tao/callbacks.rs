@@ -96,6 +96,10 @@ mod tests {
                 name: "MyRoot".to_owned(),
                 ..StructConfig::default()
             },
+            form: StructConfig {
+                name: "MyForm".to_owned(),
+                ..StructConfig::default()
+            },
             parent: StructConfig {
                 name: "Tao".to_owned(),
                 ..StructConfig::default()
@@ -108,6 +112,7 @@ mod tests {
             ..CodeConfig::default()
         });
         assert!(!code.contains("impl FormTrait"));
+        assert!(code.contains("type Form = MyForm;"));
     }
 
     #[test]
