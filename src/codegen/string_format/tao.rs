@@ -78,9 +78,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
                 const TYPE_ID: usize = {id};
                 const TYPE_NAME: &'static str = "{internal_name}";
                 const PARENT_TYPE_ID: usize = {parent}::TYPE_ID;
-            }}
-            
-            impl FormTrait for {name} {{}}"#,
+            }}"#,
             doc = cfg.doc,
             name = cfg.name,
             internal_name = cfg.internal_name,

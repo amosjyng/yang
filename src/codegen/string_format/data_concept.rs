@@ -1,5 +1,6 @@
+use super::form_fragment;
 use super::fragments::{AtomicFragment, FileFragment};
-use super::tao::{tao_fragment, tao_test_fragment};
+use super::tao::tao_test_fragment;
 use super::DataFormatConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -64,10 +65,10 @@ pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     }
 }
 
-/// Generate code for a string concept.
+/// Generate code for a Data concept.
 pub fn code_data_concept(cfg: &DataFormatConfig) -> String {
     let mut file = FileFragment::default();
-    file.append(Rc::new(RefCell::new(tao_fragment(&cfg.tao_cfg))));
+    file.append(Rc::new(RefCell::new(form_fragment(&cfg.tao_cfg))));
     file.append(Rc::new(RefCell::new(data_concept_fragment(cfg))));
     let mut test_frag = tao_test_fragment(&cfg.tao_cfg);
     test_frag.append(Rc::new(RefCell::new(string_concept_test_fragment(cfg))));

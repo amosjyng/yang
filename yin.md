@@ -61,12 +61,17 @@ define!(uses_attribute_logic);
 uses_attribute_logic.add_parent(flag);
 ```
 
-The same is true of Data:
+The same is true of Tao and Data:
 
 ```rust
+define!(uses_root_node_logic);
+uses_root_node_logic.add_parent(flag);
+
 define!(uses_data_logic);
 uses_data_logic.add_parent(flag);
 ```
+
+Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
 
 Let's apply that to the string concept we defined earlier:
 
@@ -146,11 +151,6 @@ target.implement_with(
     "The target of an implement command."
 );
 
-uses_attribute_logic.implement_with(
-    3,
-    "Marks an archetype and all its descendants as requiring attribute-specific logic during generation."
-);
-
 newly_defined.implement_with(
     4,
     "Marks an archetype and all its descendants as having been newly defined as part of this particular build."
@@ -181,9 +181,19 @@ rust_primitive.implement_with(
     "The Rust primitive that a Yin data concept is implemented by."
 );
 
+uses_attribute_logic.implement_with(
+    3,
+    "Marks an archetype and all its descendants as requiring attribute-specific logic during generation."
+);
+
 uses_data_logic.implement_with(
     8,
     "Marks an archetype and all its descendants as requiring data-specific logic during generation."
+);
+
+uses_root_node_logic.implement_with(
+    16,
+    "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this."
 );
 
 import_path.implement_with(
