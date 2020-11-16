@@ -84,5 +84,5 @@ fn main() {
     ensure_zamm_installed();
 
     println!("==================== RUNNING ZAMM ====================");
-    assert_command(true, "zamm", &["build"]);
+    //assert_command(true, "zamm", &["build"]);
 }
