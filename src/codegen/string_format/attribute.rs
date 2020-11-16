@@ -1,5 +1,6 @@
+use super::form::form_fragment;
 use super::fragments::{AtomicFragment, FileFragment};
-use super::tao::{tao_fragment, tao_test_fragment};
+use super::tao::tao_test_fragment;
 use super::AttributeFormatConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -20,7 +21,7 @@ pub fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
             impl AttributeTrait for {name} {{
                 type OwnerForm = {owner_form};
                 type ValueForm = {value_form};
-            }}"#, name = cfg.tao_cfg.name,
+            }}"#, name = cfg.tao_cfg.this.name,
             owner_form = cfg.owner_form.name,
             value_form = cfg.value_form.name,
         },
@@ -78,7 +79,7 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
                 instance.set_value(&value_of_instance);
                 assert_eq!(instance.owner(), None);
                 assert_eq!(instance.value(), Some(value_of_instance));
-            }}"#, name = cfg.tao_cfg.name,
+            }}"#, name = cfg.tao_cfg.this.name,
             owner_type = cfg.owner_type.name,
         value_type = cfg.value_type.name},
     }
@@ -87,7 +88,7 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
 /// Generate code for an Attribute config.
 pub fn code_attribute(cfg: &AttributeFormatConfig) -> String {
     let mut file = FileFragment::default();
-    file.append(Rc::new(RefCell::new(tao_fragment(&cfg.tao_cfg))));
+    file.append(Rc::new(RefCell::new(form_fragment(&cfg.tao_cfg))));
     file.append(Rc::new(RefCell::new(attribute_fragment(&cfg))));
     let mut test_frag = tao_test_fragment(&cfg.tao_cfg);
     test_frag.append(Rc::new(RefCell::new(attribute_test_fragment(&cfg))));

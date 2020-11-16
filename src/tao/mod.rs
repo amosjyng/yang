@@ -10,11 +10,13 @@ pub mod relation {
         mod own_module_form;
         mod uses_attribute_logic_form;
         mod uses_data_logic_form;
+        mod uses_root_node_logic_form;
 
         pub use newly_defined_form::NewlyDefined;
         pub use own_module_form::OwnModule;
         pub use uses_attribute_logic_form::UsesAttributeLogic;
         pub use uses_data_logic_form::UsesDataLogic;
+        pub use uses_root_node_logic_form::UsesRootNodeLogic;
     }
 
     /// Binary relations.
@@ -64,7 +66,9 @@ pub use lens_form::Lens;
 use relation::attribute::{
     Crate, DefaultValue, ImplementationName, ImportPath, RustPrimitive, Target,
 };
-use relation::flag::{NewlyDefined, OwnModule, UsesAttributeLogic, UsesDataLogic};
+use relation::flag::{
+    NewlyDefined, OwnModule, UsesAttributeLogic, UsesDataLogic, UsesRootNodeLogic,
+};
 use zamm_yin::graph::{Graph, InjectionGraph};
 use zamm_yin::initialize_type;
 use zamm_yin::tao::archetype::ArchetypeTrait;
@@ -91,7 +95,8 @@ pub fn initialize_kb() {
             Crate,
             ImplementationName,
             RustPrimitive,
-            DefaultValue
+            DefaultValue,
+            UsesRootNodeLogic
         )
     );
 }

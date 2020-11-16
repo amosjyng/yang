@@ -90,6 +90,32 @@ mod tests {
     }
 
     #[test]
+    fn integration_test_root_node_generation() {
+        let code = code(&CodeConfig {
+            target: StructConfig {
+                name: "MyRoot".to_owned(),
+                ..StructConfig::default()
+            },
+            form: StructConfig {
+                name: "MyForm".to_owned(),
+                ..StructConfig::default()
+            },
+            parent: StructConfig {
+                name: "Tao".to_owned(),
+                ..StructConfig::default()
+            },
+            activate_root_node: true,
+            codegen_cfg: CodegenConfig {
+                comment_autogen: false,
+                ..CodegenConfig::default()
+            },
+            ..CodeConfig::default()
+        });
+        assert!(!code.contains("impl FormTrait"));
+        assert!(code.contains("type Form = MyForm;"));
+    }
+
+    #[test]
     fn integration_test_data_generation() {
         let code = code(&CodeConfig {
             target: StructConfig {
@@ -107,18 +133,20 @@ mod tests {
             },
             ..CodeConfig::default()
         });
+        assert!(code.contains("impl FormTrait"));
         assert!(code.contains("set_value"));
     }
 
     #[test]
     fn integration_test_regular_generation() {
-        assert!(!code(&CodeConfig {
+        let code = code(&CodeConfig {
             parent: StructConfig {
                 name: "Tao".to_owned(),
                 ..StructConfig::default()
             },
             ..CodeConfig::default()
-        })
-        .contains("Attribute"));
+        });
+        assert!(code.contains("impl FormTrait"));
+        assert!(!code.contains("Attribute"));
     }
 }

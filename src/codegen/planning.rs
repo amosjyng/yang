@@ -12,11 +12,10 @@ use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::tao::relation::attribute::{Attribute, OwnerArchetype, ValueArchetype};
-use zamm_yin::tao::Tao;
 
 fn in_own_submodule(target: &Archetype) -> bool {
     // todo: filter by type, once Yin has that functionality
-    !target.child_archetypes().is_empty()
+    target.root_node_logic_activated() || !target.child_archetypes().is_empty()
 }
 
 fn ancestor_path(target: &Archetype, separator: &str, force_own_module: bool) -> String {
@@ -34,7 +33,7 @@ fn ancestor_path(target: &Archetype, separator: &str, force_own_module: bool) ->
         None => {
             // parent path matters because we want to follow whatever convention the parent is
             // following
-            let parent_path = if target == &Tao::archetype() {
+            let parent_path = if target.root_node_logic_activated() {
                 None
             } else {
                 // always produce own module for parents, because obviously they have a child in
@@ -123,7 +122,7 @@ fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig {
 }
 
 fn or_form_default(archetype: Archetype) -> Archetype {
-    if archetype == Tao::archetype() {
+    if archetype.root_node_logic_activated() {
         Archetype::try_from(Form::TYPE_NAME).unwrap() // allow user to override Form
     } else {
         archetype
@@ -133,9 +132,18 @@ fn or_form_default(archetype: Archetype) -> Archetype {
 /// Generate the CodeConfig for a given implementation request.
 pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConfig {
     let target = request.target().unwrap();
+    let target_struct = concept_to_struct(&target, codegen_cfg.yin);
+    let form = if target.root_node_logic_activated() {
+        // technically we should allow the user to customize this as well
+        concept_to_struct(&Form::archetype(), codegen_cfg.yin)
+    } else {
+        target_struct.clone()
+    };
     let ancestors = target.ancestry();
     let parent = ancestors.iter().last().unwrap();
     let parent_struct = concept_to_struct(parent, codegen_cfg.yin);
+
+    let activate_root_node = target.root_node_logic_activated();
     let activate_attribute = target == Attribute::archetype().as_archetype()
         || parent.has_ancestor(Attribute::archetype().as_archetype())
         || target.attribute_logic_activated();
@@ -181,8 +189,10 @@ pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConf
     }
 
     CodeConfig {
-        target: concept_to_struct(&target, codegen_cfg.yin),
+        target: target_struct,
+        form,
         parent: parent_struct,
+        activate_root_node,
         activate_attribute,
         activate_data,
         all_attributes,
@@ -363,6 +373,16 @@ mod tests {
     }
 
     #[test]
+    fn import_path_custom_root() {
+        initialize_kb();
+        let mut root = Tao::archetype().individuate_as_archetype();
+        root.set_internal_name("my-root".to_owned());
+        root.mark_newly_defined();
+        root.activate_root_node_logic();
+        assert_eq!(import_path(&root, false, false), "crate::my_root::MyRoot");
+    }
+
+    #[test]
     fn struct_config_tao() {
         initialize_kb();
         assert_eq!(
@@ -455,6 +475,20 @@ mod tests {
         let cfg = code_cfg_for(implement, &codegen_cfg);
         assert!(!cfg.activate_attribute);
         assert!(!cfg.activate_data);
+    }
+
+    #[test]
+    fn code_cfg_for_root_node_activated() {
+        initialize_kb();
+        let mut target = Tao::archetype().individuate_as_archetype();
+        target.set_internal_name("MyRoot".to_owned());
+        target.mark_newly_defined();
+        target.activate_root_node_logic();
+        let mut implement = Implement::individuate();
+        implement.set_target(target.as_archetype());
+        implement.set_config(ImplementConfig::default());
+
+        assert!(code_cfg_for(implement, &CodegenConfig::default()).activate_root_node);
     }
 
     #[test]
