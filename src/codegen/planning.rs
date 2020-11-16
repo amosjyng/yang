@@ -12,7 +12,6 @@ use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::tao::relation::attribute::{Attribute, OwnerArchetype, ValueArchetype};
-use zamm_yin::tao::Tao;
 
 fn in_own_submodule(target: &Archetype) -> bool {
     // todo: filter by type, once Yin has that functionality
@@ -34,7 +33,7 @@ fn ancestor_path(target: &Archetype, separator: &str, force_own_module: bool) ->
         None => {
             // parent path matters because we want to follow whatever convention the parent is
             // following
-            let parent_path = if target == &Tao::archetype() || target.root_node_logic_activated() {
+            let parent_path = if target.root_node_logic_activated() {
                 None
             } else {
                 // always produce own module for parents, because obviously they have a child in
@@ -123,7 +122,7 @@ fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig {
 }
 
 fn or_form_default(archetype: Archetype) -> Archetype {
-    if archetype == Tao::archetype() {
+    if archetype.root_node_logic_activated() {
         Archetype::try_from(Form::TYPE_NAME).unwrap() // allow user to override Form
     } else {
         archetype
