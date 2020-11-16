@@ -31,6 +31,13 @@ define!(string_concept);
 string_concept.add_parent(data);
 ```
 
+Another type of data is a number:
+
+```rust
+define!(number);
+number.add_parent(data);
+```
+
 Every type of data usually has a "default" value that we think of when constructing one from scratch.
 
 ```rust
@@ -38,11 +45,27 @@ define!(default_value);
 default_value.add_parent(Attribute::archetype().as_archetype());
 ```
 
+For strings, this would be the empty string:
+
+```rust
+string_concept.set_default_value("String::new()");
+```
+
+For numbers, this would be zero:
+
+```rust
+number.set_default_value("0");
+```
+
 Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
 
 ```rust
 define!(rust_primitive);
 rust_primitive.add_parent(Attribute::archetype().as_archetype());
+
+string_concept.set_rust_primitive("String");
+// for now, only use positive numbers
+number.set_rust_primitive("usize");
 ```
 
 This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
@@ -52,23 +75,18 @@ When Yin tells us about herself, we must forget all preconceptions we have about
 However, this also means that Yin's new attribute node won't be the same `Attribute` node that Yang ties all his custom attribute generation code to. Until all of the logic that goes into generating attributes becomes fully defined in graph form, we're going to need some way of telling Yang to activate that custom logic for newly defined nodes that don't inherit from the existing `Attribute` node:
 
 ```rust
-// redefine relation and flag because they don't exist yet in the current version of Yin used by Yang
-define!(relation);
-define!(flag);
-flag.add_parent(relation);
-
 define!(uses_attribute_logic);
-uses_attribute_logic.add_parent(flag);
+uses_attribute_logic.add_parent(Flag::archetype());
 ```
 
 The same is true of Tao and Data:
 
 ```rust
 define!(uses_root_node_logic);
-uses_root_node_logic.add_parent(flag);
+uses_root_node_logic.add_parent(Flag::archetype());
 
 define!(uses_data_logic);
-uses_data_logic.add_parent(flag);
+uses_data_logic.add_parent(Flag::archetype());
 ```
 
 Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
@@ -83,14 +101,14 @@ Due to current limitations with Yang, we cannot set Tao as the parent here. We s
 
 ```rust
 define!(newly_defined);
-newly_defined.add_parent(flag);
+newly_defined.add_parent(Flag::archetype());
 ```
 
 During implementation, we should be able to force a new attribute to live inside its own module. This override should take place even if the concept doesn't have any child archetypes yet, so that any concepts in downstream packages that depend on it will know where to look:
 
 ```rust
 define!(own_module);
-own_module.add_parent(flag);
+own_module.add_parent(Flag::archetype());
 ```
 
 Once built, structs have a certain import path:
@@ -131,19 +149,7 @@ implementation_name.add_parent(Attribute::archetype().as_archetype());
 
 ### Implementation
 
-Unlike with Yin, we don't actually want to implement *everything* we know, because everything we know about Yin is already implemented inside her physical body. We only want to implement the things that we learned about Yang here.
-
-First, we tell Yang about the newer version of Yin that we'll be building for:
-
-```rust
-Attribute::archetype()
-    .build_info()
-    .set_import_path("zamm_yin::tao::relation::attribute::Attribute");
-
-flag.build_info().set_crate_name("zamm_yin");
-```
-
-Now we can implement the other things:
+Unlike with Yin, we don't actually want to implement *everything* we know, because everything we know about Yin is already implemented inside her physical body. We only want to implement the things that we learned about Yang here:
 
 ```rust
 target.implement_with(
@@ -169,6 +175,12 @@ data.implement_with(
 string_concept.implement_with(
     7,
     "The concept of a string of characters."
+);
+
+number.activate_data_logic();
+number.implement_with(
+    17,
+    "The concept of numbers."
 );
 
 default_value.implement_with(
@@ -224,8 +236,8 @@ implementation_name.implement_with(
 These are the versions of Yin and Yang used to make this build happen:
 
 ```toml
-zamm_yin = "0.0.12"
-zamm_yang = "0.0.11"
+zamm_yin = "0.0.13"
+zamm_yang = "0.0.12"
 ```
 
 ### Imports
@@ -237,7 +249,7 @@ use zamm_yin::tao::Tao;
 use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::archetype::ArchetypeFormTrait;
 use zamm_yin::tao::archetype::AttributeArchetype;
-use zamm_yin::tao::FormTrait;
+use zamm_yin::tao::form::FormTrait;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::tao::callbacks::handle_all_implementations;
@@ -245,8 +257,9 @@ use zamm_yang::tao::initialize_kb;
 use zamm_yang::tao::Implement;
 use zamm_yang::tao::ImplementConfig;
 use zamm_yang::tao::archetype::CodegenFlags;
-use zamm_yang::tao::form::DefinedMarker;
 use zamm_yang::tao::archetype::CreateImplementation;
+use zamm_yang::tao::form::DefinedMarker;
+use zamm_yang::tao::form::data::DataExtension;
 use zamm_yang::define;
 use zamm_yang::helper::aa;
 ```
@@ -254,6 +267,7 @@ use zamm_yang::helper::aa;
 These are the imports specific to building on top of Yin:
 
 ```rust
-use zamm_yin::tao::attribute::Attribute;
-use zamm_yin::tao::Form;
+use zamm_yin::tao::relation::attribute::Attribute;
+use zamm_yin::tao::relation::flag::Flag;
+use zamm_yin::tao::form::Form;
 ```

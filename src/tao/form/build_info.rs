@@ -4,11 +4,12 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use zamm_yin::graph::value_wrappers::{unwrap_strong, StrongValue};
-use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, CommonNodeTrait, FinalNode};
+use zamm_yin::graph::value_wrappers::{unwrap_value, StrongValue};
+use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::{Tao, YIN_MAX_ID};
+use zamm_yin::Wrapper;
 
 /// Represents build information about a generated concept.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -28,14 +29,14 @@ impl BuildInfo {
 
     /// Retrieve crate which the object was built as a part of. This is called `crate_name` instead
     /// of just `crate` because `crate` is a reserved keyword in Rust.
-    pub fn crate_name(&self) -> Option<String> {
+    pub fn crate_name(&self) -> Option<Rc<String>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.base
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(Crate::TYPE_ID)
             .first()
-            .map(|s| unwrap_strong::<String>(&s.value()).cloned())
+            .map(|s| unwrap_value::<String>(s.value()))
             .flatten()
     }
 
@@ -49,14 +50,14 @@ impl BuildInfo {
     }
 
     /// Retrieve import path the concept ended up at, relative to the crate.
-    pub fn import_path(&self) -> Option<String> {
+    pub fn import_path(&self) -> Option<Rc<String>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.base
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(ImportPath::TYPE_ID)
             .first()
-            .map(|s| unwrap_strong::<String>(&s.value()).cloned())
+            .map(|s| unwrap_value::<String>(s.value()))
             .flatten()
     }
 
@@ -71,14 +72,14 @@ impl BuildInfo {
     }
 
     /// Retrieve name the concept took on for its actual implementation.
-    pub fn implementation_name(&self) -> Option<String> {
+    pub fn implementation_name(&self) -> Option<Rc<String>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.base
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(ImplementationName::TYPE_ID)
             .first()
-            .map(|s| unwrap_strong::<String>(&s.value()).cloned())
+            .map(|s| unwrap_value::<String>(s.value()))
             .flatten()
     }
 }
@@ -111,17 +112,15 @@ impl<'a> TryFrom<&'a str> for BuildInfo {
     }
 }
 
-impl CommonNodeTrait for BuildInfo {
-    fn id(&self) -> usize {
-        self.base.id()
+impl Wrapper for BuildInfo {
+    type BaseType = FinalNode;
+
+    fn essence(&self) -> &FinalNode {
+        &self.base
     }
 
-    fn set_internal_name(&mut self, name: String) {
-        self.base.set_internal_name(name);
-    }
-
-    fn internal_name(&self) -> Option<Rc<String>> {
-        self.base.internal_name()
+    fn essence_mut(&mut self) -> &mut FinalNode {
+        &mut self.base
     }
 }
 
@@ -134,20 +133,13 @@ impl<'a> ArchetypeTrait<'a> for BuildInfo {
     const PARENT_TYPE_ID: usize = Tao::TYPE_ID;
 }
 
-impl FormTrait for BuildInfo {
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
+impl FormTrait for BuildInfo {}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::tao::initialize_kb;
+    use zamm_yin::node_wrappers::CommonNodeTrait;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
 
     #[test]
@@ -169,27 +161,11 @@ mod tests {
     }
 
     #[test]
-    fn create_and_retrieve_node_id() {
-        initialize_kb();
-        let concept1 = BuildInfo::individuate();
-        let concept2 = BuildInfo::individuate();
-        assert_eq!(concept1.id() + 1, concept2.id());
-    }
-
-    #[test]
-    fn create_and_retrieve_node_name() {
-        initialize_kb();
-        let mut concept = BuildInfo::individuate();
-        concept.set_internal_name("A".to_string());
-        assert_eq!(concept.internal_name(), Some(Rc::new("A".to_string())));
-    }
-
-    #[test]
     fn set_and_retrieve_crate() {
         initialize_kb();
         let mut info = BuildInfo::individuate();
         info.set_crate_name("zamm_yang");
-        assert_eq!(info.crate_name(), Some("zamm_yang".to_owned()));
+        assert_eq!(info.crate_name(), Some(Rc::new("zamm_yang".to_owned())));
     }
 
     #[test]
@@ -199,7 +175,7 @@ mod tests {
         info.set_import_path("zamm_yang::import::path");
         assert_eq!(
             info.import_path(),
-            Some("zamm_yang::import::path".to_owned())
+            Some(Rc::new("zamm_yang::import::path".to_owned()))
         );
     }
 
@@ -208,7 +184,7 @@ mod tests {
         initialize_kb();
         let mut info = BuildInfo::individuate();
         info.set_implementation_name("Yolo");
-        assert_eq!(info.implementation_name(), Some("Yolo".to_owned()));
+        assert_eq!(info.implementation_name(), Some(Rc::new("Yolo".to_owned())));
     }
 
     /// Test that the attributes don't get mixed up.
@@ -220,12 +196,12 @@ mod tests {
         info.set_import_path("zamm_yang::import::path");
         info.set_implementation_name("Yolo");
 
-        assert_eq!(info.crate_name(), Some("zamm_yang".to_owned()));
+        assert_eq!(info.crate_name(), Some(Rc::new("zamm_yang".to_owned())));
         assert_eq!(
             info.import_path(),
-            Some("zamm_yang::import::path".to_owned())
+            Some(Rc::new("zamm_yang::import::path".to_owned()))
         );
-        assert_eq!(info.implementation_name(), Some("Yolo".to_owned()));
+        assert_eq!(info.implementation_name(), Some(Rc::new("Yolo".to_owned())));
     }
 
     /// Build info should never be inherited

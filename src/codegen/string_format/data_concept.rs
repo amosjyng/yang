@@ -79,11 +79,12 @@ pub fn code_data_concept(cfg: &DataFormatConfig) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::rc::Rc;
 
     #[test]
     fn test_string_output() {
         let code = code_data_concept(&DataFormatConfig {
-            rust_primitive_name: "String".to_owned(),
+            rust_primitive_name: Rc::new("String".to_owned()),
             ..DataFormatConfig::default()
         });
         assert!(code.contains("String"));
@@ -93,7 +94,7 @@ mod tests {
     #[test]
     fn test_int_output() {
         let code = code_data_concept(&DataFormatConfig {
-            rust_primitive_name: "i64".to_owned(),
+            rust_primitive_name: Rc::new("i64".to_owned()),
             ..DataFormatConfig::default()
         });
         // todo: assert no "String" in code after CommonNodeTrait gets automatically implemented

@@ -3,11 +3,12 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use zamm_yin::graph::value_wrappers::{unwrap_strong, StrongValue};
-use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, CommonNodeTrait, FinalNode};
+use zamm_yin::graph::value_wrappers::{unwrap_value, StrongValue};
+use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::{Tao, YIN_MAX_ID};
+use zamm_yin::Wrapper;
 
 /// Represents a command to implement something.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -54,8 +55,8 @@ impl Implement {
     }
 
     /// Retrieve the config stored for this Implement.
-    pub fn config(&self) -> Option<ImplementConfig> {
-        unwrap_strong::<ImplementConfig>(&self.essence().value()).cloned()
+    pub fn config(&self) -> Option<Rc<ImplementConfig>> {
+        unwrap_value::<ImplementConfig>(self.essence().value())
     }
 }
 
@@ -87,17 +88,15 @@ impl<'a> TryFrom<&'a str> for Implement {
     }
 }
 
-impl CommonNodeTrait for Implement {
-    fn id(&self) -> usize {
-        self.base.id()
+impl Wrapper for Implement {
+    type BaseType = FinalNode;
+
+    fn essence(&self) -> &FinalNode {
+        &self.base
     }
 
-    fn set_internal_name(&mut self, name: String) {
-        self.base.set_internal_name(name);
-    }
-
-    fn internal_name(&self) -> Option<Rc<String>> {
-        self.base.internal_name()
+    fn essence_mut(&mut self) -> &mut FinalNode {
+        &mut self.base
     }
 }
 
@@ -110,20 +109,13 @@ impl<'a> ArchetypeTrait<'a> for Implement {
     const PARENT_TYPE_ID: usize = Tao::TYPE_ID;
 }
 
-impl FormTrait for Implement {
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
+impl FormTrait for Implement {}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::tao::initialize_kb;
+    use zamm_yin::node_wrappers::CommonNodeTrait;
     use zamm_yin::tao::relation::attribute::Owner;
 
     #[test]
@@ -178,10 +170,10 @@ mod tests {
         });
         assert_eq!(
             implement.config(),
-            Some(ImplementConfig {
+            Some(Rc::new(ImplementConfig {
                 id: 2,
                 doc: Some("Hi".to_owned()),
-            })
+            }))
         );
     }
 }

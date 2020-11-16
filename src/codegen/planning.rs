@@ -8,6 +8,7 @@ use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::{Form, FormTrait};
@@ -89,10 +90,10 @@ pub fn file_path(target: &Archetype) -> String {
 fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -> String {
     let build_info = BuildInfo::from(target.id());
     match build_info.import_path() {
-        Some(existing_path) => existing_path,
+        Some(existing_path) => (*existing_path).clone(),
         None => {
             let yin_crate = if build_info.crate_name().is_some() {
-                build_info.crate_name().unwrap()
+                (*build_info.crate_name().unwrap()).clone()
             } else if yin_override || target.is_newly_defined() {
                 "crate".to_owned()
             } else {
@@ -111,12 +112,12 @@ fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -
 
 /// Turns a concept into a struct to be imported.
 fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig {
-    let build_info = BuildInfo::from(*target.essence());
+    let build_info = BuildInfo::from(target.id());
     let name = build_info
         .implementation_name()
-        .unwrap_or_else(|| target.internal_name().unwrap().as_str().to_camel_case());
+        .unwrap_or_else(|| Rc::new(target.internal_name().unwrap().as_str().to_camel_case()));
     StructConfig {
-        name,
+        name: (*name).clone(),
         import: import_path(target, target.force_own_module(), yin_override),
     }
 }
@@ -198,9 +199,9 @@ pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConf
         all_attributes,
         introduced_attributes,
         attribute_structs: attr_structs,
-        rust_primitive_name: target.rust_primitive().unwrap_or_default(),
-        default_value: target.default_value().unwrap_or_default(),
-        impl_cfg: request.config().unwrap(),
+        rust_primitive_name: target.rust_primitive(),
+        default_value: target.default_value(),
+        impl_cfg: (*request.config().unwrap()).clone(),
         codegen_cfg: *codegen_cfg,
     }
 }
