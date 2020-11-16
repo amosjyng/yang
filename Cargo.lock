@@ -1448,7 +1448,7 @@ dependencies = [
 
 [[package]]
 name = "zamm_yang"
-version = "0.0.12"
+version = "0.0.12-beta"
 dependencies = [
  "heck",
  "indoc",
