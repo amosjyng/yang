@@ -8,24 +8,12 @@ readme = "README.md"
 repository = "https://github.com/amosjyng/yang"
 license = "GPL-3.0"
 keywords = ["codegen", "code-generation"]
-categories = ["command-line-utilities", "development-tools"]
-
-[[bin]]
-name = "yang"
-path = "src/main.rs"
+categories = ["development-tools"]
 
 [dependencies]
-clap = { version = "^2.33.3", features = ["color", "wrap_help"] }
-colored = "^2"
 heck = "0.3.1"
 indoc = "^1.0"
 itertools = "^0.9.0"
 path_abs = "^0.5.0"
-pulldown-cmark = "^0.8.0"
 textwrap = "^0.12.1"
-toml = "^0.5.7"
-yaml-rust = "^0.4"
 zamm_yin = "0.0.13"
-
-[build-dependencies]
-reqwest = { version = "^0.10.8", features = ["blocking"] }

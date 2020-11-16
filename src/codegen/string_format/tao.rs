@@ -11,13 +11,12 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
         "std::fmt".to_owned(),
         "std::fmt::Debug".to_owned(),
         "std::fmt::Formatter".to_owned(),
-        "std::rc::Rc".to_owned(),
         cfg.parent_import.to_owned(),
         format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate),
         format!("{}::tao::archetype::{}", cfg.yin_crate, cfg.archetype_name),
         format!("{}::tao::form::FormTrait", cfg.yin_crate),
         format!("{}::node_wrappers::debug_wrapper", cfg.yin_crate),
-        format!("{}::node_wrappers::CommonNodeTrait", cfg.yin_crate),
+        format!("{}::Wrapper", cfg.yin_crate),
         format!("{}::node_wrappers::FinalNode", cfg.yin_crate),
     ];
     if let Some(import) = &cfg.imports {
@@ -59,18 +58,16 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
                     FinalNode::try_from(name).map(|f| Self {{ base: f }})
                 }}
             }}
-            
-            impl CommonNodeTrait for {name} {{
-                fn id(&self) -> usize {{
-                    self.base.id()
+
+            impl Wrapper for {name} {{
+                type BaseType = FinalNode;
+
+                fn essence(&self) -> &FinalNode {{
+                    &self.base
                 }}
-            
-                fn set_internal_name(&mut self, name: String) {{
-                    self.base.set_internal_name(name);
-                }}
-            
-                fn internal_name(&self) -> Option<Rc<String>> {{
-                    self.base.internal_name()
+
+                fn essence_mut(&mut self) -> &mut FinalNode {{
+                    &mut self.base
                 }}
             }}
             
@@ -83,15 +80,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
                 const PARENT_TYPE_ID: usize = {parent}::TYPE_ID;
             }}
             
-            impl FormTrait for {name} {{
-                fn essence(&self) -> &FinalNode {{
-                    &self.base
-                }}
-            
-                fn essence_mut(&mut self) -> &mut FinalNode {{
-                    &mut self.base
-                }}
-            }}"#,
+            impl FormTrait for {name} {{}}"#,
             doc = cfg.doc,
             name = cfg.name,
             internal_name = cfg.internal_name,
@@ -107,6 +96,8 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
     let mut test_mod = ModuleFragment::new_test_module();
     let mut imports = vec![
         "crate::tao::initialize_kb".to_owned(),
+        "std::rc::Rc".to_owned(),
+        format!("{}::node_wrappers::CommonNodeTrait", cfg.yin_crate),
         format!("{}::tao::archetype::ArchetypeFormTrait", cfg.yin_crate),
     ];
     for attr_import in &cfg.all_attribute_imports {
@@ -153,19 +144,10 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
             }}
 
             #[test]
-            fn create_and_retrieve_node_id() {{
+            fn test_wrapper_implemented() {{
                 initialize_kb();
-                let concept1 = {name}::individuate();
-                let concept2 = {name}::individuate();
-                assert_eq!(concept1.id() + 1, concept2.id());
-            }}
-
-            #[test]
-            fn create_and_retrieve_node_name() {{
-                initialize_kb();
-                let mut concept = {name}::individuate();
-                concept.set_internal_name("A".to_string());
-                assert_eq!(concept.internal_name(), Some(Rc::new("A".to_string())));
+                let concept = {name}::individuate();
+                assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
             }}"#,
             name = cfg.name,
             introduced_attributes = cfg.introduced_attributes,
