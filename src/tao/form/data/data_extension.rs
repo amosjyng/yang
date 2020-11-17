@@ -1,16 +1,17 @@
-use crate::tao::form::data::StringConcept;
-use crate::tao::relation::attribute::{DefaultValue, RustPrimitive};
+use crate::tao::relation::attribute::RustPrimitive;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
+use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::FormTrait;
+use zamm_yin::tao::relation::attribute::DefaultValue;
 use zamm_yin::Wrapper;
 
 /// Trait to extend Data functionality that has not been auto-generated.
 pub trait DataExtension: FormTrait {
     /// Set the name of the Rust primitive that this concept represents.
     fn set_rust_primitive(&mut self, primitive_name: &str) {
-        let mut name_str = StringConcept::individuate();
+        let mut name_str = StringConcept::new();
         name_str.set_value(primitive_name.to_owned());
         self.essence_mut()
             .add_outgoing(RustPrimitive::TYPE_ID, name_str.essence());
@@ -27,7 +28,7 @@ pub trait DataExtension: FormTrait {
 
     /// Set the Rust code representation for the default value of this concept.
     fn set_default_value(&mut self, default_value_as_code: &str) {
-        let mut code_str = StringConcept::individuate();
+        let mut code_str = StringConcept::new();
         code_str.set_value(default_value_as_code.to_owned());
         self.essence_mut()
             .add_outgoing(DefaultValue::TYPE_ID, code_str.essence());
@@ -50,9 +51,9 @@ impl DataExtension for Archetype {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tao::form::data::Data;
     use crate::tao::initialize_kb;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
+    use zamm_yin::tao::form::data::Data;
 
     #[test]
     fn set_and_get_rust_primitive() {

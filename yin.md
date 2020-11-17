@@ -11,61 +11,11 @@ define!(target);
 target.add_parent(Attribute::archetype().as_archetype());
 ```
 
-Take the "data" archetype, perhaps roughly analogous to the linguistic concept of a "noun." What do we generally start out describing as nouns? Physical objects in the physical world.
-
-Now, not every noun corresponds directly to something physical. We have words that refer to mental states, for example. But even emotions appear to ultimately be an emergent phenomenon of lower-level physics. Even the [is-ought problem](https://en.wikipedia.org/wiki/Is%E2%80%93ought_problem) or [fact-value distinction](https://en.wikipedia.org/wiki/Fact%E2%80%93value_distinction) are, in a sense, not quite as dichotomous as they might seem: all "ought" opinions that have ever existed are encoded in some "is," whether that encoding takes the form of neural patterns, ink on a parchment, or sound waves propagating through the air. This doesn't mean that the general distinction between "is" and "ought" isn't worth making, or that nouns should be done away with. All abstractions are [leaky](https://blog.codinghorror.com/all-abstractions-are-failed-abstractions/), but [some are useful](https://en.wikipedia.org/wiki/All_models_are_wrong).
-
-The same can be said for the bits in Yin and Yang's world. Everything is ultimately bits for these programs -- even a video feed hooked up to the physical world only ever comes in as a stream of bits. If we really wanted to fool a program, it should be theoretically impossible for the program [to tell](https://en.wikipedia.org/wiki/Brain_in_a_vat) that it's actually running in a hermetically sealed continuous integration test environment instead of production. But it still makes sense to speak of pieces of data versus the relations between the data, even if the relations themselves can rightfully be considered data as well:
-
-```rust
-define!(data);
-data.add_parent(Form::archetype());
-```
-
-In a sense, it's all about framing. Every series of bits forms a number, but unless you're Gödel and you're trying to establish an equivalence between a mathematical proof and an integer, reasoning about "a series of bits" is going to be quite different from reasoning about "a number."
-
-One type of data is a "string":
-
-```rust
-define!(string_concept);
-string_concept.add_parent(data);
-```
-
-Another type of data is a number:
-
-```rust
-define!(number);
-number.add_parent(data);
-```
-
-Every type of data usually has a "default" value that we think of when constructing one from scratch.
-
-```rust
-define!(default_value);
-default_value.add_parent(Attribute::archetype().as_archetype());
-```
-
-For strings, this would be the empty string:
-
-```rust
-string_concept.set_default_value("String::new()");
-```
-
-For numbers, this would be zero:
-
-```rust
-number.set_default_value("0");
-```
-
 Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
 
 ```rust
 define!(rust_primitive);
 rust_primitive.add_parent(Attribute::archetype().as_archetype());
-
-string_concept.set_rust_primitive("String");
-// for now, only use positive numbers
-number.set_rust_primitive("usize");
 ```
 
 This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
@@ -90,12 +40,6 @@ uses_data_logic.add_parent(Flag::archetype());
 ```
 
 Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
-
-Let's apply that to the string concept we defined earlier:
-
-```rust
-string_concept.activate_data_logic();
-```
 
 Due to current limitations with Yang, we cannot set Tao as the parent here. We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
 
@@ -167,29 +111,8 @@ own_module.implement_with(
     "Marks an archetype as living inside its own module, even if it doesn't have any defined child archetypes yet."
 );
 
-data.implement_with(
-    6,
-    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
-);
-
-string_concept.implement_with(
-    7,
-    "The concept of a string of characters."
-);
-
-number.activate_data_logic();
-number.implement_with(
-    17,
-    "The concept of numbers."
-);
-
-default_value.implement_with(
-    15,
-    "The default value of a data structure."
-);
-
 rust_primitive.implement_with(
-    14,
+    12,
     "The Rust primitive that a Yin data concept is implemented by."
 );
 
@@ -199,32 +122,32 @@ uses_attribute_logic.implement_with(
 );
 
 uses_data_logic.implement_with(
-    8,
+    6,
     "Marks an archetype and all its descendants as requiring data-specific logic during generation."
 );
 
 uses_root_node_logic.implement_with(
-    16,
+    13,
     "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this."
 );
 
 import_path.implement_with(
-    9,
+    7,
     "Describes the import path of a defined struct."
 );
 
 lens.implement_with(
-    11,
+    9,
     "Describes a way of looking at things that is only well-defined within a specific context."
 );
 
 crate_name.implement_with(
-    12,
+    10,
     "Crate that a concept was built as a part of."
 );
 
 implementation_name.implement_with(
-    13,
+    11,
     "Name the concept actually took on when implemented."
 );
 ```
@@ -236,8 +159,8 @@ implementation_name.implement_with(
 These are the versions of Yin and Yang used to make this build happen:
 
 ```toml
-zamm_yin = "0.0.13"
-zamm_yang = "0.0.12"
+zamm_yin = "0.0.14"
+zamm_yang = "0.1.0"
 ```
 
 ### Imports

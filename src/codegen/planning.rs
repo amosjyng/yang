@@ -6,7 +6,7 @@ use crate::codegen::template::concept::form::code_form;
 use crate::codegen::template::concept::tao::{code_tao, TaoConfig};
 use crate::codegen::StructConfig;
 use crate::tao::archetype::CodegenFlags;
-use crate::tao::form::data::{Data, DataExtension};
+use crate::tao::form::data::DataExtension;
 use crate::tao::form::{BuildInfo, DefinedMarker};
 use crate::tao::Implement;
 use heck::KebabCase;
@@ -15,7 +15,10 @@ use itertools::Itertools;
 use std::convert::TryFrom;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
+use zamm_yin::tao::archetype::{
+    Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype, AttributeArchetypeFormTrait,
+};
+use zamm_yin::tao::form::data::Data;
 use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::tao::relation::attribute::Attribute;
 
@@ -556,7 +559,7 @@ mod tests {
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name("MyAttrType".to_owned());
         target.mark_newly_defined();
-        let mut implement = Implement::individuate();
+        let mut implement = Implement::new();
         implement.set_target(target.as_archetype());
         implement.set_config(ImplementConfig::default());
         let cfg = generic_config(
@@ -579,7 +582,7 @@ mod tests {
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name("MyDataType".to_owned());
         target.mark_newly_defined();
-        let mut implement = Implement::individuate();
+        let mut implement = Implement::new();
         implement.set_target(target.as_archetype());
         implement.set_config(ImplementConfig::default());
         let cfg = generic_config(
@@ -601,7 +604,7 @@ mod tests {
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name("MyAttrType".to_owned());
         target.mark_newly_defined();
-        let mut implement = Implement::individuate();
+        let mut implement = Implement::new();
         implement.set_target(target.as_archetype());
         implement.set_config(ImplementConfig {
             doc: Some("One.\n\nTwo.".to_owned()),
@@ -647,7 +650,7 @@ mod tests {
         target.activate_attribute_logic();
         target.set_owner_archetype(Tao::archetype());
         target.set_value_archetype(Form::archetype());
-        let mut implement = Implement::individuate();
+        let mut implement = Implement::new();
         implement.set_target(target.as_archetype());
         implement.set_config(ImplementConfig::default());
         let parent = primary_parent(&target.as_archetype());

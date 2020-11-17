@@ -11,7 +11,7 @@ use zamm_yin::tao::form::FormTrait;
 pub trait CreateImplementation: FormTrait + CommonNodeTrait {
     /// Create a new implementation for a concept.
     fn implement(&self) -> Implement {
-        let mut implementation = Implement::individuate();
+        let mut implementation = Implement::new();
         implementation.set_target(Archetype::from(self.id()));
         implementation
     }
