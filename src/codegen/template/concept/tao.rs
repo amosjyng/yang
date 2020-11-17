@@ -184,7 +184,7 @@ pub fn tao_test_fragment(cfg: &TaoConfig) -> ModuleFragment {
             #[test]
             fn from_node_id() {{
                 initialize_kb();
-                let concept = {name}::individuate();
+                let concept = {name}::new();
                 let concept_copy = {name}::from(concept.id());
                 assert_eq!(concept.id(), concept_copy.id());
             }}
@@ -192,7 +192,7 @@ pub fn tao_test_fragment(cfg: &TaoConfig) -> ModuleFragment {
             #[test]
             fn from_name() {{
                 initialize_kb();
-                let mut concept = {name}::individuate();
+                let mut concept = {name}::new();
                 concept.set_internal_name("A".to_owned());
                 assert_eq!({name}::try_from("A").map(|c| c.id()), Ok(concept.id()));
                 assert!({name}::try_from("B").is_err());
@@ -201,7 +201,7 @@ pub fn tao_test_fragment(cfg: &TaoConfig) -> ModuleFragment {
             #[test]
             fn test_wrapper_implemented() {{
                 initialize_kb();
-                let concept = {name}::individuate();
+                let concept = {name}::new();
                 assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
             }}"#,
             name = cfg.this.name,

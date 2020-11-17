@@ -86,8 +86,8 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
             #[test]
             fn get_owner() {{
                 initialize_kb();
-                let mut instance = {name}::individuate();
-                let owner_of_instance = {owner_type}::individuate();
+                let mut instance = {name}::new();
+                let owner_of_instance = {owner_type}::new();
                 instance.set_owner(&owner_of_instance);
                 assert_eq!(instance.owner(), Some(owner_of_instance));
                 assert_eq!(instance.value(), None);
@@ -96,8 +96,8 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
             #[test]
             fn get_value() {{
                 initialize_kb();
-                let mut instance = {name}::individuate();
-                let value_of_instance = {value_type}::individuate();
+                let mut instance = {name}::new();
+                let value_of_instance = {value_type}::new();
                 instance.set_value(&value_of_instance);
                 assert_eq!(instance.owner(), None);
                 assert_eq!(instance.value(), Some(value_of_instance));
