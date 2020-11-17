@@ -22,25 +22,24 @@ pub fn handle_all_implementations(codegen_cfg: &CodegenConfig) {
 
 #[cfg(test)]
 mod tests {
-    use crate::codegen::string_format::attribute::code_attribute;
-    use crate::codegen::string_format::tao::code_tao;
-    use crate::codegen::string_format::{
-        code_data_concept, code_form, AttributeFormatConfig, DataFormatConfig, FormatConfig,
-    };
+    use crate::codegen::template::concept::attribute::{code_attribute, AttributeFormatConfig};
+    use crate::codegen::template::concept::data::{code_data_concept, DataFormatConfig};
+    use crate::codegen::template::concept::form::code_form;
+    use crate::codegen::template::concept::tao::{code_tao, TaoConfig};
     use crate::codegen::StructConfig;
     use std::rc::Rc;
 
     #[test]
     fn integration_test_attribute_generation() {
         let code = code_attribute(&AttributeFormatConfig {
-            tao_cfg: FormatConfig {
+            tao_cfg: TaoConfig {
                 this: StructConfig {
                     name: "MyNewAttr".to_owned(),
                     ..StructConfig::default()
                 },
                 parent_name: "MyAttr".to_owned(),
                 archetype_name: "AttributeArchetype".to_owned(),
-                ..FormatConfig::default()
+                ..TaoConfig::default()
             },
             owner_type: StructConfig {
                 name: "MyOwner".to_owned(),
@@ -75,7 +74,7 @@ mod tests {
 
     #[test]
     fn integration_test_root_node_generation() {
-        let code = code_tao(&FormatConfig {
+        let code = code_tao(&TaoConfig {
             this: StructConfig {
                 name: "MyRoot".to_owned(),
                 ..StructConfig::default()
@@ -85,7 +84,7 @@ mod tests {
                 ..StructConfig::default()
             },
             parent_name: "Tao".to_owned(),
-            ..FormatConfig::default()
+            ..TaoConfig::default()
         });
         assert!(!code.contains("impl FormTrait"));
         assert!(code.contains("type Form = MyForm;"));
@@ -94,13 +93,13 @@ mod tests {
     #[test]
     fn integration_test_data_generation() {
         let code = code_data_concept(&DataFormatConfig {
-            tao_cfg: FormatConfig {
+            tao_cfg: TaoConfig {
                 this: StructConfig {
                     name: "MyStr".to_owned(),
                     ..StructConfig::default()
                 },
                 parent_name: "MyData".to_owned(),
-                ..FormatConfig::default()
+                ..TaoConfig::default()
             },
             rust_primitive_name: Rc::new("asdf".to_owned()),
             default_value: Rc::new("bsdf".to_owned()),
@@ -111,12 +110,12 @@ mod tests {
 
     #[test]
     fn integration_test_regular_generation() {
-        let code = code_form(&FormatConfig {
+        let code = code_form(&TaoConfig {
             this: StructConfig {
                 name: "Tao".to_owned(),
                 ..StructConfig::default()
             },
-            ..FormatConfig::default()
+            ..TaoConfig::default()
         });
         assert!(code.contains("impl FormTrait"));
         assert!(!code.contains("Attribute"));

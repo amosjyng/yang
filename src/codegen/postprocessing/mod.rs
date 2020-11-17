@@ -27,15 +27,15 @@ pub fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codegen::string_format::code_form;
-    use crate::codegen::string_format::FormatConfig;
+    use crate::codegen::template::concept::form::code_form;
+    use crate::codegen::template::concept::tao::TaoConfig;
     use crate::codegen::StructConfig;
     use mark_autogen::AUTOGENERATION_MARKER;
     use mark_fmt::FMT_SKIP_MARKER;
 
     #[test]
     fn test_post_process_comments() {
-        let code = code_form(&FormatConfig::default());
+        let code = code_form(&TaoConfig::default());
         let result = post_process_generation(&code, &CodegenConfig::default());
         assert!(result.contains(AUTOGENERATION_MARKER));
         assert!(result.contains("YIN_MAX_ID"));
@@ -43,7 +43,7 @@ mod tests {
 
     #[test]
     fn test_post_process_no_comments() {
-        let code = code_form(&FormatConfig::default());
+        let code = code_form(&TaoConfig::default());
         let result = post_process_generation(
             &code,
             &CodegenConfig {
@@ -56,12 +56,12 @@ mod tests {
 
     #[test]
     fn test_post_process_fmt_not_skip() {
-        let code = code_form(&FormatConfig {
+        let code = code_form(&TaoConfig {
             this: StructConfig {
                 name: "S".to_owned(), // short
                 ..StructConfig::default()
             },
-            ..FormatConfig::default()
+            ..TaoConfig::default()
         });
         let result = post_process_generation(&code, &CodegenConfig::default());
         assert!(!result.contains(FMT_SKIP_MARKER));
@@ -69,12 +69,12 @@ mod tests {
 
     #[test]
     fn test_post_process_fmt_skip() {
-        let code = code_form(&FormatConfig {
+        let code = code_form(&TaoConfig {
             this: StructConfig {
                 name: "ReallySuperLongClassNameOhBoy".to_owned(),
                 ..StructConfig::default()
             },
-            ..FormatConfig::default()
+            ..TaoConfig::default()
         });
         let result = post_process_generation(
             &code,
@@ -88,12 +88,12 @@ mod tests {
 
     #[test]
     fn test_post_process_fmt_skip_release() {
-        let code = code_form(&FormatConfig {
+        let code = code_form(&TaoConfig {
             this: StructConfig {
                 name: "ReallySuperLongClassNameOhBoy".to_owned(),
                 ..StructConfig::default()
             },
-            ..FormatConfig::default()
+            ..TaoConfig::default()
         });
         let result = post_process_generation(
             &code,

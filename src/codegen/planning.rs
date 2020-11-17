@@ -1,11 +1,9 @@
 use super::CodegenConfig;
 use crate::codegen::docstring::into_docstring;
-use crate::codegen::string_format::attribute::code_attribute;
-use crate::codegen::string_format::code_data_concept;
-use crate::codegen::string_format::tao::code_tao;
-use crate::codegen::string_format::{
-    code_form, AttributeFormatConfig, DataFormatConfig, FormatConfig,
-};
+use crate::codegen::template::concept::attribute::{code_attribute, AttributeFormatConfig};
+use crate::codegen::template::concept::data::{code_data_concept, DataFormatConfig};
+use crate::codegen::template::concept::form::code_form;
+use crate::codegen::template::concept::tao::{code_tao, TaoConfig};
 use crate::codegen::StructConfig;
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::{Data, DataExtension};
@@ -152,7 +150,7 @@ fn generic_config(
     target: &Archetype,
     parent: &Archetype,
     codegen_cfg: &CodegenConfig,
-) -> FormatConfig {
+) -> TaoConfig {
     let this = concept_to_struct(&target, codegen_cfg.yin);
     let internal_name = this.name.to_kebab_case();
     let form = if target.root_node_logic_activated() {
@@ -223,7 +221,7 @@ fn generic_config(
         "Archetype".to_owned()
     };
 
-    FormatConfig {
+    TaoConfig {
         yin_crate: yin_crate.to_owned(),
         imports,
         this,
@@ -242,7 +240,7 @@ fn generic_config(
 }
 
 fn attribute_config(
-    base_cfg: FormatConfig,
+    base_cfg: TaoConfig,
     target: &Archetype,
     codegen_cfg: &CodegenConfig,
 ) -> AttributeFormatConfig {
@@ -265,7 +263,7 @@ fn attribute_config(
     }
 }
 
-fn data_config(base_cfg: FormatConfig, target: &Archetype) -> DataFormatConfig {
+fn data_config(base_cfg: TaoConfig, target: &Archetype) -> DataFormatConfig {
     DataFormatConfig {
         tao_cfg: base_cfg,
         rust_primitive_name: target.rust_primitive().unwrap(),

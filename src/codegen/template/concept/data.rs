@@ -1,10 +1,21 @@
-use super::form_fragment;
-use super::fragments::{AtomicFragment, FileFragment};
+use super::form::form_fragment;
 use super::tao::tao_test_fragment;
-use super::DataFormatConfig;
+use super::tao::TaoConfig;
+use crate::codegen::template::basic::{AtomicFragment, FileFragment};
 use indoc::formatdoc;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+/// Config values at the time of Attribute code generation.
+#[derive(Default)]
+pub struct DataFormatConfig {
+    /// Regular concept config.
+    pub tao_cfg: TaoConfig,
+    /// Rust primitive that this concept represents.
+    pub rust_primitive_name: Rc<String>,
+    /// Rust code representation of the default value of this concept.
+    pub default_value: Rc<String>,
+}
 
 /// Get the body fragment for a data concept.
 pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {

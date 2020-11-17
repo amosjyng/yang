@@ -1,12 +1,12 @@
-use super::fragments::{AppendedFragment, AtomicFragment, FileFragment};
+use super::tao::TaoConfig;
 use super::tao::{tao_fragment, tao_test_fragment};
-use super::FormatConfig;
+use crate::codegen::template::basic::{AppendedFragment, AtomicFragment, FileFragment};
 use indoc::formatdoc;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Get both the Tao and Form fragments.
-pub fn form_fragment(cfg: &FormatConfig) -> AppendedFragment {
+pub fn form_fragment(cfg: &TaoConfig) -> AppendedFragment {
     let form_specific_fragment = AtomicFragment {
         imports: vec![format!("{}::tao::form::FormTrait", cfg.yin_crate)],
         atom: formatdoc! {r#"
@@ -21,7 +21,7 @@ pub fn form_fragment(cfg: &FormatConfig) -> AppendedFragment {
 }
 
 /// Generate code for a form concept.
-pub fn code_form(cfg: &FormatConfig) -> String {
+pub fn code_form(cfg: &TaoConfig) -> String {
     let mut file = FileFragment::default();
     file.append(Rc::new(RefCell::new(form_fragment(cfg))));
     file.set_tests(Rc::new(RefCell::new(tao_test_fragment(cfg))));

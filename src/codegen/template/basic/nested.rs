@@ -56,7 +56,7 @@ impl CodeFragment for NestedFragment {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codegen::string_format::fragments::{AppendedFragment, AtomicFragment};
+    use crate::codegen::template::basic::{AppendedFragment, AtomicFragment};
     use indoc::indoc;
 
     #[test]

@@ -108,13 +108,13 @@ mod tests {
                 "std::fmt::{Debug, Formatter}",
                 "std::fmt",
                 "std::rc::Rc",
-                "crate::concepts::attributes::{Attribute, AttributeTrait}",
-                "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
+                "crate::concept::attributes::{Attribute, AttributeTrait}",
+                "crate::concept::{ArchetypeTrait, FormTrait, Tao}",
                 "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}"
             ]),
             &[
-                "crate::concepts::attributes::{Attribute, AttributeTrait}",
-                "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
+                "crate::concept::attributes::{Attribute, AttributeTrait}",
+                "crate::concept::{ArchetypeTrait, FormTrait, Tao}",
                 "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}",
                 "std::convert::TryFrom",
                 "std::fmt",
@@ -128,15 +128,15 @@ mod tests {
     fn test_sort_imports_super() {
         assert_eq!(
             sort_imports(&[
-                "crate::concepts::attributes::{Attribute, AttributeTrait}",
-                "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
+                "crate::concept::attributes::{Attribute, AttributeTrait}",
+                "crate::concept::{ArchetypeTrait, FormTrait, Tao}",
                 "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}",
                 "super::ParentTrait"
             ]),
             &[
                 "super::ParentTrait",
-                "crate::concepts::attributes::{Attribute, AttributeTrait}",
-                "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
+                "crate::concept::attributes::{Attribute, AttributeTrait}",
+                "crate::concept::{ArchetypeTrait, FormTrait, Tao}",
                 "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}"
             ]
         );
@@ -146,9 +146,9 @@ mod tests {
     fn test_sort_imports_ignore_empty() {
         assert_eq!(
             sort_imports(&[
-                "crate::concepts::attributes::{Attribute, AttributeTrait}",
+                "crate::concept::attributes::{Attribute, AttributeTrait}",
                 "",
-                "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
+                "crate::concept::{ArchetypeTrait, FormTrait, Tao}",
                 "",
                 "",
                 "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}",
@@ -156,8 +156,8 @@ mod tests {
             ]),
             &[
                 "super::ParentTrait",
-                "crate::concepts::attributes::{Attribute, AttributeTrait}",
-                "crate::concepts::{ArchetypeTrait, FormTrait, Tao}",
+                "crate::concept::attributes::{Attribute, AttributeTrait}",
+                "crate::concept::{ArchetypeTrait, FormTrait, Tao}",
                 "crate::node_wrappers::{debug_wrapper, CommonNodeTrait, FinalNode}",
             ]
         );
