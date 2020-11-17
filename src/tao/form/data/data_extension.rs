@@ -1,9 +1,10 @@
-use crate::tao::form::data::StringConcept;
-use crate::tao::relation::attribute::{DefaultValue, RustPrimitive};
+use crate::tao::relation::attribute::RustPrimitive;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
+use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::FormTrait;
+use zamm_yin::tao::relation::attribute::DefaultValue;
 use zamm_yin::Wrapper;
 
 /// Trait to extend Data functionality that has not been auto-generated.
@@ -50,9 +51,9 @@ impl DataExtension for Archetype {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tao::form::data::Data;
     use crate::tao::initialize_kb;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
+    use zamm_yin::tao::form::data::Data;
 
     #[test]
     fn set_and_get_rust_primitive() {

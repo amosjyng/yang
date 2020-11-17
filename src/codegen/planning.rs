@@ -6,7 +6,7 @@ use crate::codegen::template::concept::form::code_form;
 use crate::codegen::template::concept::tao::{code_tao, TaoConfig};
 use crate::codegen::StructConfig;
 use crate::tao::archetype::CodegenFlags;
-use crate::tao::form::data::{Data, DataExtension};
+use crate::tao::form::data::DataExtension;
 use crate::tao::form::{BuildInfo, DefinedMarker};
 use crate::tao::Implement;
 use heck::KebabCase;
@@ -18,6 +18,7 @@ use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{
     Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype, AttributeArchetypeFormTrait,
 };
+use zamm_yin::tao::form::data::Data;
 use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::tao::relation::attribute::Attribute;
 

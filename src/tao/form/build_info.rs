@@ -1,5 +1,4 @@
 use crate::tao::relation::attribute::{Crate, ImplementationName, ImportPath};
-use crate::tao::StringConcept;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
@@ -7,6 +6,7 @@ use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::{unwrap_value, StrongValue};
 use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
+use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::{Tao, YIN_MAX_ID};
 use zamm_yin::Wrapper;
@@ -128,7 +128,7 @@ impl<'a> ArchetypeTrait<'a> for BuildInfo {
     type ArchetypeForm = Archetype;
     type Form = BuildInfo;
 
-    const TYPE_ID: usize = YIN_MAX_ID + 10;
+    const TYPE_ID: usize = YIN_MAX_ID + 8;
     const TYPE_NAME: &'static str = "build-info";
     const PARENT_TYPE_ID: usize = Tao::TYPE_ID;
 }
