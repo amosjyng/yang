@@ -162,7 +162,7 @@ fn generic_config(
 
     let impl_cfg = request.config().unwrap();
     let doc = match &impl_cfg.doc {
-        Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
+        Some(d) => format!("\n{}", into_docstring(&d, 0)),
         None => String::new(),
     };
 
@@ -298,6 +298,7 @@ mod tests {
     use super::*;
     use crate::tao::initialize_kb;
     use crate::tao::ImplementConfig;
+    use indoc::indoc;
     use zamm_yin::tao::relation::attribute::{Attribute, Owner};
     use zamm_yin::tao::Tao;
 
@@ -592,6 +593,36 @@ mod tests {
         );
 
         assert!(!cfg.id.contains("YIN_MAX_ID"));
+    }
+
+    #[test]
+    fn test_default_doc_newline() {
+        initialize_kb();
+        let mut target = Tao::archetype().individuate_as_archetype();
+        target.set_internal_name("MyAttrType".to_owned());
+        target.mark_newly_defined();
+        let mut implement = Implement::individuate();
+        implement.set_target(target.as_archetype());
+        implement.set_config(ImplementConfig {
+            doc: Some("One.\n\nTwo.".to_owned()),
+            ..ImplementConfig::default()
+        });
+        let cfg = generic_config(
+            &implement,
+            &target.as_archetype(),
+            &primary_parent(&target),
+            &CodegenConfig::default(),
+        );
+
+        assert_eq!(
+            cfg.doc.trim(),
+            indoc! {r"
+            /// One.
+            ///
+            /// Two.
+        "}
+            .trim()
+        );
     }
 
     #[test]
