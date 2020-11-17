@@ -1,11 +1,64 @@
-use super::fragments::{AtomicFragment, FileFragment, ModuleFragment};
-use super::FormatConfig;
+use crate::codegen::template::basic::{AtomicFragment, FileFragment, ModuleFragment};
+use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+/// Templating config values for all concepts.
+pub struct TaoConfig {
+    /// Name to use for the yin crate.
+    pub yin_crate: String,
+    /// Main file imports.
+    pub imports: Option<String>,
+    /// Class representing the concept itself.
+    pub this: StructConfig,
+    /// Name of the concept.
+    pub internal_name: String,
+    /// The form representing the concept.
+    pub form: StructConfig,
+    /// Name of the parent class.
+    pub parent_name: String,
+    /// Import path for the parent class.
+    pub parent_import: String,
+    /// Name of the archetype used to represent this.
+    pub archetype_name: String,
+    /// List of attributes this class has.
+    pub all_attributes: String,
+    /// Imports for above list of introduced attributes.
+    pub all_attribute_imports: Vec<String>,
+    /// List of attributes this class introduced.
+    pub introduced_attributes: String,
+    /// Imports for above list of introduced attributes.
+    pub introduced_attribute_imports: Vec<String>,
+    /// Rustdoc for the class.
+    pub doc: String,
+    /// ID of the concept.
+    pub id: String,
+}
+
+impl Default for TaoConfig {
+    fn default() -> Self {
+        Self {
+            yin_crate: "zamm_yin".to_owned(),
+            imports: Some("zamm_yin::tao::YIN_MAX_ID".to_owned()),
+            this: StructConfig::default(),
+            internal_name: "dummy".to_owned(),
+            form: StructConfig::default(),
+            parent_name: "Tao".to_owned(),
+            parent_import: "tao::Tao".to_owned(),
+            archetype_name: "Archetype".to_owned(),
+            all_attributes: "vec![]".to_owned(),
+            all_attribute_imports: vec![],
+            introduced_attributes: "vec![]".to_owned(),
+            introduced_attribute_imports: vec![],
+            doc: "".to_owned(),
+            id: "1".to_owned(),
+        }
+    }
+}
+
 /// Get the Tao body fragment.
-pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
+pub fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
     let mut imports = vec![
         "std::convert::TryFrom".to_owned(),
         "std::fmt".to_owned(),
@@ -93,7 +146,7 @@ pub fn tao_fragment(cfg: &FormatConfig) -> AtomicFragment {
 }
 
 /// Get the Tao test fragment
-pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
+pub fn tao_test_fragment(cfg: &TaoConfig) -> ModuleFragment {
     let mut test_mod = ModuleFragment::new_test_module();
     let mut imports = vec![
         "crate::tao::initialize_kb".to_owned(),
@@ -161,7 +214,7 @@ pub fn tao_test_fragment(cfg: &FormatConfig) -> ModuleFragment {
 }
 
 /// Generate code for a Tao concept config.
-pub fn code_tao(cfg: &FormatConfig) -> String {
+pub fn code_tao(cfg: &TaoConfig) -> String {
     let mut file = FileFragment::default();
     file.append(Rc::new(RefCell::new(tao_fragment(cfg))));
     file.set_tests(Rc::new(RefCell::new(tao_test_fragment(cfg))));

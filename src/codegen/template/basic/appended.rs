@@ -60,7 +60,7 @@ impl CodeFragment for AppendedFragment {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codegen::string_format::fragments::AtomicFragment;
+    use crate::codegen::template::basic::AtomicFragment;
     use indoc::indoc;
 
     #[test]

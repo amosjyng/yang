@@ -1,10 +1,26 @@
 use super::form::form_fragment;
-use super::fragments::{AtomicFragment, FileFragment};
 use super::tao::tao_test_fragment;
-use super::AttributeFormatConfig;
+use super::tao::TaoConfig;
+use crate::codegen::template::basic::{AtomicFragment, FileFragment};
+use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+/// Config values at the time of Attribute code generation.
+#[derive(Default)]
+pub struct AttributeFormatConfig {
+    /// Regular concept config.
+    pub tao_cfg: TaoConfig,
+    /// Attribute's owner archetype.
+    pub owner_type: StructConfig,
+    /// Attribute's owner form.
+    pub owner_form: StructConfig,
+    /// Attribute's value archetype.
+    pub value_type: StructConfig,
+    /// Attribute's value form.
+    pub value_form: StructConfig,
+}
 
 /// Get the attribute body fragment.
 pub fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {

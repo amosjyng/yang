@@ -1,18 +1,23 @@
-use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
-use crate::codegen::{CodeConfig, CodegenConfig, StructConfig};
+use super::CodegenConfig;
+use crate::codegen::docstring::into_docstring;
+use crate::codegen::template::concept::attribute::{code_attribute, AttributeFormatConfig};
+use crate::codegen::template::concept::data::{code_data_concept, DataFormatConfig};
+use crate::codegen::template::concept::form::code_form;
+use crate::codegen::template::concept::tao::{code_tao, TaoConfig};
+use crate::codegen::StructConfig;
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::{Data, DataExtension};
 use crate::tao::form::{BuildInfo, DefinedMarker};
 use crate::tao::Implement;
+use heck::KebabCase;
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
-use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::{Form, FormTrait};
-use zamm_yin::tao::relation::attribute::{Attribute, OwnerArchetype, ValueArchetype};
+use zamm_yin::tao::relation::attribute::Attribute;
 
 fn in_own_submodule(target: &Archetype) -> bool {
     // todo: filter by type, once Yin has that functionality
@@ -130,79 +135,161 @@ fn or_form_default(archetype: Archetype) -> Archetype {
     }
 }
 
-/// Generate the CodeConfig for a given implementation request.
-pub fn code_cfg_for(request: Implement, codegen_cfg: &CodegenConfig) -> CodeConfig {
-    let target = request.target().unwrap();
-    let target_struct = concept_to_struct(&target, codegen_cfg.yin);
+fn activate_archetype(target: &Archetype, parent: &Archetype) -> bool {
+    target == &Attribute::archetype().as_archetype()
+        || parent.has_ancestor(Attribute::archetype().as_archetype())
+        || target.attribute_logic_activated()
+}
+
+fn activate_data(target: &Archetype) -> bool {
+    target.has_ancestor(Data::archetype().as_archetype()) || target.data_logic_activated()
+}
+
+fn generic_config(
+    request: &Implement,
+    target: &Archetype,
+    parent: &Archetype,
+    codegen_cfg: &CodegenConfig,
+) -> TaoConfig {
+    let this = concept_to_struct(&target, codegen_cfg.yin);
+    let internal_name = this.name.to_kebab_case();
     let form = if target.root_node_logic_activated() {
         // technically we should allow the user to customize this as well
         concept_to_struct(&Form::archetype(), codegen_cfg.yin)
     } else {
-        target_struct.clone()
+        this.clone()
     };
-    let ancestors = target.ancestry();
-    let parent = ancestors.iter().last().unwrap();
+
+    let impl_cfg = request.config().unwrap();
+    let doc = match &impl_cfg.doc {
+        Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
+        None => String::new(),
+    };
+
+    let id = if codegen_cfg.yin {
+        format!("{}", impl_cfg.id)
+    } else {
+        format!("YIN_MAX_ID + {}", impl_cfg.id)
+    };
+
+    let yin_crate = if codegen_cfg.yin { "crate" } else { "zamm_yin" };
+
+    let imports = if codegen_cfg.yin {
+        None
+    } else {
+        Some("zamm_yin::tao::YIN_MAX_ID".to_owned())
+    };
+
     let parent_struct = concept_to_struct(parent, codegen_cfg.yin);
 
-    let activate_root_node = target.root_node_logic_activated();
-    let activate_attribute = target == Attribute::archetype().as_archetype()
-        || parent.has_ancestor(Attribute::archetype().as_archetype())
-        || target.attribute_logic_activated();
-    let activate_data =
-        target.has_ancestor(Data::archetype().as_archetype()) || target.data_logic_activated();
-
-    let all_attributes = target
+    let all_attribute_structs: Vec<StructConfig> = target
         .attribute_archetypes()
         .iter()
         .map(|a| concept_to_struct(&a.as_archetype(), codegen_cfg.yin))
         .collect();
-    let introduced_attributes = target
+    let introduced_attribute_structs: Vec<StructConfig> = target
         .introduced_attribute_archetypes()
         .iter()
         .map(|a| concept_to_struct(&a.as_archetype(), codegen_cfg.yin))
         .collect();
+    let all_attributes = format!(
+        "vec![{}]",
+        all_attribute_structs
+            .iter()
+            .map(|s| format!("{}::archetype()", s.name))
+            .format(", ")
+    );
+    let all_attribute_imports = all_attribute_structs
+        .iter()
+        .map(|s| s.import.clone())
+        .collect();
+    let introduced_attributes = format!(
+        "vec![{}]",
+        introduced_attribute_structs
+            .iter()
+            .map(|s| format!("{}::archetype()", s.name))
+            .format(", ")
+    );
+    let introduced_attribute_imports = introduced_attribute_structs
+        .iter()
+        .map(|s| s.import.clone())
+        .collect();
 
-    let mut attr_structs = HashMap::new();
-    if activate_attribute {
-        let target_attr = AttributeArchetype::from(target.id());
-        let owner_type = target_attr.owner_archetype();
-        let value_type = target_attr.value_archetype();
-        attr_structs.insert(
-            OwnerArchetype::TYPE_NAME,
-            concept_to_struct(&owner_type, codegen_cfg.yin),
-        );
-        attr_structs.insert(
-            ValueArchetype::TYPE_NAME,
-            concept_to_struct(&value_type, codegen_cfg.yin),
-        );
+    let archetype_name = if activate_archetype(target, parent) {
+        "AttributeArchetype".to_owned()
+    } else {
+        "Archetype".to_owned()
+    };
 
-        let owner_form = or_form_default(owner_type);
-        let value_form = or_form_default(value_type);
-
-        attr_structs.insert(
-            OWNER_FORM_KEY,
-            concept_to_struct(&owner_form, codegen_cfg.yin),
-        );
-        attr_structs.insert(
-            VALUE_FORM_KEY,
-            concept_to_struct(&value_form, codegen_cfg.yin),
-        );
-    }
-
-    CodeConfig {
-        target: target_struct,
+    TaoConfig {
+        yin_crate: yin_crate.to_owned(),
+        imports,
+        this,
+        internal_name,
         form,
-        parent: parent_struct,
-        activate_root_node,
-        activate_attribute,
-        activate_data,
+        parent_name: parent_struct.name,
+        parent_import: parent_struct.import,
         all_attributes,
+        all_attribute_imports,
         introduced_attributes,
-        attribute_structs: attr_structs,
-        rust_primitive_name: target.rust_primitive(),
-        default_value: target.default_value(),
-        impl_cfg: (*request.config().unwrap()).clone(),
-        codegen_cfg: *codegen_cfg,
+        introduced_attribute_imports,
+        archetype_name,
+        doc,
+        id,
+    }
+}
+
+fn attribute_config(
+    base_cfg: TaoConfig,
+    target: &Archetype,
+    codegen_cfg: &CodegenConfig,
+) -> AttributeFormatConfig {
+    let target_attr = AttributeArchetype::from(target.id());
+    let owner_type_concept = target_attr.owner_archetype();
+    let value_type_concept = target_attr.value_archetype();
+
+    let owner_type = concept_to_struct(&owner_type_concept, codegen_cfg.yin);
+    let value_type = concept_to_struct(&value_type_concept, codegen_cfg.yin);
+
+    let owner_form = concept_to_struct(&or_form_default(owner_type_concept), codegen_cfg.yin);
+    let value_form = concept_to_struct(&or_form_default(value_type_concept), codegen_cfg.yin);
+
+    AttributeFormatConfig {
+        tao_cfg: base_cfg,
+        owner_type,
+        owner_form,
+        value_type,
+        value_form,
+    }
+}
+
+fn data_config(base_cfg: TaoConfig, target: &Archetype) -> DataFormatConfig {
+    DataFormatConfig {
+        tao_cfg: base_cfg,
+        rust_primitive_name: target.rust_primitive().unwrap(),
+        default_value: target.default_value().unwrap(),
+    }
+}
+
+fn primary_parent(target: &Archetype) -> Archetype {
+    *target.parents().first().unwrap()
+}
+
+/// Generate code for a given concept. Post-processing still needed.
+pub fn code(request: Implement, codegen_cfg: &CodegenConfig) -> String {
+    let target = request.target().unwrap();
+    let parent = primary_parent(&target);
+
+    let base_cfg = generic_config(&request, &target, &parent, codegen_cfg);
+
+    if target.root_node_logic_activated() {
+        code_tao(&base_cfg)
+    } else if activate_archetype(&target, &parent) {
+        code_attribute(&attribute_config(base_cfg, &target, codegen_cfg))
+    } else if activate_data(&target) {
+        code_data_concept(&data_config(base_cfg, &target))
+    } else {
+        code_form(&base_cfg)
     }
 }
 
@@ -463,19 +550,48 @@ mod tests {
     }
 
     #[test]
-    fn code_cfg_for_not_activated() {
+    fn test_default_no_activations() {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name("MyAttrType".to_owned());
         target.mark_newly_defined();
         let mut implement = Implement::individuate();
-        implement.set_target(target);
+        implement.set_target(target.as_archetype());
         implement.set_config(ImplementConfig::default());
+        let cfg = generic_config(
+            &implement,
+            &target.as_archetype(),
+            &primary_parent(&target),
+            &CodegenConfig::default(),
+        );
 
-        let codegen_cfg = CodegenConfig::default();
-        let cfg = code_cfg_for(implement, &codegen_cfg);
-        assert!(!cfg.activate_attribute);
-        assert!(!cfg.activate_data);
+        assert!(!target.root_node_logic_activated());
+        assert!(!activate_archetype(&target, &primary_parent(&target)));
+        assert!(!activate_data(&target));
+
+        assert!(cfg.id.contains("YIN_MAX_ID"));
+    }
+
+    #[test]
+    fn code_cfg_for_yin() {
+        initialize_kb();
+        let mut target = Tao::archetype().individuate_as_archetype();
+        target.set_internal_name("MyDataType".to_owned());
+        target.mark_newly_defined();
+        let mut implement = Implement::individuate();
+        implement.set_target(target.as_archetype());
+        implement.set_config(ImplementConfig::default());
+        let cfg = generic_config(
+            &implement,
+            &target.as_archetype(),
+            &primary_parent(&target),
+            &CodegenConfig {
+                yin: true,
+                ..CodegenConfig::default()
+            },
+        );
+
+        assert!(!cfg.id.contains("YIN_MAX_ID"));
     }
 
     #[test]
@@ -485,11 +601,10 @@ mod tests {
         target.set_internal_name("MyRoot".to_owned());
         target.mark_newly_defined();
         target.activate_root_node_logic();
-        let mut implement = Implement::individuate();
-        implement.set_target(target.as_archetype());
-        implement.set_config(ImplementConfig::default());
 
-        assert!(code_cfg_for(implement, &CodegenConfig::default()).activate_root_node);
+        assert!(target.root_node_logic_activated());
+        assert!(!activate_archetype(&target, &primary_parent(&target)));
+        assert!(!activate_data(&target));
     }
 
     #[test]
@@ -504,21 +619,24 @@ mod tests {
         let mut implement = Implement::individuate();
         implement.set_target(target.as_archetype());
         implement.set_config(ImplementConfig::default());
-
+        let parent = primary_parent(&target.as_archetype());
         let codegen_cfg = CodegenConfig::default();
-        let cfg = code_cfg_for(implement, &codegen_cfg);
-        assert!(cfg.activate_attribute);
-        assert_eq!(
-            cfg.attribute_structs
-                .get(OwnerArchetype::TYPE_NAME)
-                .map(|a| a.name.as_str()),
-            Some("Tao")
+
+        let attr_cfg = attribute_config(
+            generic_config(&implement, &target.as_archetype(), &parent, &codegen_cfg),
+            &target.as_archetype(),
+            &codegen_cfg,
         );
+
+        assert!(!target.root_node_logic_activated());
+        assert!(activate_archetype(&target.as_archetype(), &parent));
+        assert!(!activate_data(&target.as_archetype()));
+
+        assert_eq!(attr_cfg.owner_type.name, "Tao".to_owned());
+        assert_eq!(attr_cfg.value_type.name, "Form".to_owned());
         assert_eq!(
-            cfg.attribute_structs
-                .get(ValueArchetype::TYPE_NAME)
-                .map(|a| a.name.as_str()),
-            Some("Form")
+            attr_cfg.tao_cfg.archetype_name,
+            "AttributeArchetype".to_owned()
         );
     }
 
@@ -529,10 +647,9 @@ mod tests {
         target.set_internal_name("MyDataType".to_owned());
         target.mark_newly_defined();
         target.activate_data_logic();
-        let mut implement = Implement::individuate();
-        implement.set_target(target);
-        implement.set_config(ImplementConfig::default());
 
-        assert!(code_cfg_for(implement, &CodegenConfig::default()).activate_data);
+        assert!(!target.root_node_logic_activated());
+        assert!(!activate_archetype(&target, &primary_parent(&target)));
+        assert!(activate_data(&target));
     }
 }
