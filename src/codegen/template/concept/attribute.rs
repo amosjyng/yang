@@ -46,10 +46,16 @@ pub fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
 
 /// Get the attribute test fragment.
 pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
-    let mut imports = vec![format!(
-        "{}::tao::archetype::ArchetypeFormTrait",
-        cfg.tao_cfg.yin_crate
-    )];
+    let mut imports = vec![
+        format!(
+            "{}::tao::archetype::ArchetypeFormTrait",
+            cfg.tao_cfg.yin_crate
+        ),
+        format!(
+            "{}::tao::archetype::AttributeArchetypeFormTrait",
+            cfg.tao_cfg.yin_crate
+        ),
+    ];
     // there's a chance the form is the same as the type, in which case it will have gotten
     // imported above already
     if cfg.owner_type.name != cfg.owner_form.name {
