@@ -10,7 +10,7 @@ use zamm_yin::Wrapper;
 pub trait DataExtension: FormTrait {
     /// Set the name of the Rust primitive that this concept represents.
     fn set_rust_primitive(&mut self, primitive_name: &str) {
-        let mut name_str = StringConcept::individuate();
+        let mut name_str = StringConcept::new();
         name_str.set_value(primitive_name.to_owned());
         self.essence_mut()
             .add_outgoing(RustPrimitive::TYPE_ID, name_str.essence());
@@ -27,7 +27,7 @@ pub trait DataExtension: FormTrait {
 
     /// Set the Rust code representation for the default value of this concept.
     fn set_default_value(&mut self, default_value_as_code: &str) {
-        let mut code_str = StringConcept::individuate();
+        let mut code_str = StringConcept::new();
         code_str.set_value(default_value_as_code.to_owned());
         self.essence_mut()
             .add_outgoing(DefaultValue::TYPE_ID, code_str.essence());

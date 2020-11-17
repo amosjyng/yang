@@ -1,6 +1,6 @@
 use crate::tao::archetype::CodegenFlags;
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
+use zamm_yin::tao::archetype::*;
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::relation::attribute::Attribute;
 

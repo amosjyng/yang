@@ -5,7 +5,7 @@ use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::{unwrap_value, StrongValue};
 use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, FinalNode};
-use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
+use zamm_yin::tao::archetype::*;
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::{Tao, YIN_MAX_ID};
 use zamm_yin::Wrapper;
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     fn from_node_id() {
         initialize_kb();
-        let concept = Implement::individuate();
+        let concept = Implement::new();
         let concept_copy = Implement::from(concept.id());
         assert_eq!(concept.id(), concept_copy.id());
     }
@@ -139,15 +139,15 @@ mod tests {
     #[test]
     fn create_and_retrieve_node_id() {
         initialize_kb();
-        let concept1 = Implement::individuate();
-        let concept2 = Implement::individuate();
+        let concept1 = Implement::new();
+        let concept2 = Implement::new();
         assert_eq!(concept1.id() + 1, concept2.id());
     }
 
     #[test]
     fn create_and_retrieve_node_name() {
         initialize_kb();
-        let mut concept = Implement::individuate();
+        let mut concept = Implement::new();
         concept.set_internal_name("A".to_string());
         assert_eq!(concept.internal_name(), Some(Rc::new("A".to_string())));
     }
@@ -155,7 +155,7 @@ mod tests {
     #[test]
     fn set_and_retrieve_target() {
         initialize_kb();
-        let mut implement = Implement::individuate();
+        let mut implement = Implement::new();
         implement.set_target(Owner::archetype().as_archetype());
         assert_eq!(implement.target(), Some(Owner::archetype().as_archetype()));
     }
@@ -163,7 +163,7 @@ mod tests {
     #[test]
     fn set_and_retrieve_config() {
         initialize_kb();
-        let mut implement = Implement::individuate();
+        let mut implement = Implement::new();
         implement.set_config(ImplementConfig {
             id: 2,
             doc: Some("Hi".to_owned()),

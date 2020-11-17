@@ -20,7 +20,7 @@ pub struct BuildInfo {
 impl BuildInfo {
     /// Set crate which the object was built as a part of.
     pub fn set_crate_name(&mut self, name: &str) {
-        let mut s = StringConcept::individuate();
+        let mut s = StringConcept::new();
         // todo: set using StringConcept API once that is correctly generated once more
         s.essence_mut()
             .set_value(Rc::new(StrongValue::new(name.to_owned())));
@@ -42,7 +42,7 @@ impl BuildInfo {
 
     /// Set import path the concept ended up at, relative to the crate.
     pub fn set_import_path(&mut self, path: &str) {
-        let mut s = StringConcept::individuate();
+        let mut s = StringConcept::new();
         // todo: set using StringConcept API once that is correctly generated once more
         s.essence_mut()
             .set_value(Rc::new(StrongValue::new(path.to_owned())));
@@ -63,7 +63,7 @@ impl BuildInfo {
 
     /// Set name the concept took on for its actual implementation.
     pub fn set_implementation_name(&mut self, name: &str) {
-        let mut s = StringConcept::individuate();
+        let mut s = StringConcept::new();
         // todo: set using StringConcept API once that is correctly generated once more
         s.essence_mut()
             .set_value(Rc::new(StrongValue::new(name.to_owned())));
@@ -155,7 +155,7 @@ mod tests {
     #[test]
     fn from_node_id() {
         initialize_kb();
-        let concept = BuildInfo::individuate();
+        let concept = BuildInfo::new();
         let concept_copy = BuildInfo::from(concept.id());
         assert_eq!(concept.id(), concept_copy.id());
     }
@@ -163,7 +163,7 @@ mod tests {
     #[test]
     fn set_and_retrieve_crate() {
         initialize_kb();
-        let mut info = BuildInfo::individuate();
+        let mut info = BuildInfo::new();
         info.set_crate_name("zamm_yang");
         assert_eq!(info.crate_name(), Some(Rc::new("zamm_yang".to_owned())));
     }
@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn set_and_retrieve_import_path() {
         initialize_kb();
-        let mut info = BuildInfo::individuate();
+        let mut info = BuildInfo::new();
         info.set_import_path("zamm_yang::import::path");
         assert_eq!(
             info.import_path(),
@@ -182,7 +182,7 @@ mod tests {
     #[test]
     fn set_and_retrieve_implementation_name() {
         initialize_kb();
-        let mut info = BuildInfo::individuate();
+        let mut info = BuildInfo::new();
         info.set_implementation_name("Yolo");
         assert_eq!(info.implementation_name(), Some(Rc::new("Yolo".to_owned())));
     }
@@ -191,7 +191,7 @@ mod tests {
     #[test]
     fn set_and_retrieve_all() {
         initialize_kb();
-        let mut info = BuildInfo::individuate();
+        let mut info = BuildInfo::new();
         info.set_crate_name("zamm_yang");
         info.set_import_path("zamm_yang::import::path");
         info.set_implementation_name("Yolo");
