@@ -58,14 +58,14 @@ pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
             #[test]
             fn get_value_none() {{
                 initialize_kb();
-                let concept = {name}::individuate();
+                let concept = {name}::new();
                 assert_eq!(concept.value(), None);
             }}
         
             #[test]
             fn get_value_some() {{
                 initialize_kb();
-                let mut concept = {name}::individuate();
+                let mut concept = {name}::new();
                 concept.set_value({sample_value});
                 assert_eq!(concept.value(), Some(Rc::new({sample_value})));
             }}"#, name = cfg.tao_cfg.this.name,

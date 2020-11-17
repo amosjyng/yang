@@ -46,10 +46,16 @@ pub fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
 
 /// Get the attribute test fragment.
 pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
-    let mut imports = vec![format!(
-        "{}::tao::archetype::ArchetypeFormTrait",
-        cfg.tao_cfg.yin_crate
-    )];
+    let mut imports = vec![
+        format!(
+            "{}::tao::archetype::ArchetypeFormTrait",
+            cfg.tao_cfg.yin_crate
+        ),
+        format!(
+            "{}::tao::archetype::AttributeArchetypeFormTrait",
+            cfg.tao_cfg.yin_crate
+        ),
+    ];
     // there's a chance the form is the same as the type, in which case it will have gotten
     // imported above already
     if cfg.owner_type.name != cfg.owner_form.name {
@@ -80,8 +86,8 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
             #[test]
             fn get_owner() {{
                 initialize_kb();
-                let mut instance = {name}::individuate();
-                let owner_of_instance = {owner_type}::individuate();
+                let mut instance = {name}::new();
+                let owner_of_instance = {owner_type}::new();
                 instance.set_owner(&owner_of_instance);
                 assert_eq!(instance.owner(), Some(owner_of_instance));
                 assert_eq!(instance.value(), None);
@@ -90,8 +96,8 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
             #[test]
             fn get_value() {{
                 initialize_kb();
-                let mut instance = {name}::individuate();
-                let value_of_instance = {value_type}::individuate();
+                let mut instance = {name}::new();
+                let value_of_instance = {value_type}::new();
                 instance.set_value(&value_of_instance);
                 assert_eq!(instance.owner(), None);
                 assert_eq!(instance.value(), Some(value_of_instance));
