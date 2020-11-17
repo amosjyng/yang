@@ -227,8 +227,8 @@ fn generic_config(
         this,
         internal_name,
         form,
-        parent_name: parent_struct.name.clone(),
-        parent_import: parent_struct.import.clone(),
+        parent_name: parent_struct.name,
+        parent_import: parent_struct.import,
         all_attributes,
         all_attribute_imports,
         introduced_attributes,
@@ -272,7 +272,7 @@ fn data_config(base_cfg: TaoConfig, target: &Archetype) -> DataFormatConfig {
 }
 
 fn primary_parent(target: &Archetype) -> Archetype {
-    target.parents().first().unwrap().clone()
+    *target.parents().first().unwrap()
 }
 
 /// Generate code for a given concept. Post-processing still needed.

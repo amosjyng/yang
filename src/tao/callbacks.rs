@@ -57,7 +57,6 @@ mod tests {
                 name: "MyValue".to_owned(),
                 import: "zamm_yin::tao::MyValue".to_owned(),
             },
-            ..AttributeFormatConfig::default()
         });
 
         assert!(code.contains("AttributeArchetype"));
