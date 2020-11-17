@@ -1,13 +1,13 @@
 use super::Implement;
-use crate::codegen::planning::{code_cfg_for, file_path};
+use crate::codegen::planning::{code, file_path};
 use crate::codegen::track_autogen::save_autogen;
-use crate::codegen::{code, output_code, CodegenConfig};
+use crate::codegen::{output_code, CodegenConfig};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
 
 /// Handle the implementation request for a new archetype.
 pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
-    let code = code(&code_cfg_for(request, codegen_cfg));
+    let code = code(request, codegen_cfg);
     output_code(&code, &file_path(&request.target().unwrap()), codegen_cfg);
 }
 
@@ -22,62 +22,45 @@ pub fn handle_all_implementations(codegen_cfg: &CodegenConfig) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::codegen::string_format::{OWNER_FORM_KEY, VALUE_FORM_KEY};
-    use crate::codegen::{CodeConfig, CodegenConfig, StructConfig};
-    use std::collections::HashMap;
+    use crate::codegen::string_format::attribute::code_attribute;
+    use crate::codegen::string_format::tao::code_tao;
+    use crate::codegen::string_format::{
+        code_data_concept, code_form, AttributeFormatConfig, DataFormatConfig, FormatConfig,
+    };
+    use crate::codegen::StructConfig;
     use std::rc::Rc;
-    use zamm_yin::tao::archetype::ArchetypeTrait;
-    use zamm_yin::tao::relation::attribute::{OwnerArchetype, ValueArchetype};
 
     #[test]
     fn integration_test_attribute_generation() {
-        let mut attr_structs = HashMap::new();
-        attr_structs.insert(
-            OwnerArchetype::TYPE_NAME,
-            StructConfig {
+        let code = code_attribute(&AttributeFormatConfig {
+            tao_cfg: FormatConfig {
+                this: StructConfig {
+                    name: "MyNewAttr".to_owned(),
+                    ..StructConfig::default()
+                },
+                parent_name: "MyAttr".to_owned(),
+                archetype_name: "AttributeArchetype".to_owned(),
+                ..FormatConfig::default()
+            },
+            owner_type: StructConfig {
                 name: "MyOwner".to_owned(),
                 import: "zamm_yin::tao::MyOwner".to_owned(),
             },
-        );
-        attr_structs.insert(
-            ValueArchetype::TYPE_NAME,
-            StructConfig {
-                name: "MyValue".to_owned(),
-                import: "zamm_yin::tao::MyValue".to_owned(),
-            },
-        );
-        attr_structs.insert(
-            OWNER_FORM_KEY,
-            StructConfig {
+            owner_form: StructConfig {
                 name: "MyOwner".to_owned(),
                 import: "zamm_yin::tao::MyOwner".to_owned(),
             },
-        );
-        attr_structs.insert(
-            VALUE_FORM_KEY,
-            StructConfig {
+            value_type: StructConfig {
                 name: "MyValue".to_owned(),
                 import: "zamm_yin::tao::MyValue".to_owned(),
             },
-        );
-        let code = code(&CodeConfig {
-            target: StructConfig {
-                name: "MyNewAttr".to_owned(),
-                ..StructConfig::default()
+            value_form: StructConfig {
+                name: "MyValue".to_owned(),
+                import: "zamm_yin::tao::MyValue".to_owned(),
             },
-            parent: StructConfig {
-                name: "MyAttr".to_owned(),
-                ..StructConfig::default()
-            },
-            activate_attribute: true,
-            attribute_structs: attr_structs,
-            codegen_cfg: CodegenConfig {
-                comment_autogen: false,
-                ..CodegenConfig::default()
-            },
-            ..CodeConfig::default()
+            ..AttributeFormatConfig::default()
         });
+
         assert!(code.contains("AttributeArchetype"));
         assert!(code.contains("type OwnerForm = MyOwner"));
         assert!(code.contains("type ValueForm = MyValue"));
@@ -92,8 +75,8 @@ mod tests {
 
     #[test]
     fn integration_test_root_node_generation() {
-        let code = code(&CodeConfig {
-            target: StructConfig {
+        let code = code_tao(&FormatConfig {
+            this: StructConfig {
                 name: "MyRoot".to_owned(),
                 ..StructConfig::default()
             },
@@ -101,16 +84,8 @@ mod tests {
                 name: "MyForm".to_owned(),
                 ..StructConfig::default()
             },
-            parent: StructConfig {
-                name: "Tao".to_owned(),
-                ..StructConfig::default()
-            },
-            activate_root_node: true,
-            codegen_cfg: CodegenConfig {
-                comment_autogen: false,
-                ..CodegenConfig::default()
-            },
-            ..CodeConfig::default()
+            parent_name: "Tao".to_owned(),
+            ..FormatConfig::default()
         });
         assert!(!code.contains("impl FormTrait"));
         assert!(code.contains("type Form = MyForm;"));
@@ -118,23 +93,17 @@ mod tests {
 
     #[test]
     fn integration_test_data_generation() {
-        let code = code(&CodeConfig {
-            target: StructConfig {
-                name: "MyStr".to_owned(),
-                ..StructConfig::default()
+        let code = code_data_concept(&DataFormatConfig {
+            tao_cfg: FormatConfig {
+                this: StructConfig {
+                    name: "MyStr".to_owned(),
+                    ..StructConfig::default()
+                },
+                parent_name: "MyData".to_owned(),
+                ..FormatConfig::default()
             },
-            parent: StructConfig {
-                name: "MyData".to_owned(),
-                ..StructConfig::default()
-            },
-            activate_data: true,
-            codegen_cfg: CodegenConfig {
-                comment_autogen: false,
-                ..CodegenConfig::default()
-            },
-            rust_primitive_name: Some(Rc::new("asdf".to_owned())),
-            default_value: Some(Rc::new("bsdf".to_owned())),
-            ..CodeConfig::default()
+            rust_primitive_name: Rc::new("asdf".to_owned()),
+            default_value: Rc::new("bsdf".to_owned()),
         });
         assert!(code.contains("impl FormTrait"));
         assert!(code.contains("set_value"));
@@ -142,12 +111,12 @@ mod tests {
 
     #[test]
     fn integration_test_regular_generation() {
-        let code = code(&CodeConfig {
-            parent: StructConfig {
+        let code = code_form(&FormatConfig {
+            this: StructConfig {
                 name: "Tao".to_owned(),
                 ..StructConfig::default()
             },
-            ..CodeConfig::default()
+            ..FormatConfig::default()
         });
         assert!(code.contains("impl FormTrait"));
         assert!(!code.contains("Attribute"));

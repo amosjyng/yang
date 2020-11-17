@@ -1,7 +1,4 @@
-use crate::codegen::docstring::into_docstring;
-use crate::codegen::{CodeConfig, StructConfig};
-use heck::KebabCase;
-use itertools::Itertools;
+use crate::codegen::StructConfig;
 
 /// Config values at the time of string generation.
 pub struct FormatConfig {
@@ -52,77 +49,6 @@ impl Default for FormatConfig {
             introduced_attribute_imports: vec![],
             doc: "".to_owned(),
             id: "1".to_owned(),
-        }
-    }
-}
-
-impl<'a> From<&'a CodeConfig<'a>> for FormatConfig {
-    /// Extract format values from code config.
-    fn from(cfg: &CodeConfig) -> Self {
-        let yin_crate = if cfg.codegen_cfg.yin {
-            "crate"
-        } else {
-            "zamm_yin"
-        };
-        let imports = if cfg.codegen_cfg.yin {
-            None
-        } else {
-            Some("zamm_yin::tao::YIN_MAX_ID".to_owned())
-        };
-        let all_attributes = format!(
-            "vec![{}]",
-            cfg.all_attributes
-                .iter()
-                .map(|s| format!("{}::archetype()", s.name))
-                .format(", ")
-        );
-        let all_attribute_imports = cfg
-            .all_attributes
-            .iter()
-            .map(|s| s.import.clone())
-            .collect();
-        let introduced_attributes = format!(
-            "vec![{}]",
-            cfg.introduced_attributes
-                .iter()
-                .map(|s| format!("{}::archetype()", s.name))
-                .format(", ")
-        );
-        let introduced_attribute_imports = cfg
-            .introduced_attributes
-            .iter()
-            .map(|s| s.import.clone())
-            .collect();
-        let archetype_name = if cfg.activate_attribute {
-            "AttributeArchetype".to_owned()
-        } else {
-            "Archetype".to_owned()
-        };
-        let doc = match &cfg.impl_cfg.doc {
-            Some(d) => format!("\n{}", into_docstring(d.as_str(), 0)),
-            None => String::new(),
-        };
-        let id = if cfg.codegen_cfg.yin {
-            format!("{}", cfg.impl_cfg.id)
-        } else {
-            format!("YIN_MAX_ID + {}", cfg.impl_cfg.id)
-        };
-
-        Self {
-            yin_crate: yin_crate.to_owned(),
-            imports,
-            this: cfg.target.clone(),
-            form: cfg.form.clone(),
-            parent_name: cfg.parent.name.clone(),
-            parent_import: cfg.parent.import.clone(),
-            all_attributes,
-            all_attribute_imports,
-            introduced_attributes,
-            introduced_attribute_imports,
-            archetype_name,
-            internal_name: cfg.target.name.to_kebab_case(),
-            doc,
-            id,
         }
     }
 }

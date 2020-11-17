@@ -27,15 +27,15 @@ pub fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codegen::string_format::tao::code_tao;
+    use crate::codegen::string_format::code_form;
     use crate::codegen::string_format::FormatConfig;
-    use crate::codegen::{CodeConfig, StructConfig};
+    use crate::codegen::StructConfig;
     use mark_autogen::AUTOGENERATION_MARKER;
     use mark_fmt::FMT_SKIP_MARKER;
 
     #[test]
     fn test_post_process_comments() {
-        let code = code_tao(&FormatConfig::default());
+        let code = code_form(&FormatConfig::default());
         let result = post_process_generation(&code, &CodegenConfig::default());
         assert!(result.contains(AUTOGENERATION_MARKER));
         assert!(result.contains("YIN_MAX_ID"));
@@ -43,79 +43,65 @@ mod tests {
 
     #[test]
     fn test_post_process_no_comments() {
-        let code_cfg = &CodeConfig {
-            codegen_cfg: CodegenConfig {
+        let code = code_form(&FormatConfig::default());
+        let result = post_process_generation(
+            &code,
+            &CodegenConfig {
                 comment_autogen: false,
                 ..CodegenConfig::default()
             },
-            ..CodeConfig::default()
-        };
-        let code = code_tao(&FormatConfig::from(code_cfg));
-        let result = post_process_generation(&code, &code_cfg.codegen_cfg);
+        );
         assert!(!result.contains(AUTOGENERATION_MARKER));
     }
 
     #[test]
-    fn test_post_process_yin() {
-        let code_cfg = &CodeConfig {
-            codegen_cfg: CodegenConfig {
-                yin: true,
-                ..CodegenConfig::default()
-            },
-            ..CodeConfig::default()
-        };
-        let code = code_tao(&FormatConfig::from(code_cfg));
-        let result = post_process_generation(&code, &code_cfg.codegen_cfg);
-        assert!(!result.contains("YIN_MAX_ID"));
-    }
-
-    #[test]
     fn test_post_process_fmt_not_skip() {
-        let code_cfg = &CodeConfig {
-            target: StructConfig {
+        let code = code_form(&FormatConfig {
+            this: StructConfig {
                 name: "S".to_owned(), // short
                 ..StructConfig::default()
             },
-            ..CodeConfig::default()
-        };
-        let code = code_tao(&FormatConfig::from(code_cfg));
-        let result = post_process_generation(&code, &code_cfg.codegen_cfg);
+            ..FormatConfig::default()
+        });
+        let result = post_process_generation(&code, &CodegenConfig::default());
         assert!(!result.contains(FMT_SKIP_MARKER));
     }
 
     #[test]
     fn test_post_process_fmt_skip() {
-        let code_cfg = &CodeConfig {
-            target: StructConfig {
-                name: "ReallySuperLongClassNameOhBoy".to_owned(), // short
+        let code = code_form(&FormatConfig {
+            this: StructConfig {
+                name: "ReallySuperLongClassNameOhBoy".to_owned(),
                 ..StructConfig::default()
             },
-            codegen_cfg: CodegenConfig {
+            ..FormatConfig::default()
+        });
+        let result = post_process_generation(
+            &code,
+            &CodegenConfig {
                 release: false,
                 ..CodegenConfig::default()
             },
-            ..CodeConfig::default()
-        };
-        let code = code_tao(&FormatConfig::from(code_cfg));
-        let result = post_process_generation(&code, &code_cfg.codegen_cfg);
+        );
         assert!(result.contains(FMT_SKIP_MARKER));
     }
 
     #[test]
     fn test_post_process_fmt_skip_release() {
-        let code_cfg = &CodeConfig {
-            target: StructConfig {
-                name: "ReallySuperLongClassNameOhBoy".to_owned(), // short
+        let code = code_form(&FormatConfig {
+            this: StructConfig {
+                name: "ReallySuperLongClassNameOhBoy".to_owned(),
                 ..StructConfig::default()
             },
-            codegen_cfg: CodegenConfig {
+            ..FormatConfig::default()
+        });
+        let result = post_process_generation(
+            &code,
+            &CodegenConfig {
                 release: true,
                 ..CodegenConfig::default()
             },
-            ..CodeConfig::default()
-        };
-        let code = code_tao(&FormatConfig::from(code_cfg));
-        let result = post_process_generation(&code, &code_cfg.codegen_cfg);
+        );
         assert!(result.contains(FMT_SKIP_MARKER));
     }
 }

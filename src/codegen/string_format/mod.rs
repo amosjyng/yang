@@ -15,7 +15,7 @@ mod main;
 /// Generate code for generic Tao concepts.
 pub mod tao;
 
-pub use attribute_format_config::{AttributeFormatConfig, OWNER_FORM_KEY, VALUE_FORM_KEY};
+pub use attribute_format_config::AttributeFormatConfig;
 pub use data_concept::code_data_concept;
 pub use data_format_config::DataFormatConfig;
 pub use form::{code_form, form_fragment};
