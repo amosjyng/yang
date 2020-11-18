@@ -1,7 +1,7 @@
 mod attribute_activation;
 
 use crate::tao::BuildInfo;
-use crate::tao::Implement;
+use crate::tao::{Implement, ImplementExtension};
 pub use attribute_activation::CodegenFlags;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
