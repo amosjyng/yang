@@ -8,7 +8,6 @@ Here's what Yang knows: implementing is an action it can take:
 
 ```rust
 define!(implement);
-implement.add_parent(Tao::archetype());
 ```
 
 Implementations are lower-level concepts that *target* specific higher-level concepts.
