@@ -1,6 +1,6 @@
 [package]
 name = "zamm_yang"
-version = "0.1.1-beta"
+version = "0.1.2-beta"
 authors = ["Amos Jun-yeung Ng <me@amos.ng>"]
 edition = "2018"
 description = "A basic, experimental code generator"
@@ -12,8 +12,8 @@ categories = ["development-tools"]
 
 [dependencies]
 heck = "0.3.1"
-indoc = "^1.0"
-itertools = "^0.9.0"
-path_abs = "^0.5.0"
-textwrap = "^0.12.1"
-zamm_yin = "^0.1.0"
+indoc = "1.0"
+itertools = "0.9.0"
+path_abs = "0.5.0"
+textwrap = "0.12.1"
+zamm_yin = "0.1.0"
