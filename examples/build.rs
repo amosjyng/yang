@@ -21,7 +21,7 @@ fn main() {
     define!(target);
     target.add_parent(Attribute::archetype().as_archetype());
     target.set_internal_name("Target".to_string());
-    target.implement_with(1, "The target of an implement command.");
+    target.implement_with_doc("The target of an implement command.");
 
     handle_all_implementations(&CodegenConfig::default());
 }

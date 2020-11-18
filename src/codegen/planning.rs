@@ -13,6 +13,7 @@ use crate::tao::Implement;
 use heck::KebabCase;
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
+use std::cell::Cell;
 use std::convert::TryFrom;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
@@ -22,6 +23,19 @@ use zamm_yin::tao::archetype::{
 use zamm_yin::tao::form::data::Data;
 use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::tao::relation::attribute::Attribute;
+
+thread_local! {
+    static NEXT_IMPLEMENTATION_ID: Cell<usize> = Cell::new(0);
+}
+
+/// Grab a new implementation ID, thus incrementing the global ID counter.
+fn grab_new_implementation_id() -> usize {
+    NEXT_IMPLEMENTATION_ID.with(|id| {
+        let return_id = id.get();
+        id.set(return_id + 1);
+        return_id
+    })
+}
 
 fn in_own_submodule(target: &Archetype) -> bool {
     // todo: filter by type, once Yin has that functionality
@@ -164,16 +178,17 @@ fn generic_config(
         this.clone()
     };
 
-    let impl_cfg = request.config().unwrap();
-    let doc = match &impl_cfg.doc {
+    let doc = match &request.documentation() {
         Some(d) => format!("\n{}", into_docstring(&d, 0)),
         None => String::new(),
     };
 
+    // allow a default, especially for tests
+    let initial_id = request.implementation_id().unwrap_or_else(|| Rc::new(0));
     let id = if codegen_cfg.yin {
-        format!("{}", impl_cfg.id)
+        format!("{}", initial_id)
     } else {
-        format!("YIN_MAX_ID + {}", impl_cfg.id)
+        format!("YIN_MAX_ID + {}", initial_id)
     };
 
     let yin_crate = if codegen_cfg.yin { "crate" } else { "zamm_yin" };
@@ -300,11 +315,19 @@ pub fn code(request: Implement, codegen_cfg: &CodegenConfig) -> String {
 /// Create initialization file for newly defined concepts.
 pub fn handle_init(codegen_cfg: &CodegenConfig) {
     let yin_crate = if codegen_cfg.yin { "crate" } else { "zamm_yin" };
-    let concepts_to_initialize = Implement::archetype()
-        .individuals()
-        .iter()
-        .map(|c| concept_to_struct(&Implement::from(c.id()).target().unwrap(), codegen_cfg.yin))
-        .collect();
+    let mut concepts_to_initialize = Vec::<StructConfig>::new();
+    for implement_command in Implement::archetype().individuals() {
+        let mut implement = Implement::from(implement_command.id());
+        concepts_to_initialize.push(concept_to_struct(
+            &implement.target().unwrap(),
+            codegen_cfg.yin,
+        ));
+
+        // only set ID for user if user hasn't already set it
+        if implement.implementation_id().is_none() {
+            implement.set_implementation_id(grab_new_implementation_id());
+        }
+    }
 
     let code = code_init(&KBInitConfig {
         yin_crate: yin_crate.to_owned(),
@@ -317,7 +340,6 @@ pub fn handle_init(codegen_cfg: &CodegenConfig) {
 mod tests {
     use super::*;
     use crate::tao::initialize_kb;
-    use crate::tao::ImplementConfig;
     use indoc::indoc;
     use zamm_yin::tao::relation::attribute::{Attribute, Owner};
     use zamm_yin::tao::Tao;
@@ -578,7 +600,6 @@ mod tests {
         target.mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(target.as_archetype());
-        implement.set_config(ImplementConfig::default());
         let cfg = generic_config(
             &implement,
             &target.as_archetype(),
@@ -601,7 +622,6 @@ mod tests {
         target.mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(target.as_archetype());
-        implement.set_config(ImplementConfig::default());
         let cfg = generic_config(
             &implement,
             &target.as_archetype(),
@@ -623,10 +643,7 @@ mod tests {
         target.mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(target.as_archetype());
-        implement.set_config(ImplementConfig {
-            doc: Some("One.\n\nTwo.".to_owned()),
-            ..ImplementConfig::default()
-        });
+        implement.document("One.\n\nTwo.");
         let cfg = generic_config(
             &implement,
             &target.as_archetype(),
@@ -669,7 +686,6 @@ mod tests {
         target.set_value_archetype(Form::archetype());
         let mut implement = Implement::new();
         implement.set_target(target.as_archetype());
-        implement.set_config(ImplementConfig::default());
         let parent = primary_parent(&target.as_archetype());
         let codegen_cfg = CodegenConfig::default();
 

@@ -21,13 +21,17 @@ pub mod relation {
 
     /// Binary relations.
     pub mod attribute {
+        mod concept_id_form;
         mod crate_form;
+        mod documentation_form;
         mod implementation_name_form;
         mod import_path_form;
         mod rust_primitive_form;
         mod target_form;
 
+        pub use concept_id_form::ConceptId;
         pub use crate_form::Crate;
+        pub use documentation_form::Documentation;
         pub use implementation_name_form::ImplementationName;
         pub use import_path_form::ImportPath;
         pub use rust_primitive_form::RustPrimitive;
@@ -54,9 +58,11 @@ mod implement;
 mod lens_form;
 
 use form::BuildInfo;
-pub use implement::{Implement, ImplementConfig};
+pub use implement::Implement;
 pub use lens_form::Lens;
-use relation::attribute::{Crate, ImplementationName, ImportPath, RustPrimitive, Target};
+use relation::attribute::{
+    ConceptId, Crate, Documentation, ImplementationName, ImportPath, RustPrimitive, Target,
+};
 use relation::flag::{
     NewlyDefined, OwnModule, UsesAttributeLogic, UsesDataLogic, UsesRootNodeLogic,
 };
@@ -64,6 +70,14 @@ use zamm_yin::graph::{Graph, InjectionGraph};
 use zamm_yin::initialize_type;
 use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::relation::attribute::Inherits;
+
+/// Only here for backwards compatibility reasons.
+#[deprecated(
+    since = "0.1.1",
+    note = "Please use the Implement.document and Implement.set_implementation_id functions \
+    instead."
+)]
+pub struct ImplementConfig;
 
 /// Initialize Yin, including with Yang-specific concepts.
 pub fn initialize_kb() {
@@ -84,7 +98,9 @@ pub fn initialize_kb() {
             Crate,
             ImplementationName,
             RustPrimitive,
-            UsesRootNodeLogic
+            UsesRootNodeLogic,
+            ConceptId,
+            Documentation
         )
     );
 }

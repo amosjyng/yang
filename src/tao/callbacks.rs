@@ -13,10 +13,11 @@ pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
 
 /// Handle all defined implementation requests.
 pub fn handle_all_implementations(codegen_cfg: &CodegenConfig) {
+    // handle initialization first to ensure all concepts land with the right concept IDs
+    handle_init(codegen_cfg);
     for implement_command in Implement::archetype().individuals() {
         handle_implementation(Implement::from(implement_command.id()), codegen_cfg);
     }
-    handle_init(codegen_cfg);
 
     save_autogen();
 }
