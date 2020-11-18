@@ -29,3 +29,6 @@ pub fn aa(archetype: Archetype) -> AttributeArchetype {
     }
     AttributeArchetype::from(archetype.id())
 }
+
+/// Backwards compatibility trait to handle API changes for this yang-0.x.* branch.
+pub trait BackwardsCompatibility {}

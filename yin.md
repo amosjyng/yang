@@ -11,6 +11,22 @@ define!(target);
 target.add_parent(Attribute::archetype().as_archetype());
 ```
 
+We need some way of efficiently distinguishing Yin concepts from each other. We can't just compare the memory addresses of a Yin struct, since different ephemeral structs may in fact be referring to the same concept. An easy way to do this is by assigning a different integer ID to each one, so that each Yin concept effectively becomes a wrapper around an integer, and we are just defining the relations between different integers:
+
+```rust
+define!(concept_id);
+concept_id.add_parent(Attribute::archetype().as_archetype());
+```
+
+When implementing anything in Rust, we should consider documenting it for the user's sake:
+
+```rust
+define!(documentation);
+documentation.add_parent(Attribute::archetype().as_archetype());
+```
+
+
+
 Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
 
 ```rust
@@ -99,6 +115,16 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 target.implement_with(
     2,
     "The target of an implement command."
+);
+
+concept_id.implement_with(
+    14,
+    "The integer ID associated with a concept."
+);
+
+documentation.implement_with(
+    15,
+    "The documentation associated with an implementation."
 );
 
 newly_defined.implement_with(

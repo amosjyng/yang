@@ -1,7 +1,7 @@
 mod attribute_activation;
 
 use crate::tao::BuildInfo;
-use crate::tao::{Implement, ImplementConfig};
+use crate::tao::Implement;
 pub use attribute_activation::CodegenFlags;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
@@ -16,13 +16,22 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
         implementation
     }
 
+    /// Implement this concept with the given documentation string.
+    fn implement_with_doc(&self, doc: &str) -> Implement {
+        let mut implementation = self.implement();
+        implementation.document(doc);
+        implementation
+    }
+
     /// Create a new implementation with the specified ID and documentation string.
+    #[deprecated(
+        since = "0.1.1",
+        note = "Please use implement_with_doc instead, and leave the ID up to the program."
+    )]
     fn implement_with(&self, id: usize, doc: &str) -> Implement {
         let mut implementation = self.implement();
-        implementation.set_config(ImplementConfig {
-            id,
-            doc: Some(doc.to_owned()),
-        });
+        implementation.set_implementation_id(id);
+        implementation.document(doc);
         implementation
     }
 

@@ -1,10 +1,12 @@
 use crate::tao::NewlyDefined;
-use zamm_yin::node_wrappers::BaseNodeTrait;
-use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
+use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
+use zamm_yin::tao::archetype::{
+    Archetype, ArchetypeTrait, AttributeArchetype, AttributeArchetypeFormTrait,
+};
 use zamm_yin::tao::form::{Form, FormTrait};
 
 /// Define new concept when reading from a Yin.md
-pub trait DefinedMarker: FormTrait {
+pub trait DefinedMarker: FormTrait + CommonNodeTrait {
     /// Mark a concept as having been newly defined as part of the current build.
     fn mark_newly_defined(&mut self) {
         self.essence_mut().add_flag(NewlyDefined::TYPE_ID);
@@ -13,6 +15,52 @@ pub trait DefinedMarker: FormTrait {
     /// Whether or not a concept has been newly defined as part of the current build.
     fn is_newly_defined(&self) -> bool {
         self.essence().has_flag(NewlyDefined::TYPE_ID)
+    }
+
+    /// Dummy function to handle API change in the move to AttributeArchetypeFormTrait. This is
+    /// here because BackwardsCompatibility was not implemented at the time.
+    #[deprecated(
+        since = "0.1.1",
+        note = "Please import AttributeArchetypeFormTrait instead."
+    )]
+    fn set_owner_archetype(&mut self, owner_archetype: Archetype) {
+        AttributeArchetypeFormTrait::set_owner_archetype(
+            &mut AttributeArchetype::from(self.id()),
+            owner_archetype,
+        )
+    }
+
+    /// Dummy function to handle API change in the move to AttributeArchetypeFormTrait. This is
+    /// here because BackwardsCompatibility was not implemented at the time.
+    #[deprecated(
+        since = "0.1.1",
+        note = "Please import AttributeArchetypeFormTrait instead."
+    )]
+    fn owner_archetype(&mut self) -> Archetype {
+        AttributeArchetypeFormTrait::owner_archetype(&AttributeArchetype::from(self.id()))
+    }
+
+    /// Dummy function to handle API change in the move to AttributeArchetypeFormTrait. This is
+    /// here because BackwardsCompatibility was not implemented at the time.
+    #[deprecated(
+        since = "0.1.1",
+        note = "Please import AttributeArchetypeFormTrait instead."
+    )]
+    fn set_value_archetype(&mut self, value_archetype: Archetype) {
+        AttributeArchetypeFormTrait::set_value_archetype(
+            &mut AttributeArchetype::from(self.id()),
+            value_archetype,
+        )
+    }
+
+    /// Dummy function to handle API change in the move to AttributeArchetypeFormTrait. This is
+    /// here because BackwardsCompatibility was not implemented at the time.
+    #[deprecated(
+        since = "0.1.1",
+        note = "Please import AttributeArchetypeFormTrait instead."
+    )]
+    fn value_archetype(&mut self) -> Archetype {
+        AttributeArchetypeFormTrait::value_archetype(&AttributeArchetype::from(self.id()))
     }
 }
 

@@ -1,11 +1,13 @@
+use crate::tao::relation::attribute::{ConceptId, Documentation};
 use crate::tao::Target;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use zamm_yin::graph::value_wrappers::{unwrap_value, StrongValue};
+use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, FinalNode};
 use zamm_yin::tao::archetype::*;
+use zamm_yin::tao::form::data::{Number, StringConcept};
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::{Tao, YIN_MAX_ID};
 use zamm_yin::Wrapper;
@@ -14,22 +16,6 @@ use zamm_yin::Wrapper;
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Implement {
     base: FinalNode,
-}
-
-/// Contains all information needed to generate a concept. Because it's too difficult to store
-/// things in the KB right now, we'll use a custom struct for now.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ImplementConfig {
-    /// ID of the concept being implemented.
-    pub id: usize,
-    /// Documentation, if any, for the concept being implemented.
-    pub doc: Option<String>,
-}
-
-impl Default for ImplementConfig {
-    fn default() -> Self {
-        Self { id: 1, doc: None }
-    }
 }
 
 impl Implement {
@@ -48,15 +34,42 @@ impl Implement {
             .map(Archetype::from)
     }
 
-    /// Set the config for this Implement.
-    pub fn set_config(&mut self, config: ImplementConfig) {
-        self.essence_mut()
-            .set_value(Rc::new(StrongValue::new(config)));
+    /// Set concept ID during code generation time, as opposed to the concept's currently assigned
+    /// runtime ID.
+    pub fn set_implementation_id(&mut self, id: usize) {
+        let mut n = Number::new();
+        n.set_value(id);
+        self.base.add_outgoing(ConceptId::TYPE_ID, n.essence());
     }
 
-    /// Retrieve the config stored for this Implement.
-    pub fn config(&self) -> Option<Rc<ImplementConfig>> {
-        unwrap_value::<ImplementConfig>(self.essence().value())
+    /// Get concept ID set for code generation time, as opposed to the concept's currently assigned
+    /// runtime ID.
+    pub fn implementation_id(&self) -> Option<Rc<usize>> {
+        self.base
+            .inheritance_wrapper()
+            .base_wrapper()
+            .outgoing_nodes(ConceptId::TYPE_ID)
+            .first()
+            .map(|v| Number::from(v.id()).value())
+            .flatten()
+    }
+
+    /// Set the documentation string for this implementation.
+    pub fn document(&mut self, document: &str) {
+        let mut s = StringConcept::new();
+        s.set_value(document.to_owned());
+        self.base.add_outgoing(Documentation::TYPE_ID, s.essence());
+    }
+
+    /// Get the documentation string for this implementation.
+    pub fn documentation(&self) -> Option<Rc<String>> {
+        self.base
+            .inheritance_wrapper()
+            .base_wrapper()
+            .outgoing_nodes(Documentation::TYPE_ID)
+            .first()
+            .map(|v| StringConcept::from(v.id()).value())
+            .flatten()
     }
 }
 
@@ -161,19 +174,21 @@ mod tests {
     }
 
     #[test]
-    fn set_and_retrieve_config() {
+    fn set_and_retrieve_implementation_id() {
         initialize_kb();
         let mut implement = Implement::new();
-        implement.set_config(ImplementConfig {
-            id: 2,
-            doc: Some("Hi".to_owned()),
-        });
+        implement.set_implementation_id(17);
+        assert_eq!(implement.implementation_id(), Some(Rc::new(17)));
+    }
+
+    #[test]
+    fn set_and_retrieve_documentation() {
+        initialize_kb();
+        let mut implement = Implement::new();
+        implement.document("Some new thing.");
         assert_eq!(
-            implement.config(),
-            Some(Rc::new(ImplementConfig {
-                id: 2,
-                doc: Some("Hi".to_owned()),
-            }))
+            implement.documentation(),
+            Some(Rc::new("Some new thing.".to_owned()))
         );
     }
 }
