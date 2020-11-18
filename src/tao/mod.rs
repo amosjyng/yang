@@ -47,18 +47,22 @@ pub mod form {
         pub use data_extension::DataExtension;
     }
 
-    mod build_info;
+    mod build_info_extension;
+    mod build_info_form;
     mod defined_marker;
 
-    pub use build_info::BuildInfo;
+    pub use build_info_extension::BuildInfoExtension;
+    pub use build_info_form::BuildInfo;
     pub use defined_marker::DefinedMarker;
 }
+mod implement_extension;
 /// Command to implement something.
-mod implement;
+mod implement_form;
 mod lens_form;
 
 use form::BuildInfo;
-pub use implement::Implement;
+pub use implement_extension::ImplementExtension;
+pub use implement_form::Implement;
 pub use lens_form::Lens;
 use relation::attribute::{
     ConceptId, Crate, Documentation, ImplementationName, ImportPath, RustPrimitive, Target,

@@ -1,37 +1,29 @@
+use crate::tao::form::BuildInfo;
 use crate::tao::relation::attribute::{Crate, ImplementationName, ImportPath};
-use std::convert::TryFrom;
-use std::fmt;
-use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::{unwrap_value, StrongValue};
-use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, FinalNode};
-use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
+use zamm_yin::node_wrappers::BaseNodeTrait;
+use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::FormTrait;
-use zamm_yin::tao::{Tao, YIN_MAX_ID};
 use zamm_yin::Wrapper;
 
-/// Represents build information about a generated concept.
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct BuildInfo {
-    base: FinalNode,
-}
-
-impl BuildInfo {
+/// Trait to extend BuildInfo functionality that has not been auto-generated.
+pub trait BuildInfoExtension: FormTrait {
     /// Set crate which the object was built as a part of.
-    pub fn set_crate_name(&mut self, name: &str) {
+    fn set_crate_name(&mut self, name: &str) {
         let mut s = StringConcept::new();
         // todo: set using StringConcept API once that is correctly generated once more
         s.essence_mut()
             .set_value(Rc::new(StrongValue::new(name.to_owned())));
-        self.base.add_outgoing(Crate::TYPE_ID, s.essence());
+        self.essence_mut().add_outgoing(Crate::TYPE_ID, s.essence());
     }
 
     /// Retrieve crate which the object was built as a part of. This is called `crate_name` instead
     /// of just `crate` because `crate` is a reserved keyword in Rust.
-    pub fn crate_name(&self) -> Option<Rc<String>> {
+    fn crate_name(&self) -> Option<Rc<String>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
-        self.base
+        self.essence()
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(Crate::TYPE_ID)
@@ -41,18 +33,19 @@ impl BuildInfo {
     }
 
     /// Set import path the concept ended up at, relative to the crate.
-    pub fn set_import_path(&mut self, path: &str) {
+    fn set_import_path(&mut self, path: &str) {
         let mut s = StringConcept::new();
         // todo: set using StringConcept API once that is correctly generated once more
         s.essence_mut()
             .set_value(Rc::new(StrongValue::new(path.to_owned())));
-        self.base.add_outgoing(ImportPath::TYPE_ID, s.essence());
+        self.essence_mut()
+            .add_outgoing(ImportPath::TYPE_ID, s.essence());
     }
 
     /// Retrieve import path the concept ended up at, relative to the crate.
-    pub fn import_path(&self) -> Option<Rc<String>> {
+    fn import_path(&self) -> Option<Rc<String>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
-        self.base
+        self.essence()
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(ImportPath::TYPE_ID)
@@ -62,19 +55,19 @@ impl BuildInfo {
     }
 
     /// Set name the concept took on for its actual implementation.
-    pub fn set_implementation_name(&mut self, name: &str) {
+    fn set_implementation_name(&mut self, name: &str) {
         let mut s = StringConcept::new();
         // todo: set using StringConcept API once that is correctly generated once more
         s.essence_mut()
             .set_value(Rc::new(StrongValue::new(name.to_owned())));
-        self.base
+        self.essence_mut()
             .add_outgoing(ImplementationName::TYPE_ID, s.essence());
     }
 
     /// Retrieve name the concept took on for its actual implementation.
-    pub fn implementation_name(&self) -> Option<Rc<String>> {
+    fn implementation_name(&self) -> Option<Rc<String>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
-        self.base
+        self.essence()
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(ImplementationName::TYPE_ID)
@@ -84,56 +77,7 @@ impl BuildInfo {
     }
 }
 
-impl Debug for BuildInfo {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        debug_wrapper("BuildInfo", self, f)
-    }
-}
-
-impl From<usize> for BuildInfo {
-    fn from(id: usize) -> Self {
-        BuildInfo {
-            base: FinalNode::from(id),
-        }
-    }
-}
-
-impl From<FinalNode> for BuildInfo {
-    fn from(f: FinalNode) -> Self {
-        BuildInfo { base: f }
-    }
-}
-
-impl<'a> TryFrom<&'a str> for BuildInfo {
-    type Error = String;
-
-    fn try_from(name: &'a str) -> Result<Self, Self::Error> {
-        FinalNode::try_from(name).map(|f| Self { base: f })
-    }
-}
-
-impl Wrapper for BuildInfo {
-    type BaseType = FinalNode;
-
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
-
-impl<'a> ArchetypeTrait<'a> for BuildInfo {
-    type ArchetypeForm = Archetype;
-    type Form = BuildInfo;
-
-    const TYPE_ID: usize = YIN_MAX_ID + 8;
-    const TYPE_NAME: &'static str = "build-info";
-    const PARENT_TYPE_ID: usize = Tao::TYPE_ID;
-}
-
-impl FormTrait for BuildInfo {}
+impl BuildInfoExtension for BuildInfo {}
 
 #[cfg(test)]
 mod tests {
@@ -141,24 +85,7 @@ mod tests {
     use crate::tao::initialize_kb;
     use zamm_yin::node_wrappers::CommonNodeTrait;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
-
-    #[test]
-    fn check_type_created() {
-        initialize_kb();
-        assert_eq!(BuildInfo::archetype().id(), BuildInfo::TYPE_ID);
-        assert_eq!(
-            BuildInfo::archetype().internal_name(),
-            Some(Rc::new(BuildInfo::TYPE_NAME.to_string()))
-        );
-    }
-
-    #[test]
-    fn from_node_id() {
-        initialize_kb();
-        let concept = BuildInfo::new();
-        let concept_copy = BuildInfo::from(concept.id());
-        assert_eq!(concept.id(), concept_copy.id());
-    }
+    use zamm_yin::tao::Tao;
 
     #[test]
     fn set_and_retrieve_crate() {

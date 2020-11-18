@@ -1,4 +1,4 @@
-use super::Implement;
+use super::{Implement, ImplementExtension};
 use crate::codegen::planning::{code, file_path, handle_init};
 use crate::codegen::track_autogen::save_autogen;
 use crate::codegen::{output_code, CodegenConfig};
