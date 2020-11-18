@@ -1,3 +1,4 @@
+use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::{AtomicFragment, FileFragment, FunctionFragment};
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
@@ -52,9 +53,21 @@ fn init_types_fragment(cfg: &KBInitConfig) -> FunctionFragment {
     init_fn
 }
 
+/// Defines the number of concepts generated.
+fn max_id_fragment(cfg: &KBInitConfig) -> AtomicFragment {
+    let max_id_doc = into_docstring("The maximum concept ID inside the types distributed by Yin itself. App-specific type concepts should continue their numbering on top of this.", 0);
+    AtomicFragment::new(formatdoc! {"
+        {doc}
+        pub const YIN_MAX_ID: usize = {concepts_size};
+    ", doc = max_id_doc,
+        concepts_size = cfg.concepts_to_initialize.len() - 1 // -1 because IDs are zero-indexed
+    })
+}
+
 /// Generate code for the init file.
 pub fn code_init(cfg: &KBInitConfig) -> String {
     let mut file = FileFragment::default();
+    file.append(Rc::new(RefCell::new(max_id_fragment(cfg)))); // always define, even if unused
     file.append(Rc::new(RefCell::new(init_types_fragment(cfg))));
     file.generate_code()
 }
@@ -127,5 +140,27 @@ mod tests {
                 );
             }"}
         );
+    }
+
+    #[test]
+    fn test_init_file() {
+        let code = code_init(&KBInitConfig {
+            yin_crate: "zamm_yin".to_owned(),
+            concepts_to_initialize: vec![
+                StructConfig {
+                    name: "Me".to_owned(),
+                    import: "zamm_yin::people::Me".to_owned(),
+                },
+                StructConfig {
+                    name: "You".to_owned(),
+                    import: "crate::people::You".to_owned(),
+                },
+                StructConfig {
+                    name: "Us".to_owned(),
+                    import: "crate::groups::Us".to_owned(),
+                },
+            ],
+        });
+        assert!(code.contains("YIN_MAX_ID: usize = 2"));
     }
 }
