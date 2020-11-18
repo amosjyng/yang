@@ -17,6 +17,7 @@ pub mod relation {
         pub use uses_attribute_logic_form::UsesAttributeLogic;
         pub use uses_data_logic_form::UsesDataLogic;
         pub use uses_root_node_logic_form::UsesRootNodeLogic;
+        pub use zamm_yin::tao::relation::flag::*;
     }
 
     /// Binary relations.
@@ -36,7 +37,10 @@ pub mod relation {
         pub use import_path_form::ImportPath;
         pub use rust_primitive_form::RustPrimitive;
         pub use target_form::Target;
+        pub use zamm_yin::tao::relation::attribute::*;
     }
+
+    pub use zamm_yin::tao::relation::*;
 }
 /// Form-related attributes.
 pub mod form {
@@ -45,6 +49,7 @@ pub mod form {
         mod data_extension;
 
         pub use data_extension::DataExtension;
+        pub use zamm_yin::tao::form::data::*;
     }
 
     mod build_info_extension;
@@ -54,6 +59,7 @@ pub mod form {
     pub use build_info_extension::BuildInfoExtension;
     pub use build_info_form::BuildInfo;
     pub use defined_marker::DefinedMarker;
+    pub use zamm_yin::tao::form::*;
 }
 mod implement_extension;
 /// Command to implement something.
@@ -74,6 +80,7 @@ use zamm_yin::graph::{Graph, InjectionGraph};
 use zamm_yin::initialize_type;
 use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::relation::attribute::Inherits;
+pub use zamm_yin::tao::*;
 
 /// Only here for backwards compatibility reasons.
 #[deprecated(
