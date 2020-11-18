@@ -1,6 +1,5 @@
-use crate::tao::relation::attribute::{ConceptId, Documentation};
+use crate::tao::relation::attribute::{ConceptId, Documentation, Target};
 use crate::tao::Implement;
-use crate::tao::Target;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::node_wrappers::CommonNodeTrait;
