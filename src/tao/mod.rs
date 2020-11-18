@@ -69,6 +69,7 @@ pub use lens_form::Lens;
 use relation::flag::{
     NewlyDefined, OwnModule, UsesAttributeLogic, UsesDataLogic, UsesRootNodeLogic,
 };
+pub use auto_init::YIN_MAX_ID;
 
 /// Only here for backwards compatibility reasons.
 #[deprecated(
