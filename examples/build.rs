@@ -2,6 +2,7 @@ use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::define;
 use zamm_yang::tao::archetype::CreateImplementation;
 use zamm_yang::tao::callbacks::handle_all_implementations;
+use zamm_yang::tao::form::BuildInfoExtension;
 use zamm_yang::tao::form::DefinedMarker;
 use zamm_yang::tao::initialize_kb;
 use zamm_yin::node_wrappers::CommonNodeTrait;

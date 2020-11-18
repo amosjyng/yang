@@ -47,10 +47,12 @@ pub mod form {
         pub use data_extension::DataExtension;
     }
 
-    mod build_info;
+    mod build_info_extension;
+    mod build_info_form;
     mod defined_marker;
 
-    pub use build_info::BuildInfo;
+    pub use build_info_extension::BuildInfoExtension;
+    pub use build_info_form::BuildInfo;
     pub use defined_marker::DefinedMarker;
 }
 mod implement_extension;

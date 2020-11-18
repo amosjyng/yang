@@ -8,7 +8,7 @@ use crate::codegen::template::concept::tao::{code_tao, TaoConfig};
 use crate::codegen::{output_code, StructConfig};
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::DataExtension;
-use crate::tao::form::{BuildInfo, DefinedMarker};
+use crate::tao::form::{BuildInfo, BuildInfoExtension, DefinedMarker};
 use crate::tao::{Implement, ImplementExtension};
 use heck::KebabCase;
 use heck::{CamelCase, SnakeCase};

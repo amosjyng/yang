@@ -84,6 +84,11 @@ import_path.add_parent(Attribute::archetype().as_archetype());
 
 All this can apply to any concept at all that's being implemented. However, these attributes are only meaningful within the context of code generation. As such, they should live inside a build config lens -- a way of viewing concepts through a different perspective than usual.
 
+```rust
+define!(build_info);
+build_info.add_parent(Form::archetype());
+```
+
 Everything is a lens. The `relation` branch of the knowledge base's inheritance tree views all nodes through the lens of relating other nodes to each other (even forms with multiple attributes can be considered higher n-ary relations), the `form` branch views all its leaf nodes as instances of their ancestor chain, the `archetype` branch views all non-leaf nodes as types to be reasoned with ala type theory. We don't put all these under a root `Lens` node because when everything is a lens, the distinction ceases to be meaningful. Alternatively, the only lens that applies to everything is the `Tao` node, the lens through which everything is only just a number or a string label.
 
 What *does* make sense is distinguishing context-dependent lens from universal ones. There will always be forms and relations no matter which subject you look at; there will not always be build-related information outside of the context of a software build. We should define the lens accordingly:
@@ -169,6 +174,11 @@ uses_root_node_logic.implement_with(
 import_path.implement_with(
     7,
     "Describes the import path of a defined struct."
+);
+
+build_info.implement_with(
+    8,
+    "Represents build information about a generated concept."
 );
 
 lens.implement_with(
