@@ -29,10 +29,18 @@ thread_local! {
 }
 
 /// Grab a new implementation ID, thus incrementing the global ID counter.
-fn grab_new_implementation_id() -> usize {
+fn grab_new_implementation_id(yin: bool) -> usize {
     NEXT_IMPLEMENTATION_ID.with(|id| {
-        let return_id = id.get();
+        let mut return_id = id.get();
         id.set(return_id + 1);
+
+        if !yin && return_id == 0 {
+            // things that build on top of Yin are effectively one-indexed instead of zero-indexed
+            // like Yin is
+            return_id += 1;
+            id.set(return_id + 1);
+        }
+
         return_id
     })
 }
@@ -325,7 +333,7 @@ pub fn handle_init(codegen_cfg: &CodegenConfig) {
 
         // only set ID for user if user hasn't already set it
         if implement.implementation_id().is_none() {
-            implement.set_implementation_id(grab_new_implementation_id());
+            implement.set_implementation_id(grab_new_implementation_id(codegen_cfg.yin));
         }
     }
 
@@ -343,6 +351,18 @@ mod tests {
     use indoc::indoc;
     use zamm_yin::tao::relation::attribute::{Attribute, Owner};
     use zamm_yin::tao::Tao;
+
+    #[test]
+    fn yin_id_zero_indexed() {
+        assert_eq!(grab_new_implementation_id(true), 0);
+        assert_eq!(grab_new_implementation_id(true), 1);
+    }
+
+    #[test]
+    fn yang_yin_id_one_indexed() {
+        assert_eq!(grab_new_implementation_id(false), 1);
+        assert_eq!(grab_new_implementation_id(false), 2);
+    }
 
     #[test]
     fn own_submodule_tao() {
