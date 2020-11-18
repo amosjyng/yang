@@ -682,8 +682,10 @@ mod tests {
         target.set_internal_name("MyAttrType".to_owned());
         target.mark_newly_defined();
         target.activate_attribute_logic();
-        target.set_owner_archetype(Tao::archetype());
-        target.set_value_archetype(Form::archetype());
+        // todo: reset after set_owner_archetype and set_value_archetype moved to
+        // BackwardsCompatibility
+        AttributeArchetypeFormTrait::set_owner_archetype(&mut target, Tao::archetype());
+        AttributeArchetypeFormTrait::set_value_archetype(&mut target, Form::archetype());
         let mut implement = Implement::new();
         implement.set_target(target.as_archetype());
         let parent = primary_parent(&target.as_archetype());
