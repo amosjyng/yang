@@ -1,10 +1,11 @@
 use super::CodegenConfig;
 use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::concept::attribute::{code_attribute, AttributeFormatConfig};
+use crate::codegen::template::concept::auto_init_kb::{code_init, KBInitConfig};
 use crate::codegen::template::concept::data::{code_data_concept, DataFormatConfig};
 use crate::codegen::template::concept::form::code_form;
 use crate::codegen::template::concept::tao::{code_tao, TaoConfig};
-use crate::codegen::StructConfig;
+use crate::codegen::{output_code, StructConfig};
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::DataExtension;
 use crate::tao::form::{BuildInfo, DefinedMarker};
@@ -294,6 +295,22 @@ pub fn code(request: Implement, codegen_cfg: &CodegenConfig) -> String {
     } else {
         code_form(&base_cfg)
     }
+}
+
+/// Create initialization file for newly defined concepts.
+pub fn handle_init(codegen_cfg: &CodegenConfig) {
+    let yin_crate = if codegen_cfg.yin { "crate" } else { "zamm_yin" };
+    let concepts_to_initialize = Implement::archetype()
+        .individuals()
+        .iter()
+        .map(|c| concept_to_struct(&Implement::from(c.id()).target().unwrap(), codegen_cfg.yin))
+        .collect();
+
+    let code = code_init(&KBInitConfig {
+        yin_crate: yin_crate.to_owned(),
+        concepts_to_initialize,
+    });
+    output_code(&code, "src/tao/auto_init.rs", codegen_cfg);
 }
 
 #[cfg(test)]

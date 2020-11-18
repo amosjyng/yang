@@ -1,4 +1,5 @@
 use super::{AppendedFragment, CodeFragment, NestedFragment};
+use crate::codegen::docstring::into_docstring;
 use indoc::formatdoc;
 use itertools::Itertools;
 use std::cell::RefCell;
@@ -24,6 +25,10 @@ impl FunctionArgument {
 pub struct FunctionFragment {
     /// Name of the function.
     name: String,
+    /// Documentation string for the function.
+    doc: Option<String>,
+    /// Whether or not this function should be publicly exported out of the function.
+    public: bool,
     /// Arguments of the function.
     args: Vec<FunctionArgument>,
     /// Type of data that the function returns.
@@ -39,11 +44,23 @@ impl FunctionFragment {
     pub fn new(name: String) -> Self {
         Self {
             name,
+            doc: None,
+            public: false,
             args: Vec::<FunctionArgument>::new(),
             return_type: None,
             imports: Vec::<String>::new(),
             content: Rc::new(RefCell::new(AppendedFragment::new_with_separator("\n"))),
         }
+    }
+
+    /// Set documentation for the function.
+    pub fn set_documentation(&mut self, doc: String) {
+        self.doc = Some(doc);
+    }
+
+    /// Set the function to be public.
+    pub fn make_public(&mut self) {
+        self.public = true;
     }
 
     /// Set the return type for the function.
@@ -69,6 +86,11 @@ impl FunctionFragment {
 
 impl CodeFragment for FunctionFragment {
     fn body(&self) -> String {
+        let doc = match &self.doc {
+            Some(d) => into_docstring(&d, 0),
+            None => String::new(),
+        };
+        let public = if self.public { "pub " } else { "" };
         let args = self
             .args
             .iter()
@@ -81,7 +103,10 @@ impl CodeFragment for FunctionFragment {
         let nested = NestedFragment {
             imports: Vec::new(), // todo: should NestedFragment be a trait instead?
             preamble: formatdoc! {"
-                fn {name}({args}){return_type} {{",
+                {doc}
+                {public}fn {name}({args}){return_type} {{",
+                doc = doc,
+                public = public,
                 name = self.name,
                 args = args,
                 return_type = return_type
@@ -119,15 +144,45 @@ mod tests {
     }
 
     #[test]
+    fn test_documented_function() {
+        let mut f = FunctionFragment::new("foo".to_owned());
+        f.set_documentation("This is a function.".to_owned());
+
+        assert_eq!(f.imports(), Vec::<String>::new());
+        assert_eq!(
+            f.body(),
+            indoc! {"
+                /// This is a function.
+                fn foo() {
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_public_function() {
+        let mut f = FunctionFragment::new("foo".to_owned());
+        f.make_public();
+
+        assert_eq!(f.imports(), Vec::<String>::new());
+        assert_eq!(
+            f.body(),
+            indoc! {"
+                pub fn foo() {
+                }"}
+        );
+    }
+
+    #[test]
     fn test_function_return() {
         let mut f = FunctionFragment::new("foo".to_owned());
+        f.make_public();
         f.set_return("()".to_owned());
 
         assert_eq!(f.imports(), Vec::<String>::new());
         assert_eq!(
             f.body(),
             indoc! {"
-                fn foo() -> () {
+                pub fn foo() -> () {
                 }"}
         );
     }
@@ -175,6 +230,8 @@ mod tests {
     #[test]
     fn test_function_imports() {
         let mut f = FunctionFragment::new("foo".to_owned());
+        f.set_documentation("This function adds two custom numbers together.".to_owned());
+        f.make_public();
         f.add_import("crate::MyNum".to_owned());
         f.set_return("MyNum".to_owned());
         f.add_arg("x".to_owned(), "MyNum".to_owned());
@@ -188,7 +245,8 @@ mod tests {
         assert_eq!(
             f.body(),
             indoc! {"
-                fn foo(x: MyNum, y: MyNum) -> MyNum {
+                /// This function adds two custom numbers together.
+                pub fn foo(x: MyNum, y: MyNum) -> MyNum {
                     x + y
                 }"}
         );
