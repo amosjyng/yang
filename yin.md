@@ -172,7 +172,7 @@ implementation_name.implement_with_doc("Name the concept actually took on when i
 These are the versions of Yin and Yang used to make this build happen:
 
 ```toml
-zamm_yang = "=0.1.1"
+zamm_yang = "0.1.2"
 ```
 
 ### Imports
