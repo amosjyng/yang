@@ -7,7 +7,7 @@ use std::str;
 ///
 /// Lock this in so that if there are future releases of ZAMM that are not backwards-compatible,
 /// this particular commit will still build.
-const ZAMM_VERSION: &str = "0.0.1";
+const ZAMM_VERSION: &str = "0.1.0";
 
 /// Call out to the commandline.
 fn run_command<I, S>(streaming: bool, command: &str, args: I) -> io::Result<Output>
