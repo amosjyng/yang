@@ -12,8 +12,11 @@ categories = ["development-tools"]
 
 [dependencies]
 heck = "0.3.1"
-indoc = "^1.0"
-itertools = "^0.9.0"
-path_abs = "^0.5.0"
-textwrap = "^0.12.1"
-zamm_yin = "^0.1.0"
+indoc = "1.0"
+itertools = "0.9.0"
+path_abs = "0.5.0"
+textwrap = "0.12.1"
+zamm_yin = "0.1.0"
+
+[build-dependencies]
+zamm = "0.1.1"
