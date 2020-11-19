@@ -69,14 +69,11 @@ mod implement_form;
 mod lens_form;
 
 use auto_init::initialize_types;
+pub use auto_init::YIN_MAX_ID;
 use form::BuildInfo;
 pub use implement_extension::ImplementExtension;
 pub use implement_form::Implement;
 pub use lens_form::Lens;
-use relation::flag::{
-    NewlyDefined, OwnModule, UsesAttributeLogic, UsesDataLogic, UsesRootNodeLogic,
-};
-pub use auto_init::YIN_MAX_ID;
 pub use zamm_yin::tao::*;
 
 /// Only here for backwards compatibility reasons.
