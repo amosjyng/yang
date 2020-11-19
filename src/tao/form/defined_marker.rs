@@ -1,22 +1,15 @@
-use crate::tao::NewlyDefined;
-use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
+use zamm_yin::node_wrappers::{CommonNodeTrait};
 use zamm_yin::tao::archetype::{
-    Archetype, ArchetypeTrait, AttributeArchetype, AttributeArchetypeFormTrait,
+    Archetype, AttributeArchetype, AttributeArchetypeFormTrait,
 };
 use zamm_yin::tao::form::{Form, FormTrait};
 
 /// Define new concept when reading from a Yin.md
+#[deprecated(
+    since = "0.1.2",
+    note = "Please use AttributeArchetypeFormTrait instead."
+)]
 pub trait DefinedMarker: FormTrait + CommonNodeTrait {
-    /// Mark a concept as having been newly defined as part of the current build.
-    fn mark_newly_defined(&mut self) {
-        self.essence_mut().add_flag(NewlyDefined::TYPE_ID);
-    }
-
-    /// Whether or not a concept has been newly defined as part of the current build.
-    fn is_newly_defined(&self) -> bool {
-        self.essence().has_flag(NewlyDefined::TYPE_ID)
-    }
-
     /// Dummy function to handle API change in the move to AttributeArchetypeFormTrait. This is
     /// here because BackwardsCompatibility was not implemented at the time.
     #[deprecated(
@@ -64,35 +57,9 @@ pub trait DefinedMarker: FormTrait + CommonNodeTrait {
     }
 }
 
+#[allow(deprecated)]
 impl DefinedMarker for Form {}
+#[allow(deprecated)]
 impl DefinedMarker for Archetype {}
+#[allow(deprecated)]
 impl DefinedMarker for AttributeArchetype {}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::tao::initialize_kb;
-    use zamm_yin::tao::archetype::ArchetypeFormTrait;
-    use zamm_yin::tao::Tao;
-
-    #[test]
-    fn test_newly_defined() {
-        initialize_kb();
-        let mut new_attr = Tao::archetype().individuate_as_form();
-        assert!(!new_attr.is_newly_defined());
-
-        new_attr.mark_newly_defined();
-        assert!(new_attr.is_newly_defined());
-    }
-
-    #[test]
-    fn test_activation_inherited() {
-        initialize_kb();
-        let mut new_attr = Tao::archetype().individuate_as_archetype();
-        let sub_attr = new_attr.individuate_as_form();
-        assert!(!sub_attr.is_newly_defined());
-
-        new_attr.mark_newly_defined();
-        assert!(sub_attr.is_newly_defined());
-    }
-}
