@@ -180,14 +180,17 @@ zamm_yang = "0.1.2"
 These are the generic imports for general Yang generation:
 
 ```rust
-use zamm_yang::tao::*;
-use zamm_yang::tao::archetype::*;
-use zamm_yang::tao::form::*;
+use zamm_yang::tao::Tao;
+use zamm_yang::tao::archetype::ArchetypeTrait;
+use zamm_yang::tao::archetype::ArchetypeFormTrait;
+use zamm_yang::tao::form::FormTrait;
 use zamm_yang::node_wrappers::CommonNodeTrait;
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::tao::callbacks::handle_all_implementations;
+use zamm_yang::tao::initialize_kb;
+use zamm_yang::tao::archetype::CreateImplementation;
+use zamm_yang::tao::form::DefinedMarker;
 use zamm_yang::define;
-use zamm_yang::helper::aa;
 ```
 
 These are the imports specific to building on top of Yin:

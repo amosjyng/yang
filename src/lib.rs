@@ -8,3 +8,7 @@ pub mod codegen;
 pub mod helper;
 /// Yang-specific concepts.
 pub mod tao;
+/// Re-export of Yin wrappers.
+pub mod node_wrappers {
+    pub use zamm_yin::node_wrappers::*;
+}

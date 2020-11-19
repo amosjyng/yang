@@ -18,6 +18,8 @@ You can use [ZAMM](https://crates.io/crates/zamm) to automatically use Yang to g
 
 Semver "backwards compatibility" will be interpreted to mean any changes that do not break Yin and Yang's release builds. For example, there may be many changes in the public API in between Yang versions `0.x.0` and `0.x.y`. But so long as the Yin and Yang releases that depend on `0.x.0` do not break, and the releases that depend on the most recent `0.x.y` version also do not break, this will be considered "backwards compatible" for all practical purposes.
 
+Note that this means Yang version `0.x.0` will itself be exempt from this check, since Yang `0.x.0` will depend on Yang `0.x-1.y`, and that dependency will of course be a breaking change.
+
 ## Development
 
 Note that due to Yang using its autogeneration capabilities on itself, it requires a pre-existing binary of itself in order to build its current version. The `build.rs` script will attempt to download one from Bintray if it isn't found locally. If none of the versions of Bintray are available for your platform, you can bootstrap Yang by building each version consecutively and setting the `YANG_BINARY` environment variable to the location of the newly built `yang` executable.

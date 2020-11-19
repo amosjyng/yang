@@ -4,7 +4,7 @@ use crate::tao::BuildInfo;
 use crate::tao::{Implement, ImplementExtension};
 pub use attribute_activation::CodegenFlags;
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
+pub use zamm_yin::tao::archetype::*;
 use zamm_yin::tao::form::FormTrait;
 
 /// Convenience trait for creating a new implementation of a concept.
