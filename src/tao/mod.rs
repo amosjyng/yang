@@ -58,6 +58,7 @@ pub mod form {
 
     pub use build_info_extension::BuildInfoExtension;
     pub use build_info_form::BuildInfo;
+    #[allow(deprecated)]
     pub use defined_marker::DefinedMarker;
     pub use zamm_yin::tao::form::*;
 }
