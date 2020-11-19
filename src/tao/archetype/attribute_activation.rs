@@ -1,5 +1,6 @@
-use crate::tao::relation::flag::{NewlyDefined, OwnModule, UsesAttributeLogic, UsesRootNodeLogic};
-use crate::tao::UsesDataLogic;
+use crate::tao::relation::flag::{
+    NewlyDefined, OwnModule, UsesAttributeLogic, UsesDataLogic, UsesRootNodeLogic,
+};
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::FormTrait;

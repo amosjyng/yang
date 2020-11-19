@@ -62,25 +62,18 @@ pub mod form {
     pub use defined_marker::DefinedMarker;
     pub use zamm_yin::tao::form::*;
 }
+mod auto_init;
 mod implement_extension;
 /// Command to implement something.
 mod implement_form;
 mod lens_form;
 
+use auto_init::initialize_types;
+pub use auto_init::YIN_MAX_ID;
 use form::BuildInfo;
 pub use implement_extension::ImplementExtension;
 pub use implement_form::Implement;
 pub use lens_form::Lens;
-use relation::attribute::{
-    ConceptId, Crate, Documentation, ImplementationName, ImportPath, RustPrimitive, Target,
-};
-use relation::flag::{
-    NewlyDefined, OwnModule, UsesAttributeLogic, UsesDataLogic, UsesRootNodeLogic,
-};
-use zamm_yin::graph::{Graph, InjectionGraph};
-use zamm_yin::initialize_type;
-use zamm_yin::tao::archetype::ArchetypeTrait;
-use zamm_yin::tao::relation::attribute::Inherits;
 pub use zamm_yin::tao::*;
 
 /// Only here for backwards compatibility reasons.
@@ -94,25 +87,5 @@ pub struct ImplementConfig;
 /// Initialize Yin, including with Yang-specific concepts.
 pub fn initialize_kb() {
     zamm_yin::tao::initialize_kb();
-    let mut ig = InjectionGraph::new();
-    initialize_type!(
-        ig,
-        (
-            Implement,
-            Target,
-            UsesAttributeLogic,
-            NewlyDefined,
-            OwnModule,
-            UsesDataLogic,
-            ImportPath,
-            BuildInfo,
-            Lens,
-            Crate,
-            ImplementationName,
-            RustPrimitive,
-            UsesRootNodeLogic,
-            ConceptId,
-            Documentation
-        )
-    );
+    initialize_types();
 }

@@ -121,80 +121,48 @@ implementation_name.add_parent(Attribute::archetype().as_archetype());
 Unlike with Yin, we don't actually want to implement *everything* we know, because everything we know about Yin is already implemented inside her physical body. We only want to implement the things that we learned about Yang here:
 
 ```rust
-implement.implement_with(
-    1,
+implement.implement_with_doc(
     "The act of implementing something. When created, this effectively serves as a call to action for Yang."
 );
 
-target.implement_with(
-    2,
-    "The target of an implement command."
-);
+target.implement_with_doc("The target of an implement command.");
+concept_id.implement_with_doc("The integer ID associated with a concept.");
+documentation.implement_with_doc("The documentation associated with an implementation.");
 
-concept_id.implement_with(
-    14,
-    "The integer ID associated with a concept."
-);
-
-documentation.implement_with(
-    15,
-    "The documentation associated with an implementation."
-);
-
-newly_defined.implement_with(
-    4,
+newly_defined.implement_with_doc(
     "Marks an archetype and all its descendants as having been newly defined as part of this particular build."
 );
 
-own_module.implement_with(
-    5,
+own_module.implement_with_doc(
     "Marks an archetype as living inside its own module, even if it doesn't have any defined child archetypes yet."
 );
 
-rust_primitive.implement_with(
-    12,
+rust_primitive.implement_with_doc(
     "The Rust primitive that a Yin data concept is implemented by."
 );
 
-uses_attribute_logic.implement_with(
-    3,
+uses_attribute_logic.implement_with_doc(
     "Marks an archetype and all its descendants as requiring attribute-specific logic during generation."
 );
 
-uses_data_logic.implement_with(
-    6,
+uses_data_logic.implement_with_doc(
     "Marks an archetype and all its descendants as requiring data-specific logic during generation."
 );
 
-uses_root_node_logic.implement_with(
-    13,
+uses_root_node_logic.implement_with_doc(
     "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this."
 );
 
-import_path.implement_with(
-    7,
-    "Describes the import path of a defined struct."
-);
+import_path.implement_with_doc("Describes the import path of a defined struct.");
+build_info.implement_with_doc("Represents build information about a generated concept.");
 
-build_info.implement_with(
-    8,
-    "Represents build information about a generated concept."
-);
-
-lens.implement_with(
-    9,
+lens.implement_with_doc(
     "Describes a way of looking at things that is only well-defined within a specific context."
 );
 
-crate_name.implement_with(
-    10,
-    "Crate that a concept was built as a part of."
-);
+crate_name.implement_with_doc("Crate that a concept was built as a part of.");
 
-implementation_name.implement_with(
-    11,
-    "Name the concept actually took on when implemented."
-);
+implementation_name.implement_with_doc("Name the concept actually took on when implemented.");
 ```
 
 ## Appendix
@@ -204,8 +172,7 @@ implementation_name.implement_with(
 These are the versions of Yin and Yang used to make this build happen:
 
 ```toml
-zamm_yin = "=0.0.14"
-zamm_yang = "=0.1.0"
+zamm_yang = "0.1.2"
 ```
 
 ### Imports
@@ -213,23 +180,24 @@ zamm_yang = "=0.1.0"
 These are the generic imports for general Yang generation:
 
 ```rust
-use zamm_yin::tao::Tao;
-use zamm_yin::tao::archetype::ArchetypeTrait;
-use zamm_yin::tao::archetype::ArchetypeFormTrait;
-use zamm_yin::tao::form::FormTrait;
-use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yang::codegen::CodegenConfig;
-use zamm_yang::tao::callbacks::handle_all_implementations;
-use zamm_yang::tao::initialize_kb;
-use zamm_yang::tao::archetype::CreateImplementation;
-use zamm_yang::tao::form::DefinedMarker;
 use zamm_yang::define;
+use zamm_yang::tao::initialize_kb;
+use zamm_yang::tao::Tao;
+use zamm_yang::tao::archetype::ArchetypeTrait;
+use zamm_yang::tao::archetype::ArchetypeFormTrait;
+use zamm_yang::tao::archetype::AttributeArchetypeFormTrait;
+use zamm_yang::tao::archetype::CreateImplementation;
+use zamm_yang::tao::archetype::CodegenFlags;
+use zamm_yang::tao::form::Form;
+use zamm_yang::tao::form::FormTrait;
+use zamm_yang::tao::callbacks::handle_all_implementations;
+use zamm_yang::codegen::CodegenConfig;
+use zamm_yang::node_wrappers::CommonNodeTrait;
 ```
 
 These are the imports specific to building on top of Yin:
 
 ```rust
-use zamm_yin::tao::relation::attribute::Attribute;
-use zamm_yin::tao::relation::flag::Flag;
-use zamm_yin::tao::form::Form;
+use zamm_yang::tao::relation::attribute::Attribute;
+use zamm_yang::tao::relation::flag::Flag;
 ```
