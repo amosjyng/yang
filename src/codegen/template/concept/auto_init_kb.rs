@@ -28,7 +28,10 @@ fn init_types_fragment(cfg: &KBInitConfig) -> FunctionFragment {
     init_fn.add_import(format!("{}::graph::Graph", cfg.yin_crate));
     init_fn.add_import(format!("{}::initialize_type", cfg.yin_crate));
     init_fn.add_import(format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate));
-    init_fn.add_import(format!("{}::tao::relation::attribute::Inherits", cfg.yin_crate));
+    init_fn.add_import(format!(
+        "{}::tao::relation::attribute::Inherits",
+        cfg.yin_crate
+    ));
     for concept in &cfg.concepts_to_initialize {
         init_fn.add_import(concept.import.clone());
     }
