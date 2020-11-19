@@ -1,7 +1,5 @@
-use zamm_yin::node_wrappers::{CommonNodeTrait};
-use zamm_yin::tao::archetype::{
-    Archetype, AttributeArchetype, AttributeArchetypeFormTrait,
-};
+use zamm_yin::node_wrappers::CommonNodeTrait;
+use zamm_yin::tao::archetype::{Archetype, AttributeArchetype, AttributeArchetypeFormTrait};
 use zamm_yin::tao::form::{Form, FormTrait};
 
 /// Define new concept when reading from a Yin.md
