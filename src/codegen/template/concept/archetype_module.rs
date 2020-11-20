@@ -1,8 +1,11 @@
 use crate::codegen::template::basic::ModuleFragment;
+use heck::{CamelCase, SnakeCase};
 
 /// Config values at the time of Archetype module code generation.
 #[derive(Default)]
 pub struct ArchetypeModuleConfig {
+    /// Names of Archetypes to be included directly in this module.
+    pub archetype_names: Vec<String>,
     /// Submodules that are not to be accessible outside of this module.
     pub private_submodules: Vec<String>,
     /// Submodules that are to be accessible outside of this module. Usually user-defined ones.
@@ -14,6 +17,19 @@ pub struct ArchetypeModuleConfig {
 /// Returns a module that represents an archetype and its descendants.
 pub fn archetype_module_fragment(cfg: &ArchetypeModuleConfig) -> ModuleFragment {
     let mut module = ModuleFragment::new_file_module();
+
+    for archetype_name in &cfg.archetype_names {
+        let snakey_name = archetype_name.as_str().to_snake_case().to_ascii_lowercase();
+        let form_module_name = format!("{}_form", snakey_name);
+        // archetype forms are private...
+        module.add_submodule(form_module_name.clone());
+        // ...so that their re-exports could be public
+        module.re_export(format!(
+            "{}::{}",
+            form_module_name,
+            archetype_name.as_str().to_camel_case()
+        ));
+    }
 
     for private_module in &cfg.private_submodules {
         module.add_submodule(private_module.clone());
@@ -38,18 +54,14 @@ mod tests {
     #[test]
     fn test_archetype_module() {
         let frag = archetype_module_fragment(&ArchetypeModuleConfig {
-            private_submodules: vec![
-                "primary_form".to_owned(),
-                "concept1_form".to_owned(),
-                "concept2_form".to_owned(),
+            archetype_names: vec![
+                "primary".to_owned(),
+                "concept-one".to_owned(),
+                "concept-two".to_owned(),
             ],
+            private_submodules: vec![],
             public_submodules: vec!["subtype".to_owned(), "primary_extension".to_owned()],
-            re_exports: vec![
-                "concept1_form::Concept1".to_owned(),
-                "concept2_form::Concept2".to_owned(),
-                "primary_form::Primary".to_owned(),
-                "zamm_yin::path::to::primary::*".to_owned(),
-            ],
+            re_exports: vec!["zamm_yin::path::to::primary::*".to_owned()],
         });
 
         assert_eq!(
@@ -58,12 +70,12 @@ mod tests {
                 pub mod primary_extension;
                 pub mod subtype;
 
-                mod concept1_form;
-                mod concept2_form;
+                mod concept_one_form;
+                mod concept_two_form;
                 mod primary_form;
 
-                pub use concept1_form::Concept1;
-                pub use concept2_form::Concept2;
+                pub use concept_one_form::ConceptOne;
+                pub use concept_two_form::ConceptTwo;
                 pub use primary_form::Primary;
                 pub use zamm_yin::path::to::primary::*;
             "}
