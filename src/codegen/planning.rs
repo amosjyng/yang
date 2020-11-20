@@ -134,7 +134,7 @@ pub fn module_file_path(target: &Archetype) -> String {
 fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -> String {
     let build_info = BuildInfo::from(target.id());
     match build_info.import_path() {
-        Some(existing_path) => (*existing_path).clone(),
+        Some(existing_path) => (*existing_path).to_owned(),
         None => {
             let yin_crate = if build_info.crate_name().is_some() {
                 (*build_info.crate_name().unwrap()).to_owned()
@@ -159,9 +159,9 @@ fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig {
     let build_info = BuildInfo::from(target.id());
     let name = build_info
         .implementation_name()
-        .unwrap_or_else(|| Rc::new(target.internal_name().unwrap().as_str().to_camel_case()));
+        .unwrap_or_else(|| Rc::from(target.internal_name().unwrap().to_camel_case().as_str()));
     StructConfig {
-        name: (*name).clone(),
+        name: (*name).to_owned(),
         import: import_path(target, target.force_own_module(), yin_override),
     }
 }
