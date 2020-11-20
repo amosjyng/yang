@@ -2,6 +2,7 @@ use super::{AppendedFragment, AtomicFragment, CodeFragment, FileFragment, Nested
 use crate::codegen::template::imports::{imports_as_str, re_exports_as_str};
 use indoc::formatdoc;
 use std::cell::RefCell;
+use std::cmp::Ordering;
 use std::rc::Rc;
 
 /// Fragment for a module declaration.
@@ -13,6 +14,7 @@ pub struct ModuleFragment {
     declare_only: bool,
     uses_entire_file: bool,
     re_exports: Vec<String>,
+    submodules: Vec<Rc<RefCell<ModuleFragment>>>,
     content: Rc<RefCell<AppendedFragment>>,
 }
 
@@ -66,7 +68,7 @@ impl ModuleFragment {
         // to add submodules manually via the `append` function instead.
         new_submodule.mark_as_declare_only();
         let module_rc = Rc::new(RefCell::new(new_submodule));
-        self.append(module_rc.clone());
+        self.submodules.push(module_rc.clone());
         module_rc
     }
 
@@ -93,7 +95,44 @@ impl ModuleFragment {
     pub fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
         self.content.borrow_mut().append(fragment);
     }
+
+    fn submodules_by_publicity(&self, publicity: bool) -> AppendedFragment {
+        let mut submodules_subset = self
+            .submodules
+            .iter()
+            .filter(|s| s.borrow().public == publicity)
+            .collect::<Vec<&Rc<RefCell<ModuleFragment>>>>();
+        submodules_subset.sort();
+        // single newline separation between short module declarations
+        // todo: separate by declaration-only versus full-impl as well
+        let mut submodules_frag = AppendedFragment::new_with_separator("\n");
+        for module in submodules_subset {
+            submodules_frag.append(module.clone());
+        }
+        submodules_frag
+    }
 }
+
+impl Ord for ModuleFragment {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.name.cmp(&other.name)
+    }
+}
+
+impl PartialOrd for ModuleFragment {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for ModuleFragment {
+    fn eq(&self, other: &Self) -> bool {
+        // in context, we'll only be comparing modules at the same level with each other
+        self.name == other.name
+    }
+}
+
+impl Eq for ModuleFragment {}
 
 impl CodeFragment for ModuleFragment {
     fn body(&self) -> String {
@@ -128,16 +167,19 @@ impl CodeFragment for ModuleFragment {
                 re_exports_str += "\n\n";
             }
 
-            let internal_code = format!(
-                "{}{}{}\n",
-                imports_str,
-                re_exports_str,
-                self.content.borrow().body()
-            );
-            let internals = AtomicFragment {
-                imports: Vec::new(),
-                atom: internal_code,
-            };
+            let mut submodules_frag = AppendedFragment::default();
+            submodules_frag.append(Rc::new(RefCell::new(self.submodules_by_publicity(true))));
+            submodules_frag.append(Rc::new(RefCell::new(self.submodules_by_publicity(false))));
+
+            let mut internals = AppendedFragment::default();
+            internals.append(Rc::new(RefCell::new(submodules_frag)));
+            if !imports_str.is_empty() {
+                internals.append(Rc::new(RefCell::new(AtomicFragment::new(imports_str))));
+            }
+            if !re_exports_str.is_empty() {
+                internals.append(Rc::new(RefCell::new(AtomicFragment::new(re_exports_str))));
+            }
+            internals.append(self.content.clone());
             let internals_rc = Rc::new(RefCell::new(internals));
 
             if self.uses_entire_file {
@@ -244,7 +286,7 @@ mod tests {
 
     #[test]
     fn test_submodules() {
-        let mut test_mod = ModuleFragment::new("my_mod".to_owned());
+        let mut test_mod = ModuleFragment::new("my_dom".to_owned());
         test_mod
             .add_submodule("my_sub".to_owned())
             .borrow_mut()
@@ -254,7 +296,7 @@ mod tests {
         assert_eq!(
             test_mod.body(),
             indoc! {"
-                mod my_mod {
+                mod my_dom {
                     pub mod my_sub;
                 }"}
         );
@@ -262,7 +304,7 @@ mod tests {
 
     #[test]
     fn test_implemented_submodules() {
-        let mut test_mod = ModuleFragment::new("my_mod".to_owned());
+        let mut test_mod = ModuleFragment::new("my_dom".to_owned());
         test_mod
             .add_submodule("my_sub".to_owned())
             .borrow_mut()
@@ -272,7 +314,7 @@ mod tests {
         assert_eq!(
             test_mod.body(),
             indoc! {"
-                mod my_mod {
+                mod my_dom {
                     mod my_sub {
                     }
                 }"}
@@ -280,8 +322,36 @@ mod tests {
     }
 
     #[test]
+    fn test_sorted_submodules() {
+        let mut test_mod = ModuleFragment::new("my_dom".to_owned());
+        test_mod
+            .add_submodule("sub_d".to_owned())
+            .borrow_mut()
+            .mark_as_public();
+        test_mod.add_submodule("sub_b".to_owned());
+        test_mod.add_submodule("sub_c".to_owned());
+        test_mod
+            .add_submodule("sub_a".to_owned())
+            .borrow_mut()
+            .mark_as_public();
+
+        assert_eq!(test_mod.imports(), Vec::<String>::new());
+        assert_eq!(
+            test_mod.body(),
+            indoc! {"
+                mod my_dom {
+                    pub mod sub_a;
+                    pub mod sub_d;
+
+                    mod sub_b;
+                    mod sub_c;
+                }"}
+        );
+    }
+
+    #[test]
     fn test_re_exports() {
-        let mut test_mod = ModuleFragment::new("my_mod".to_owned());
+        let mut test_mod = ModuleFragment::new("my_dom".to_owned());
         test_mod.add_submodule("my_sub".to_owned());
 
         test_mod.re_export("my_sub::StructA".to_owned());
@@ -291,10 +361,10 @@ mod tests {
         assert_eq!(
             test_mod.body(),
             indoc! {"
-                mod my_mod {
-                    pub use my_sub::{StructA, StructB};
-
+                mod my_dom {
                     mod my_sub;
+
+                    pub use my_sub::{StructA, StructB};
                 }"}
         );
     }
@@ -320,9 +390,9 @@ mod tests {
         assert_eq!(
             test_mod.body(),
             indoc! {r#"
-                pub use my_sub::{StructA, StructB};
-
                 mod my_sub;
+
+                pub use my_sub::{StructA, StructB};
 
                 fn a() {
                     println!("actually b");
