@@ -304,7 +304,7 @@ fn primary_parent(target: &Archetype) -> Archetype {
 
 /// Generate code for a given concept. Post-processing still needed.
 pub fn code(request: Implement, codegen_cfg: &CodegenConfig) -> String {
-    let target = request.target().unwrap();
+    let target = Archetype::from(request.target().unwrap().id());
     let parent = primary_parent(&target);
 
     let base_cfg = generic_config(&request, &target, &parent, codegen_cfg);
@@ -321,15 +321,13 @@ pub fn code(request: Implement, codegen_cfg: &CodegenConfig) -> String {
 }
 
 /// Create initialization file for newly defined concepts.
-pub fn handle_init(codegen_cfg: &CodegenConfig) {
+pub fn handle_init(archetype_requests: &Vec<Implement>, codegen_cfg: &CodegenConfig) {
     let yin_crate = if codegen_cfg.yin { "crate" } else { "zamm_yin" };
     let mut concepts_to_initialize = Vec::<StructConfig>::new();
-    for implement_command in Implement::archetype().individuals() {
+    for implement_command in archetype_requests {
         let mut implement = Implement::from(implement_command.id());
-        concepts_to_initialize.push(concept_to_struct(
-            &implement.target().unwrap(),
-            codegen_cfg.yin,
-        ));
+        let target_type = Archetype::from(implement.target().unwrap().id());
+        concepts_to_initialize.push(concept_to_struct(&target_type, codegen_cfg.yin));
 
         // only set ID for user if user hasn't already set it
         if implement.implementation_id().is_none() {
@@ -619,7 +617,7 @@ mod tests {
         target.set_internal_name("MyAttrType".to_owned());
         target.mark_newly_defined();
         let mut implement = Implement::new();
-        implement.set_target(target.as_archetype());
+        implement.set_target(target.as_form());
         let cfg = generic_config(
             &implement,
             &target.as_archetype(),
@@ -641,7 +639,7 @@ mod tests {
         target.set_internal_name("MyDataType".to_owned());
         target.mark_newly_defined();
         let mut implement = Implement::new();
-        implement.set_target(target.as_archetype());
+        implement.set_target(target.as_form());
         let cfg = generic_config(
             &implement,
             &target.as_archetype(),
@@ -662,7 +660,7 @@ mod tests {
         target.set_internal_name("MyAttrType".to_owned());
         target.mark_newly_defined();
         let mut implement = Implement::new();
-        implement.set_target(target.as_archetype());
+        implement.set_target(target.as_form());
         implement.document("One.\n\nTwo.");
         let cfg = generic_config(
             &implement,
@@ -707,7 +705,7 @@ mod tests {
         AttributeArchetypeFormTrait::set_owner_archetype(&mut target, Tao::archetype());
         AttributeArchetypeFormTrait::set_value_archetype(&mut target, Form::archetype());
         let mut implement = Implement::new();
-        implement.set_target(target.as_archetype());
+        implement.set_target(target.as_form());
         let parent = primary_parent(&target.as_archetype());
         let codegen_cfg = CodegenConfig::default();
 

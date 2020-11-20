@@ -2,21 +2,35 @@ use super::{Implement, ImplementExtension};
 use crate::codegen::planning::{code, file_path, handle_init};
 use crate::codegen::track_autogen::save_autogen;
 use crate::codegen::{output_code, CodegenConfig};
+use crate::tao::form::Module;
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
+use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait};
+use zamm_yin::tao::form::FormTrait;
+
+/// Retrieve implementation requests that pertain to archetypes.
+fn archetypes_to_implement() -> Vec<Implement> {
+    Implement::archetype()
+        .individuals()
+        .into_iter()
+        .map(|i| Implement::from(i.id()))
+        .filter(|i| !i.target().unwrap().has_ancestor(Module::archetype()))
+        .collect()
+}
 
 /// Handle the implementation request for a new archetype.
-pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
+fn handle_archetype_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
     let code = code(request, codegen_cfg);
-    output_code(&code, &file_path(&request.target().unwrap()), codegen_cfg);
+    let target_type = Archetype::from(request.target().unwrap().id());
+    output_code(&code, &file_path(&target_type), codegen_cfg);
 }
 
 /// Handle all defined implementation requests.
 pub fn handle_all_implementations(codegen_cfg: &CodegenConfig) {
+    let archetype_requests = archetypes_to_implement();
     // handle initialization first to ensure all concepts land with the right concept IDs
-    handle_init(codegen_cfg);
-    for implement_command in Implement::archetype().individuals() {
-        handle_implementation(Implement::from(implement_command.id()), codegen_cfg);
+    handle_init(&archetype_requests, codegen_cfg);
+    for implement_command in archetype_requests {
+        handle_archetype_implementation(Implement::from(implement_command.id()), codegen_cfg);
     }
 
     save_autogen();

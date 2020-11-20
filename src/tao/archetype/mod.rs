@@ -1,24 +1,37 @@
 mod attribute_activation;
 
+use crate::tao::form::{Module, ModuleExtension};
 use crate::tao::BuildInfo;
 use crate::tao::{Implement, ImplementExtension};
 pub use attribute_activation::CodegenFlags;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 pub use zamm_yin::tao::archetype::*;
-use zamm_yin::tao::form::FormTrait;
+use zamm_yin::tao::form::{Form, FormTrait};
 
 /// Convenience trait for creating a new implementation of a concept.
 pub trait CreateImplementation: FormTrait + CommonNodeTrait {
     /// Create a new implementation for a concept.
     fn implement(&self) -> Implement {
         let mut implementation = Implement::new();
-        implementation.set_target(Archetype::from(self.id()));
+        implementation.set_target(Form::from(self.id()));
         implementation
     }
 
     /// Implement this concept with the given documentation string.
     fn implement_with_doc(&self, doc: &str) -> Implement {
         let mut implementation = self.implement();
+        implementation.document(doc);
+        implementation
+    }
+
+    /// Implement the module for this concept.
+    fn impl_mod(&self, doc: &str) -> Implement {
+        // todo: implementation info should be built as part of Yin, so that we know here what to
+        // use for the intermediate modules
+        let mut implementation = Implement::new();
+        let mut new_module = Module::new();
+        new_module.set_most_prominent_member(&self.as_form());
+        implementation.set_target(new_module.as_form());
         implementation.document(doc);
         implementation
     }
