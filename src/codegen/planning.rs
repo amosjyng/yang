@@ -347,7 +347,7 @@ pub fn code_module(parent: Archetype) -> String {
 }
 
 /// Create initialization file for newly defined concepts.
-pub fn handle_init(archetype_requests: &Vec<Implement>, codegen_cfg: &CodegenConfig) {
+pub fn handle_init(archetype_requests: &[Implement], codegen_cfg: &CodegenConfig) {
     let yin_crate = if codegen_cfg.yin { "crate" } else { "zamm_yin" };
     let mut concepts_to_initialize = Vec::<StructConfig>::new();
     for implement_command in archetype_requests {
