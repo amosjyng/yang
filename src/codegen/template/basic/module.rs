@@ -1,5 +1,5 @@
 use super::{AppendedFragment, AtomicFragment, CodeFragment, NestedFragment};
-use crate::codegen::template::imports::imports_as_str;
+use crate::codegen::template::imports::{imports_as_str, re_exports_as_str};
 use indoc::formatdoc;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -10,6 +10,7 @@ pub struct ModuleFragment {
     public: bool,
     test: bool,
     declare_only: bool,
+    re_exports: Vec<String>,
     content: Rc<RefCell<AppendedFragment>>,
 }
 
@@ -21,6 +22,7 @@ impl ModuleFragment {
             public: false,
             test: false,
             declare_only: false,
+            re_exports: vec![],
             content: Rc::new(RefCell::new(AppendedFragment::default())),
         }
     }
@@ -67,6 +69,15 @@ impl ModuleFragment {
         self.test = true;
     }
 
+    /// Re-export something so that it looks like it comes from this module.
+    ///
+    /// This usually, but not always, refers to something hidden within a submodule of this module.
+    /// You can also re-export things from other modules, and they will also appear as if they came
+    /// from this one.
+    pub fn re_export(&mut self, export: String) {
+        self.re_exports.push(export);
+    }
+
     /// Add a fragment to the internals of this module.
     pub fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
         self.content.borrow_mut().append(fragment);
@@ -75,24 +86,44 @@ impl ModuleFragment {
 
 impl CodeFragment for ModuleFragment {
     fn body(&self) -> String {
-        let mut imports = self.content.borrow().imports();
-        if self.test {
-            imports.push("super::*".to_owned());
-        }
-        let imports_str =
-            imports_as_str(&imports.iter().map(|s| s.as_str()).collect::<Vec<&str>>());
-
         let public = if self.public { "pub " } else { "" };
         let cfg_test = if self.test { "#[cfg(test)]" } else { "" };
 
         if self.declare_only {
             format!("{public}mod {name};", public = public, name = self.name)
         } else {
-            let internal_code = format!("{}\n\n{}\n", imports_str, self.content.borrow().body());
+            let mut imports = self.content.borrow().imports();
+            if self.test {
+                imports.push("super::*".to_owned());
+            }
+            let mut imports_str =
+                imports_as_str(&imports.iter().map(|s| s.as_str()).collect::<Vec<&str>>());
+            if !imports_str.is_empty() {
+                imports_str += "\n\n";
+            }
+
+            let mut re_exports_str = re_exports_as_str(
+                &self
+                    .re_exports
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<&str>>(),
+            );
+            if !re_exports_str.is_empty() {
+                re_exports_str += "\n\n";
+            }
+
+            let internal_code = format!(
+                "{}{}{}\n",
+                imports_str,
+                re_exports_str,
+                self.content.borrow().body()
+            );
             let internals = AtomicFragment {
                 imports: Vec::new(),
                 atom: internal_code,
             };
+
             let nested = NestedFragment {
                 imports: Vec::new(),
                 preamble: formatdoc! {"
@@ -122,7 +153,7 @@ mod tests {
 
     #[test]
     fn test_regular_module() {
-        let mut test_mod = ModuleFragment::new("MyMod".to_owned());
+        let mut test_mod = ModuleFragment::new("my_mod".to_owned());
         test_mod.append(Rc::new(RefCell::new(AtomicFragment {
             imports: Vec::new(),
             atom: indoc! {r#"
@@ -136,7 +167,7 @@ mod tests {
         assert_eq!(
             test_mod.body(),
             indoc! {r#"
-                mod MyMod {
+                mod my_mod {
                     fn a() {
                         println!("actually b");
                     }
@@ -146,7 +177,7 @@ mod tests {
 
     #[test]
     fn test_public_module() {
-        let mut test_mod = ModuleFragment::new("MyMod".to_owned());
+        let mut test_mod = ModuleFragment::new("my_mod".to_owned());
         test_mod.mark_as_public();
         test_mod.append(Rc::new(RefCell::new(AtomicFragment {
             imports: Vec::new(),
@@ -161,7 +192,7 @@ mod tests {
         assert_eq!(
             test_mod.body(),
             indoc! {r#"
-                pub mod MyMod {
+                pub mod my_mod {
                     fn a() {
                         println!("actually b");
                     }
@@ -171,28 +202,28 @@ mod tests {
 
     #[test]
     fn test_declared_module() {
-        let mut test_mod = ModuleFragment::new("MyMod".to_owned());
+        let mut test_mod = ModuleFragment::new("my_mod".to_owned());
         test_mod.mark_as_declare_only();
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
-        assert_eq!(test_mod.body(), "mod MyMod;".to_owned());
+        assert_eq!(test_mod.body(), "mod my_mod;".to_owned());
     }
 
     #[test]
     fn test_publicly_declared_module() {
-        let mut test_mod = ModuleFragment::new("MyMod".to_owned());
+        let mut test_mod = ModuleFragment::new("my_mod".to_owned());
         test_mod.mark_as_declare_only();
         test_mod.mark_as_public();
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
-        assert_eq!(test_mod.body(), "pub mod MyMod;".to_owned());
+        assert_eq!(test_mod.body(), "pub mod my_mod;".to_owned());
     }
 
     #[test]
     fn test_submodules() {
-        let mut test_mod = ModuleFragment::new("MyDom".to_owned());
+        let mut test_mod = ModuleFragment::new("my_mod".to_owned());
         test_mod
-            .add_submodule("MySub".to_owned())
+            .add_submodule("my_sub".to_owned())
             .borrow_mut()
             .mark_as_public();
 
@@ -200,17 +231,17 @@ mod tests {
         assert_eq!(
             test_mod.body(),
             indoc! {"
-                mod MyDom {
-                    pub mod MySub;
+                mod my_mod {
+                    pub mod my_sub;
                 }"}
         );
     }
 
     #[test]
     fn test_implemented_submodules() {
-        let mut test_mod = ModuleFragment::new("MyDom".to_owned());
+        let mut test_mod = ModuleFragment::new("my_mod".to_owned());
         test_mod
-            .add_submodule("MySub".to_owned())
+            .add_submodule("my_sub".to_owned())
             .borrow_mut()
             .mark_for_full_implementation();
 
@@ -218,15 +249,35 @@ mod tests {
         assert_eq!(
             test_mod.body(),
             indoc! {"
-                mod MyDom {
-                    mod MySub {
+                mod my_mod {
+                    mod my_sub {
                     }
                 }"}
         );
     }
 
     #[test]
-    fn test_file_with_tests() {
+    fn test_re_exports() {
+        let mut test_mod = ModuleFragment::new("my_mod".to_owned());
+        test_mod.add_submodule("my_sub".to_owned());
+
+        test_mod.re_export("my_sub::StructA".to_owned());
+        test_mod.re_export("my_sub::StructB".to_owned());
+
+        assert_eq!(test_mod.imports(), Vec::<String>::new());
+        assert_eq!(
+            test_mod.body(),
+            indoc! {"
+                mod my_mod {
+                    pub use my_sub::{StructA, StructB};
+
+                    mod my_sub;
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_test_module() {
         let mut test_mod = ModuleFragment::new_test_module();
         test_mod.append(Rc::new(RefCell::new(AtomicFragment {
             imports: Vec::new(),

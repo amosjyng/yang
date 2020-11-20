@@ -65,18 +65,29 @@ fn group_imports(imports: &[&str]) -> Vec<String> {
     final_imports
 }
 
-/// Serialize imports into a string.
-pub fn imports_as_str(imports: &[&str]) -> String {
+/// Common function for producing import code blocks.
+fn imports_as_str_impl(imports: &[&str], public: bool) -> String {
     let grouped_imports = group_imports(imports);
     let grouped_imports_str: Vec<&str> = grouped_imports.iter().map(|i| i.as_str()).collect();
     let sorted_imports = sort_imports(&grouped_imports_str);
+    let public_str = if public { "pub " } else { "" };
     // this doesn't need to take into account self.tests because tests don't contribute to file
     // imports
     let mut result = String::new();
     for import in sorted_imports {
-        result += &format!("use {};\n", import);
+        result += &format!("{}use {};\n", public_str, import);
     }
     result.trim().to_owned()
+}
+
+/// Serialize imports into a string.
+pub fn imports_as_str(imports: &[&str]) -> String {
+    imports_as_str_impl(imports, false)
+}
+
+/// Serialize re-exports into a string.
+pub fn re_exports_as_str(imports: &[&str]) -> String {
+    imports_as_str_impl(imports, true)
 }
 
 #[cfg(test)]
@@ -239,6 +250,16 @@ mod tests {
             indoc! {"
                 use std::cell::{Cell, RefCell};
                 use std::rc::Rc;"}
+        );
+    }
+
+    #[test]
+    fn test_re_exports_as_str() {
+        assert_eq!(
+            re_exports_as_str(&["std::cell::RefCell", "std::rc::Rc", "std::cell::Cell"]),
+            indoc! {"
+                pub use std::cell::{Cell, RefCell};
+                pub use std::rc::Rc;"}
         );
     }
 }
