@@ -1,15 +1,17 @@
-use super::{AppendedFragment, AtomicFragment, CodeFragment, NestedFragment};
+use super::{AppendedFragment, AtomicFragment, CodeFragment, FileFragment, NestedFragment};
 use crate::codegen::template::imports::{imports_as_str, re_exports_as_str};
 use indoc::formatdoc;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Fragment for a module declaration.
+#[derive(Default)]
 pub struct ModuleFragment {
-    name: String,
+    name: Option<String>,
     public: bool,
     test: bool,
     declare_only: bool,
+    uses_entire_file: bool,
     re_exports: Vec<String>,
     content: Rc<RefCell<AppendedFragment>>,
 }
@@ -18,12 +20,16 @@ impl ModuleFragment {
     /// Create a new module with the given name.
     pub fn new(name: String) -> Self {
         Self {
-            name,
-            public: false,
-            test: false,
-            declare_only: false,
-            re_exports: vec![],
-            content: Rc::new(RefCell::new(AppendedFragment::default())),
+            name: Some(name),
+            ..ModuleFragment::default()
+        }
+    }
+
+    /// Create a new module that takes up an entire file.
+    pub fn new_file_module() -> Self {
+        Self {
+            uses_entire_file: true,
+            ..ModuleFragment::default()
         }
     }
 
@@ -69,6 +75,11 @@ impl ModuleFragment {
         self.test = true;
     }
 
+    /// Mark this for generation as an entire file. Skips generation of the mod preamble.
+    pub fn mark_as_entire_file(&mut self) {
+        self.uses_entire_file = true;
+    }
+
     /// Re-export something so that it looks like it comes from this module.
     ///
     /// This usually, but not always, refers to something hidden within a submodule of this module.
@@ -90,7 +101,11 @@ impl CodeFragment for ModuleFragment {
         let cfg_test = if self.test { "#[cfg(test)]" } else { "" };
 
         if self.declare_only {
-            format!("{public}mod {name};", public = public, name = self.name)
+            format!(
+                "{public}mod {name};",
+                public = public,
+                name = self.name.as_ref().unwrap()
+            )
         } else {
             let mut imports = self.content.borrow().imports();
             if self.test {
@@ -123,20 +138,28 @@ impl CodeFragment for ModuleFragment {
                 imports: Vec::new(),
                 atom: internal_code,
             };
+            let internals_rc = Rc::new(RefCell::new(internals));
 
-            let nested = NestedFragment {
-                imports: Vec::new(),
-                preamble: formatdoc! {"
-                    {cfg_test}
-                    {public}mod {name} {{",
-                    public = public,
-                    name = self.name,
-                    cfg_test = cfg_test,
-                },
-                nesting: Some(Rc::new(RefCell::new(internals))),
-                postamble: "}".to_owned(),
-            };
-            nested.body()
+            if self.uses_entire_file {
+                let mut f = FileFragment::new();
+                f.append(internals_rc);
+                f.generate_code()
+            } else {
+                // todo: try using FileFragment to generate the internals here too
+                let nested = NestedFragment {
+                    imports: Vec::new(),
+                    preamble: formatdoc! {"
+                        {cfg_test}
+                        {public}mod {name} {{",
+                        public = public,
+                        name = self.name.as_ref().unwrap(),
+                        cfg_test = cfg_test,
+                    },
+                    nesting: Some(internals_rc),
+                    postamble: "}".to_owned(),
+                };
+                nested.body()
+            }
         }
     }
 
@@ -273,6 +296,38 @@ mod tests {
 
                     mod my_sub;
                 }"}
+        );
+    }
+
+    #[test]
+    fn test_as_entire_file() {
+        let mut test_mod = ModuleFragment::new_file_module();
+        test_mod.add_submodule("my_sub".to_owned());
+
+        test_mod.re_export("my_sub::StructA".to_owned());
+        test_mod.re_export("my_sub::StructB".to_owned());
+
+        test_mod.append(Rc::new(RefCell::new(AtomicFragment {
+            imports: Vec::new(),
+            atom: indoc! {r#"
+                fn a() {
+                    println!("actually b");
+                }"#}
+            .to_string(),
+        })));
+
+        assert_eq!(test_mod.imports(), Vec::<String>::new());
+        assert_eq!(
+            test_mod.body(),
+            indoc! {r#"
+                pub use my_sub::{StructA, StructB};
+
+                mod my_sub;
+
+                fn a() {
+                    println!("actually b");
+                }
+                "#}
         );
     }
 

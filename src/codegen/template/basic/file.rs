@@ -13,6 +13,11 @@ pub struct FileFragment {
 }
 
 impl FileFragment {
+    /// Get a new default FileFragment to use.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Set a preamble for this file. Preambles are like hashbangs or module tags.
     pub fn set_preamble(&mut self, preamble: AtomicFragment) {
         self.preamble = Some(preamble)
