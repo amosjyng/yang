@@ -1,5 +1,8 @@
 use super::CodegenConfig;
 use crate::codegen::docstring::into_docstring;
+use crate::codegen::template::concept::archetype_module::{
+    code_archetype_module, ArchetypeModuleConfig,
+};
 use crate::codegen::template::concept::attribute::{code_attribute, AttributeFormatConfig};
 use crate::codegen::template::concept::auto_init_kb::{code_init, KBInitConfig};
 use crate::codegen::template::concept::data::{code_data_concept, DataFormatConfig};
@@ -97,21 +100,31 @@ fn ancestor_path(target: &Archetype, separator: &str, force_own_module: bool) ->
     }
 }
 
-/// Get the output path for a given concept.
-pub fn file_path(target: &Archetype) -> String {
-    let snake_name = target
+fn snake_name(target: &Archetype) -> String {
+    target
         .internal_name()
         .unwrap()
         .as_str()
         .to_snake_case()
-        .to_ascii_lowercase();
+        .to_ascii_lowercase()
+}
+
+/// Get the output path for a given concept.
+pub fn archetype_file_path(target: &Archetype) -> String {
     // append _form to filename to avoid
     // https://rust-lang.github.io/rust-clippy/master/index.html#module_inception
     format!(
         "src/{}/{}_form.rs",
         ancestor_path(target, "/", target.force_own_module()),
-        snake_name
+        snake_name(target)
     )
+}
+
+/// Get the output path for a given concept.
+pub fn module_file_path(target: &Archetype) -> String {
+    // module path should always be forced if mod.rs is being generated for it
+    assert!(target.force_own_module() || in_own_submodule(target));
+    format!("src/{}/mod.rs", ancestor_path(target, "/", true))
 }
 
 /// Returns the import path, not including the crate itself.
@@ -303,7 +316,7 @@ fn primary_parent(target: &Archetype) -> Archetype {
 }
 
 /// Generate code for a given concept. Post-processing still needed.
-pub fn code(request: Implement, codegen_cfg: &CodegenConfig) -> String {
+pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String {
     let target = Archetype::from(request.target().unwrap().id());
     let parent = primary_parent(&target);
 
@@ -318,6 +331,19 @@ pub fn code(request: Implement, codegen_cfg: &CodegenConfig) -> String {
     } else {
         code_form(&base_cfg)
     }
+}
+
+/// Generate code for a given module. Post-processing still needed.
+pub fn code_module(parent: Archetype) -> String {
+    let mut archetype_names = vec![parent.internal_name().unwrap()];
+    for child in parent.child_archetypes() {
+        archetype_names.push(child.internal_name().unwrap());
+    }
+
+    code_archetype_module(&ArchetypeModuleConfig {
+        archetype_names,
+        ..ArchetypeModuleConfig::default()
+    })
 }
 
 /// Create initialization file for newly defined concepts.
@@ -383,14 +409,17 @@ mod tests {
     #[test]
     fn folder_path_tao() {
         initialize_kb();
-        assert_eq!(file_path(&Tao::archetype()), "src/tao/tao_form.rs");
+        assert_eq!(
+            archetype_file_path(&Tao::archetype()),
+            "src/tao/tao_form.rs"
+        );
     }
 
     #[test]
     fn folder_path_attributes() {
         initialize_kb();
         assert_eq!(
-            file_path(&Attribute::archetype().as_archetype()),
+            archetype_file_path(&Attribute::archetype().as_archetype()),
             "src/tao/relation/attribute/attribute_form.rs"
         );
     }
@@ -399,7 +428,7 @@ mod tests {
     fn folder_path_nested() {
         initialize_kb();
         assert_eq!(
-            file_path(&Owner::archetype().as_archetype()),
+            archetype_file_path(&Owner::archetype().as_archetype()),
             "src/tao/relation/attribute/owner_form.rs"
         );
     }
@@ -410,7 +439,7 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            file_path(&owner.as_archetype()),
+            archetype_file_path(&owner.as_archetype()),
             "src/tao/relation/attribute/owner/owner_form.rs"
         );
     }
@@ -423,8 +452,34 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            file_path(&owner.as_archetype()),
+            archetype_file_path(&owner.as_archetype()),
             "src/tao/newfangled/module/attribute/owner/owner_form.rs"
+        );
+    }
+
+    #[test]
+    fn module_path_tao() {
+        initialize_kb();
+        assert_eq!(module_file_path(&Tao::archetype()), "src/tao/mod.rs");
+    }
+
+    #[test]
+    fn module_path_attributes() {
+        initialize_kb();
+        assert_eq!(
+            module_file_path(&Attribute::archetype().as_archetype()),
+            "src/tao/relation/attribute/mod.rs"
+        );
+    }
+
+    #[test]
+    fn module_path_forced_own_module() {
+        initialize_kb();
+        let mut owner = Owner::archetype();
+        owner.mark_own_module();
+        assert_eq!(
+            module_file_path(&owner.as_archetype()),
+            "src/tao/relation/attribute/owner/mod.rs"
         );
     }
 

@@ -1,11 +1,12 @@
-use crate::codegen::template::basic::ModuleFragment;
+use crate::codegen::template::basic::{CodeFragment, ModuleFragment};
 use heck::{CamelCase, SnakeCase};
+use std::rc::Rc;
 
 /// Config values at the time of Archetype module code generation.
 #[derive(Default)]
 pub struct ArchetypeModuleConfig {
     /// Names of Archetypes to be included directly in this module.
-    pub archetype_names: Vec<String>,
+    pub archetype_names: Vec<Rc<String>>,
     /// Submodules that are not to be accessible outside of this module.
     pub private_submodules: Vec<String>,
     /// Submodules that are to be accessible outside of this module. Usually user-defined ones.
@@ -45,19 +46,23 @@ pub fn archetype_module_fragment(cfg: &ArchetypeModuleConfig) -> ModuleFragment 
     module
 }
 
+/// Actually generate the code for the module.
+pub fn code_archetype_module(cfg: &ArchetypeModuleConfig) -> String {
+    archetype_module_fragment(cfg).body()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codegen::template::basic::CodeFragment;
     use indoc::indoc;
 
     #[test]
     fn test_archetype_module() {
         let frag = archetype_module_fragment(&ArchetypeModuleConfig {
             archetype_names: vec![
-                "primary".to_owned(),
-                "concept-one".to_owned(),
-                "concept-two".to_owned(),
+                Rc::new("primary".to_owned()),
+                Rc::new("concept-one".to_owned()),
+                Rc::new("concept-two".to_owned()),
             ],
             private_submodules: vec![],
             public_submodules: vec!["subtype".to_owned(), "primary_extension".to_owned()],
