@@ -207,6 +207,25 @@ mod tests {
     }
 
     #[test]
+    fn test_implemented_submodules() {
+        let mut test_mod = ModuleFragment::new("MyDom".to_owned());
+        test_mod
+            .add_submodule("MySub".to_owned())
+            .borrow_mut()
+            .mark_for_full_implementation();
+
+        assert_eq!(test_mod.imports(), Vec::<String>::new());
+        assert_eq!(
+            test_mod.body(),
+            indoc! {"
+                mod MyDom {
+                    mod MySub {
+                    }
+                }"}
+        );
+    }
+
+    #[test]
     fn test_file_with_tests() {
         let mut test_mod = ModuleFragment::new_test_module();
         test_mod.append(Rc::new(RefCell::new(AtomicFragment {
