@@ -37,13 +37,29 @@ impl ModuleFragment {
         self.public = true;
     }
 
-    /// Causes the generated code to only declare the existence of a module, without actually 
+    /// Causes the generated code to only declare the existence of a module, without actually
     /// specifying any of its contents.
     ///
-    /// This should be done when a module is implemented externally inside its own `.rs.` file, 
+    /// This should be done when a module is implemented externally inside its own `.rs.` file,
     /// because the contents will reside inside that module's `.rs` file instead.
     pub fn mark_as_declare_only(&mut self) {
         self.declare_only = true;
+    }
+
+    /// Mark the module as requiring full implementation.
+    pub fn mark_for_full_implementation(&mut self) {
+        self.declare_only = false;
+    }
+
+    /// Adds a submodule to the current module.
+    pub fn add_submodule(&mut self, name: String) -> Rc<RefCell<ModuleFragment>> {
+        let mut new_submodule = Self::new(name);
+        // unlike the top-level module, submodules start out as declare-only. It is still possible
+        // to add submodules manually via the `append` function instead.
+        new_submodule.mark_as_declare_only();
+        let module_rc = Rc::new(RefCell::new(new_submodule));
+        self.append(module_rc.clone());
+        module_rc
     }
 
     /// Mark a module as being a test module.
@@ -159,10 +175,7 @@ mod tests {
         test_mod.mark_as_declare_only();
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
-        assert_eq!(
-            test_mod.body(),
-            "mod MyMod;".to_owned()
-        );
+        assert_eq!(test_mod.body(), "mod MyMod;".to_owned());
     }
 
     #[test]
@@ -172,9 +185,24 @@ mod tests {
         test_mod.mark_as_public();
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
+        assert_eq!(test_mod.body(), "pub mod MyMod;".to_owned());
+    }
+
+    #[test]
+    fn test_submodules() {
+        let mut test_mod = ModuleFragment::new("MyDom".to_owned());
+        test_mod
+            .add_submodule("MySub".to_owned())
+            .borrow_mut()
+            .mark_as_public();
+
+        assert_eq!(test_mod.imports(), Vec::<String>::new());
         assert_eq!(
             test_mod.body(),
-            "pub mod MyMod;".to_owned()
+            indoc! {"
+                mod MyDom {
+                    pub mod MySub;
+                }"}
         );
     }
 
