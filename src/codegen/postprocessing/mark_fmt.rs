@@ -22,7 +22,7 @@ pub fn add_fmt_skips(code: &str) -> String {
     let mut result = String::new();
     for line in code.split('\n') {
         result.push_str(add_fmt_skip(line).as_str());
-        result.push_str("\n");
+        result.push('\n');
     }
     if result.ends_with("\n\n") {
         // happens if input code already contains trailing newline

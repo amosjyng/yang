@@ -27,6 +27,7 @@ pub mod relation {
         mod documentation_form;
         mod implementation_name_form;
         mod import_path_form;
+        mod most_prominent_member_form;
         mod rust_primitive_form;
         mod target_form;
 
@@ -35,6 +36,7 @@ pub mod relation {
         pub use documentation_form::Documentation;
         pub use implementation_name_form::ImplementationName;
         pub use import_path_form::ImportPath;
+        pub use most_prominent_member_form::MostProminentMember;
         pub use rust_primitive_form::RustPrimitive;
         pub use target_form::Target;
         pub use zamm_yin::tao::relation::attribute::*;
@@ -55,11 +57,15 @@ pub mod form {
     mod build_info_extension;
     mod build_info_form;
     mod defined_marker;
+    mod module_extension;
+    mod module_form;
 
     pub use build_info_extension::BuildInfoExtension;
     pub use build_info_form::BuildInfo;
     #[allow(deprecated)]
     pub use defined_marker::DefinedMarker;
+    pub use module_extension::ModuleExtension;
+    pub use module_form::Module;
     pub use zamm_yin::tao::form::*;
 }
 mod auto_init;

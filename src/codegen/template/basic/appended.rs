@@ -44,6 +44,7 @@ impl CodeFragment for AppendedFragment {
         (&self.appendages)
             .iter()
             .map(|cf| cf.borrow().body())
+            .filter(|b| !b.is_empty())
             .format(&self.block_separator)
             .to_string()
     }
@@ -62,6 +63,32 @@ mod tests {
     use super::*;
     use crate::codegen::template::basic::AtomicFragment;
     use indoc::indoc;
+
+    #[test]
+    fn test_append_empty() {
+        let appended = AppendedFragment::default();
+        assert_eq!(appended.imports(), Vec::<String>::default());
+        assert_eq!(appended.body(), "");
+    }
+
+    #[test]
+    fn test_append_one() {
+        let mut appended = AppendedFragment::default();
+        appended.append(Rc::new(RefCell::new(AtomicFragment::new("one".to_owned()))));
+        assert_eq!(appended.imports(), Vec::<String>::default());
+        assert_eq!(appended.body(), "one");
+    }
+
+    #[test]
+    fn test_append_one_actual() {
+        let mut appended = AppendedFragment::default();
+        appended.append(Rc::new(RefCell::new(AtomicFragment::new("one".to_owned()))));
+        appended.append(Rc::new(RefCell::new(
+            AtomicFragment::new(String::default()),
+        )));
+        assert_eq!(appended.imports(), Vec::<String>::default());
+        assert_eq!(appended.body(), "one");
+    }
 
     #[test]
     fn test_append() {
@@ -91,12 +118,5 @@ mod tests {
             "}
             .trim()
         );
-    }
-
-    #[test]
-    fn test_append_empty() {
-        let appended = AppendedFragment::default();
-        assert_eq!(appended.imports(), Vec::<String>::default());
-        assert_eq!(appended.body(), "");
     }
 }

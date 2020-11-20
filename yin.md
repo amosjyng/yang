@@ -68,6 +68,20 @@ define!(newly_defined);
 newly_defined.add_parent(Flag::archetype());
 ```
 
+Rust groups things by modules.
+
+```rust
+define!(module);
+module.add_parent(Form::archetype());
+```
+
+It seems to make sense to group a concept and its descendants inside the same module. For such modules, we'll mark the concept as the most prominent member of the module.
+
+```rust
+define!(most_prominent_member);
+most_prominent_member.add_parent(Attribute::archetype().as_archetype());
+```
+
 During implementation, we should be able to force a new attribute to live inside its own module. This override should take place even if the concept doesn't have any child archetypes yet, so that any concepts in downstream packages that depend on it will know where to look:
 
 ```rust
@@ -131,6 +145,12 @@ documentation.implement_with_doc("The documentation associated with an implement
 
 newly_defined.implement_with_doc(
     "Marks an archetype and all its descendants as having been newly defined as part of this particular build."
+);
+
+module.implement_with_doc("Concept representing a Rust module.");
+
+most_prominent_member.implement_with_doc(
+    "The most prominent member of a Rust module. The module will take its name after this member."
 );
 
 own_module.implement_with_doc(

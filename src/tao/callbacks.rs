@@ -1,22 +1,59 @@
 use super::{Implement, ImplementExtension};
-use crate::codegen::planning::{code, file_path, handle_init};
+use crate::codegen::planning::{
+    archetype_file_path, code_archetype, code_module, handle_init, module_file_path,
+};
 use crate::codegen::track_autogen::save_autogen;
 use crate::codegen::{output_code, CodegenConfig};
+use crate::tao::form::{Module, ModuleExtension};
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
+use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait};
+use zamm_yin::tao::form::FormTrait;
+
+/// Retrieve implementation requests that pertain to archetypes.
+fn archetypes_to_implement() -> Vec<Implement> {
+    Implement::archetype()
+        .individuals()
+        .into_iter()
+        .map(|i| Implement::from(i.id()))
+        .filter(|i| !i.target().unwrap().has_ancestor(Module::archetype()))
+        .collect()
+}
+
+/// Retrieve implementation requests that pertain to modules.
+fn modules_to_implement() -> Vec<Implement> {
+    Implement::archetype()
+        .individuals()
+        .into_iter()
+        .map(|i| Implement::from(i.id()))
+        .filter(|i| i.target().unwrap().has_ancestor(Module::archetype()))
+        .collect()
+}
 
 /// Handle the implementation request for a new archetype.
-pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
-    let code = code(request, codegen_cfg);
-    output_code(&code, &file_path(&request.target().unwrap()), codegen_cfg);
+fn handle_archetype_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
+    let code = code_archetype(request, codegen_cfg);
+    let target_type = Archetype::from(request.target().unwrap().id());
+    output_code(&code, &archetype_file_path(&target_type), codegen_cfg);
+}
+
+/// Handle the implementation request for a new module.
+fn handle_module_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
+    let target_module = Module::from(request.target().unwrap().id());
+    let primary_archetype = Archetype::from(target_module.most_prominent_member().unwrap().id());
+    let code = code_module(primary_archetype);
+    output_code(&code, &module_file_path(&primary_archetype), codegen_cfg);
 }
 
 /// Handle all defined implementation requests.
 pub fn handle_all_implementations(codegen_cfg: &CodegenConfig) {
+    let archetype_requests = archetypes_to_implement();
     // handle initialization first to ensure all concepts land with the right concept IDs
-    handle_init(codegen_cfg);
-    for implement_command in Implement::archetype().individuals() {
-        handle_implementation(Implement::from(implement_command.id()), codegen_cfg);
+    handle_init(&archetype_requests, codegen_cfg);
+    for implement_command in archetype_requests {
+        handle_archetype_implementation(implement_command, codegen_cfg);
+    }
+    for implement_command in modules_to_implement() {
+        handle_module_implementation(implement_command, codegen_cfg);
     }
 
     save_autogen();
@@ -102,8 +139,8 @@ mod tests {
                 parent_name: "MyData".to_owned(),
                 ..TaoConfig::default()
             },
-            rust_primitive_name: Rc::new("asdf".to_owned()),
-            default_value: Rc::new("bsdf".to_owned()),
+            rust_primitive_name: Rc::from("asdf"),
+            default_value: Rc::from("bsdf"),
         });
         assert!(code.contains("impl FormTrait"));
         assert!(code.contains("set_value"));

@@ -1,5 +1,8 @@
 use super::CodegenConfig;
 use crate::codegen::docstring::into_docstring;
+use crate::codegen::template::concept::archetype_module::{
+    code_archetype_module, ArchetypeModuleConfig,
+};
 use crate::codegen::template::concept::attribute::{code_attribute, AttributeFormatConfig};
 use crate::codegen::template::concept::auto_init_kb::{code_init, KBInitConfig};
 use crate::codegen::template::concept::data::{code_data_concept, DataFormatConfig};
@@ -97,21 +100,31 @@ fn ancestor_path(target: &Archetype, separator: &str, force_own_module: bool) ->
     }
 }
 
-/// Get the output path for a given concept.
-pub fn file_path(target: &Archetype) -> String {
-    let snake_name = target
+fn snake_name(target: &Archetype) -> String {
+    target
         .internal_name()
         .unwrap()
         .as_str()
         .to_snake_case()
-        .to_ascii_lowercase();
+        .to_ascii_lowercase()
+}
+
+/// Get the output path for a given concept.
+pub fn archetype_file_path(target: &Archetype) -> String {
     // append _form to filename to avoid
     // https://rust-lang.github.io/rust-clippy/master/index.html#module_inception
     format!(
         "src/{}/{}_form.rs",
         ancestor_path(target, "/", target.force_own_module()),
-        snake_name
+        snake_name(target)
     )
+}
+
+/// Get the output path for a given concept.
+pub fn module_file_path(target: &Archetype) -> String {
+    // module path should always be forced if mod.rs is being generated for it
+    assert!(target.force_own_module() || in_own_submodule(target));
+    format!("src/{}/mod.rs", ancestor_path(target, "/", true))
 }
 
 /// Returns the import path, not including the crate itself.
@@ -121,10 +134,10 @@ pub fn file_path(target: &Archetype) -> String {
 fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -> String {
     let build_info = BuildInfo::from(target.id());
     match build_info.import_path() {
-        Some(existing_path) => (*existing_path).clone(),
+        Some(existing_path) => (*existing_path).to_owned(),
         None => {
             let yin_crate = if build_info.crate_name().is_some() {
-                (*build_info.crate_name().unwrap()).clone()
+                (*build_info.crate_name().unwrap()).to_owned()
             } else if yin_override || target.is_newly_defined() {
                 "crate".to_owned()
             } else {
@@ -146,9 +159,9 @@ fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig {
     let build_info = BuildInfo::from(target.id());
     let name = build_info
         .implementation_name()
-        .unwrap_or_else(|| Rc::new(target.internal_name().unwrap().as_str().to_camel_case()));
+        .unwrap_or_else(|| Rc::from(target.internal_name().unwrap().to_camel_case().as_str()));
     StructConfig {
-        name: (*name).clone(),
+        name: (*name).to_owned(),
         import: import_path(target, target.force_own_module(), yin_override),
     }
 }
@@ -303,8 +316,8 @@ fn primary_parent(target: &Archetype) -> Archetype {
 }
 
 /// Generate code for a given concept. Post-processing still needed.
-pub fn code(request: Implement, codegen_cfg: &CodegenConfig) -> String {
-    let target = request.target().unwrap();
+pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String {
+    let target = Archetype::from(request.target().unwrap().id());
     let parent = primary_parent(&target);
 
     let base_cfg = generic_config(&request, &target, &parent, codegen_cfg);
@@ -320,16 +333,27 @@ pub fn code(request: Implement, codegen_cfg: &CodegenConfig) -> String {
     }
 }
 
+/// Generate code for a given module. Post-processing still needed.
+pub fn code_module(parent: Archetype) -> String {
+    let mut archetype_names = vec![Rc::from(parent.internal_name().unwrap().as_str())];
+    for child in parent.child_archetypes() {
+        archetype_names.push(Rc::from(child.internal_name().unwrap().as_str()));
+    }
+
+    code_archetype_module(&ArchetypeModuleConfig {
+        archetype_names,
+        ..ArchetypeModuleConfig::default()
+    })
+}
+
 /// Create initialization file for newly defined concepts.
-pub fn handle_init(codegen_cfg: &CodegenConfig) {
+pub fn handle_init(archetype_requests: &[Implement], codegen_cfg: &CodegenConfig) {
     let yin_crate = if codegen_cfg.yin { "crate" } else { "zamm_yin" };
     let mut concepts_to_initialize = Vec::<StructConfig>::new();
-    for implement_command in Implement::archetype().individuals() {
+    for implement_command in archetype_requests {
         let mut implement = Implement::from(implement_command.id());
-        concepts_to_initialize.push(concept_to_struct(
-            &implement.target().unwrap(),
-            codegen_cfg.yin,
-        ));
+        let target_type = Archetype::from(implement.target().unwrap().id());
+        concepts_to_initialize.push(concept_to_struct(&target_type, codegen_cfg.yin));
 
         // only set ID for user if user hasn't already set it
         if implement.implementation_id().is_none() {
@@ -385,14 +409,17 @@ mod tests {
     #[test]
     fn folder_path_tao() {
         initialize_kb();
-        assert_eq!(file_path(&Tao::archetype()), "src/tao/tao_form.rs");
+        assert_eq!(
+            archetype_file_path(&Tao::archetype()),
+            "src/tao/tao_form.rs"
+        );
     }
 
     #[test]
     fn folder_path_attributes() {
         initialize_kb();
         assert_eq!(
-            file_path(&Attribute::archetype().as_archetype()),
+            archetype_file_path(&Attribute::archetype().as_archetype()),
             "src/tao/relation/attribute/attribute_form.rs"
         );
     }
@@ -401,7 +428,7 @@ mod tests {
     fn folder_path_nested() {
         initialize_kb();
         assert_eq!(
-            file_path(&Owner::archetype().as_archetype()),
+            archetype_file_path(&Owner::archetype().as_archetype()),
             "src/tao/relation/attribute/owner_form.rs"
         );
     }
@@ -412,7 +439,7 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            file_path(&owner.as_archetype()),
+            archetype_file_path(&owner.as_archetype()),
             "src/tao/relation/attribute/owner/owner_form.rs"
         );
     }
@@ -425,8 +452,34 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            file_path(&owner.as_archetype()),
+            archetype_file_path(&owner.as_archetype()),
             "src/tao/newfangled/module/attribute/owner/owner_form.rs"
+        );
+    }
+
+    #[test]
+    fn module_path_tao() {
+        initialize_kb();
+        assert_eq!(module_file_path(&Tao::archetype()), "src/tao/mod.rs");
+    }
+
+    #[test]
+    fn module_path_attributes() {
+        initialize_kb();
+        assert_eq!(
+            module_file_path(&Attribute::archetype().as_archetype()),
+            "src/tao/relation/attribute/mod.rs"
+        );
+    }
+
+    #[test]
+    fn module_path_forced_own_module() {
+        initialize_kb();
+        let mut owner = Owner::archetype();
+        owner.mark_own_module();
+        assert_eq!(
+            module_file_path(&owner.as_archetype()),
+            "src/tao/relation/attribute/owner/mod.rs"
         );
     }
 
@@ -619,7 +672,7 @@ mod tests {
         target.set_internal_name("MyAttrType".to_owned());
         target.mark_newly_defined();
         let mut implement = Implement::new();
-        implement.set_target(target.as_archetype());
+        implement.set_target(target.as_form());
         let cfg = generic_config(
             &implement,
             &target.as_archetype(),
@@ -641,7 +694,7 @@ mod tests {
         target.set_internal_name("MyDataType".to_owned());
         target.mark_newly_defined();
         let mut implement = Implement::new();
-        implement.set_target(target.as_archetype());
+        implement.set_target(target.as_form());
         let cfg = generic_config(
             &implement,
             &target.as_archetype(),
@@ -662,7 +715,7 @@ mod tests {
         target.set_internal_name("MyAttrType".to_owned());
         target.mark_newly_defined();
         let mut implement = Implement::new();
-        implement.set_target(target.as_archetype());
+        implement.set_target(target.as_form());
         implement.document("One.\n\nTwo.");
         let cfg = generic_config(
             &implement,
@@ -707,7 +760,7 @@ mod tests {
         AttributeArchetypeFormTrait::set_owner_archetype(&mut target, Tao::archetype());
         AttributeArchetypeFormTrait::set_value_archetype(&mut target, Form::archetype());
         let mut implement = Implement::new();
-        implement.set_target(target.as_archetype());
+        implement.set_target(target.as_form());
         let parent = primary_parent(&target.as_archetype());
         let codegen_cfg = CodegenConfig::default();
 

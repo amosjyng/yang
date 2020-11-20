@@ -5,24 +5,24 @@ use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::*;
 use zamm_yin::tao::form::data::{Number, StringConcept};
-use zamm_yin::tao::form::FormTrait;
+use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::Wrapper;
 
 /// Extension functions for Implement concept.
 pub trait ImplementExtension: FormTrait {
     /// Set another concept as an implementation target.
-    fn set_target(&mut self, target: Archetype) {
+    fn set_target(&mut self, target: Form) {
         self.essence_mut()
             .add_outgoing(Target::TYPE_ID, target.essence());
     }
 
     /// Retrieve implementation target.
-    fn target(&self) -> Option<Archetype> {
+    fn target(&self) -> Option<Form> {
         self.essence()
             .outgoing_nodes(Target::TYPE_ID)
             .into_iter()
             .next()
-            .map(Archetype::from)
+            .map(Form::from)
     }
 
     /// Set concept ID during code generation time, as opposed to the concept's currently assigned
@@ -55,13 +55,17 @@ pub trait ImplementExtension: FormTrait {
     }
 
     /// Get the documentation string for this implementation.
-    fn documentation(&self) -> Option<Rc<String>> {
+    fn documentation(&self) -> Option<Rc<str>> {
         self.essence()
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(Documentation::TYPE_ID)
             .first()
-            .map(|v| StringConcept::from(v.id()).value())
+            .map(|v| {
+                StringConcept::from(v.id())
+                    .value()
+                    .map(|rc| Rc::from(rc.as_str()))
+            })
             .flatten()
     }
 }
@@ -78,8 +82,8 @@ mod tests {
     fn set_and_retrieve_target() {
         initialize_kb();
         let mut implement = Implement::new();
-        implement.set_target(Owner::archetype().as_archetype());
-        assert_eq!(implement.target(), Some(Owner::archetype().as_archetype()));
+        implement.set_target(Owner::archetype().as_form());
+        assert_eq!(implement.target(), Some(Owner::archetype().as_form()));
     }
 
     #[test]
@@ -95,9 +99,6 @@ mod tests {
         initialize_kb();
         let mut implement = Implement::new();
         implement.document("Some new thing.");
-        assert_eq!(
-            implement.documentation(),
-            Some(Rc::new("Some new thing.".to_owned()))
-        );
+        assert_eq!(implement.documentation(), Some(Rc::from("Some new thing.")));
     }
 }

@@ -3,6 +3,7 @@ use crate::tao::relation::attribute::{Crate, ImplementationName, ImportPath};
 use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::{unwrap_value, StrongValue};
 use zamm_yin::node_wrappers::BaseNodeTrait;
+use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::FormTrait;
@@ -21,14 +22,14 @@ pub trait BuildInfoExtension: FormTrait {
 
     /// Retrieve crate which the object was built as a part of. This is called `crate_name` instead
     /// of just `crate` because `crate` is a reserved keyword in Rust.
-    fn crate_name(&self) -> Option<Rc<String>> {
+    fn crate_name(&self) -> Option<Rc<str>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.essence()
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(Crate::TYPE_ID)
             .first()
-            .map(|s| unwrap_value::<String>(s.value()))
+            .map(|s| unwrap_value::<String>(s.value()).map(|rc| Rc::from(rc.as_str())))
             .flatten()
     }
 
@@ -43,14 +44,18 @@ pub trait BuildInfoExtension: FormTrait {
     }
 
     /// Retrieve import path the concept ended up at, relative to the crate.
-    fn import_path(&self) -> Option<Rc<String>> {
+    fn import_path(&self) -> Option<Rc<str>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.essence()
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(ImportPath::TYPE_ID)
             .first()
-            .map(|s| unwrap_value::<String>(s.value()))
+            .map(|s| {
+                StringConcept::from(s.id())
+                    .value()
+                    .map(|rc| Rc::from(rc.as_str()))
+            })
             .flatten()
     }
 
@@ -65,14 +70,18 @@ pub trait BuildInfoExtension: FormTrait {
     }
 
     /// Retrieve name the concept took on for its actual implementation.
-    fn implementation_name(&self) -> Option<Rc<String>> {
+    fn implementation_name(&self) -> Option<Rc<str>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.essence()
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(ImplementationName::TYPE_ID)
             .first()
-            .map(|s| unwrap_value::<String>(s.value()))
+            .map(|s| {
+                StringConcept::from(s.id())
+                    .value()
+                    .map(|rc| Rc::from(rc.as_str()))
+            })
             .flatten()
     }
 }
@@ -92,7 +101,7 @@ mod tests {
         initialize_kb();
         let mut info = BuildInfo::new();
         info.set_crate_name("zamm_yang");
-        assert_eq!(info.crate_name(), Some(Rc::new("zamm_yang".to_owned())));
+        assert_eq!(info.crate_name(), Some(Rc::from("zamm_yang")));
     }
 
     #[test]
@@ -102,7 +111,7 @@ mod tests {
         info.set_import_path("zamm_yang::import::path");
         assert_eq!(
             info.import_path(),
-            Some(Rc::new("zamm_yang::import::path".to_owned()))
+            Some(Rc::from("zamm_yang::import::path"))
         );
     }
 
@@ -111,7 +120,7 @@ mod tests {
         initialize_kb();
         let mut info = BuildInfo::new();
         info.set_implementation_name("Yolo");
-        assert_eq!(info.implementation_name(), Some(Rc::new("Yolo".to_owned())));
+        assert_eq!(info.implementation_name(), Some(Rc::from("Yolo")));
     }
 
     /// Test that the attributes don't get mixed up.
@@ -123,12 +132,12 @@ mod tests {
         info.set_import_path("zamm_yang::import::path");
         info.set_implementation_name("Yolo");
 
-        assert_eq!(info.crate_name(), Some(Rc::new("zamm_yang".to_owned())));
+        assert_eq!(info.crate_name(), Some(Rc::from("zamm_yang")));
         assert_eq!(
             info.import_path(),
-            Some(Rc::new("zamm_yang::import::path".to_owned()))
+            Some(Rc::from("zamm_yang::import::path"))
         );
-        assert_eq!(info.implementation_name(), Some(Rc::new("Yolo".to_owned())));
+        assert_eq!(info.implementation_name(), Some(Rc::from("Yolo")));
     }
 
     /// Build info should never be inherited

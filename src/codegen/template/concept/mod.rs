@@ -1,3 +1,5 @@
+/// Archetype-specific module code template.
+pub mod archetype_module;
 /// Attribute code template.
 pub mod attribute;
 /// KB auto-init template.
