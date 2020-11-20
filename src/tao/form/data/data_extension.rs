@@ -18,11 +18,15 @@ pub trait DataExtension: FormTrait {
     }
 
     /// Get the name of the Rust primitive that this concept represents.
-    fn rust_primitive(&self) -> Option<Rc<String>> {
+    fn rust_primitive(&self) -> Option<Rc<str>> {
         self.essence()
             .outgoing_nodes(RustPrimitive::TYPE_ID)
             .first()
-            .map(|p| StringConcept::from(*p).value())
+            .map(|p| {
+                StringConcept::from(*p)
+                    .value()
+                    .map(|rc| Rc::from(rc.as_str()))
+            })
             .flatten()
     }
 
@@ -35,11 +39,15 @@ pub trait DataExtension: FormTrait {
     }
 
     /// Get the Rust code representation for the default value of this concept.
-    fn default_value(&self) -> Option<Rc<String>> {
+    fn default_value(&self) -> Option<Rc<str>> {
         self.essence()
             .outgoing_nodes(DefaultValue::TYPE_ID)
             .first()
-            .map(|p| StringConcept::from(*p).value())
+            .map(|p| {
+                StringConcept::from(*p)
+                    .value()
+                    .map(|rc| Rc::from(rc.as_str()))
+            })
             .flatten()
     }
 }
@@ -61,7 +69,7 @@ mod tests {
 
         let mut new_data = Data::archetype().individuate_as_archetype();
         new_data.set_rust_primitive("u64");
-        assert_eq!(new_data.rust_primitive(), Some(Rc::new("u64".to_owned())));
+        assert_eq!(new_data.rust_primitive(), Some(Rc::from("u64")));
     }
 
     #[test]
@@ -70,6 +78,6 @@ mod tests {
 
         let mut new_data = Data::archetype().individuate_as_archetype();
         new_data.set_default_value("0");
-        assert_eq!(new_data.default_value(), Some(Rc::new("0".to_owned())));
+        assert_eq!(new_data.default_value(), Some(Rc::from("0")));
     }
 }

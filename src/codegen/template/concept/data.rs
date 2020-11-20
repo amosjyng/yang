@@ -7,14 +7,23 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Config values at the time of Attribute code generation.
-#[derive(Default)]
 pub struct DataFormatConfig {
     /// Regular concept config.
     pub tao_cfg: TaoConfig,
     /// Rust primitive that this concept represents.
-    pub rust_primitive_name: Rc<String>,
+    pub rust_primitive_name: Rc<str>,
     /// Rust code representation of the default value of this concept.
-    pub default_value: Rc<String>,
+    pub default_value: Rc<str>,
+}
+
+impl Default for DataFormatConfig {
+    fn default() -> Self {
+        Self {
+            tao_cfg: TaoConfig::default(),
+            rust_primitive_name: Rc::from(""),
+            default_value: Rc::from(""),
+        }
+    }
 }
 
 /// Get the body fragment for a data concept.
@@ -95,7 +104,7 @@ mod tests {
     #[test]
     fn test_string_output() {
         let code = code_data_concept(&DataFormatConfig {
-            rust_primitive_name: Rc::new("String".to_owned()),
+            rust_primitive_name: Rc::from("String"),
             ..DataFormatConfig::default()
         });
         assert!(code.contains("String"));
@@ -105,7 +114,7 @@ mod tests {
     #[test]
     fn test_int_output() {
         let code = code_data_concept(&DataFormatConfig {
-            rust_primitive_name: Rc::new("i64".to_owned()),
+            rust_primitive_name: Rc::from("i64"),
             ..DataFormatConfig::default()
         });
         // todo: assert no "String" in code after CommonNodeTrait gets automatically implemented

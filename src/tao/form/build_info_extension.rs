@@ -21,14 +21,14 @@ pub trait BuildInfoExtension: FormTrait {
 
     /// Retrieve crate which the object was built as a part of. This is called `crate_name` instead
     /// of just `crate` because `crate` is a reserved keyword in Rust.
-    fn crate_name(&self) -> Option<Rc<String>> {
+    fn crate_name(&self) -> Option<Rc<str>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
         self.essence()
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(Crate::TYPE_ID)
             .first()
-            .map(|s| unwrap_value::<String>(s.value()))
+            .map(|s| unwrap_value::<String>(s.value()).map(|rc| Rc::from(rc.as_str())))
             .flatten()
     }
 
@@ -92,7 +92,7 @@ mod tests {
         initialize_kb();
         let mut info = BuildInfo::new();
         info.set_crate_name("zamm_yang");
-        assert_eq!(info.crate_name(), Some(Rc::new("zamm_yang".to_owned())));
+        assert_eq!(info.crate_name(), Some(Rc::from("zamm_yang")));
     }
 
     #[test]
@@ -123,7 +123,7 @@ mod tests {
         info.set_import_path("zamm_yang::import::path");
         info.set_implementation_name("Yolo");
 
-        assert_eq!(info.crate_name(), Some(Rc::new("zamm_yang".to_owned())));
+        assert_eq!(info.crate_name(), Some(Rc::from("zamm_yang")));
         assert_eq!(
             info.import_path(),
             Some(Rc::new("zamm_yang::import::path".to_owned()))

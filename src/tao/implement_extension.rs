@@ -55,13 +55,17 @@ pub trait ImplementExtension: FormTrait {
     }
 
     /// Get the documentation string for this implementation.
-    fn documentation(&self) -> Option<Rc<String>> {
+    fn documentation(&self) -> Option<Rc<str>> {
         self.essence()
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(Documentation::TYPE_ID)
             .first()
-            .map(|v| StringConcept::from(v.id()).value())
+            .map(|v| {
+                StringConcept::from(v.id())
+                    .value()
+                    .map(|rc| Rc::from(rc.as_str()))
+            })
             .flatten()
     }
 }
@@ -95,9 +99,6 @@ mod tests {
         initialize_kb();
         let mut implement = Implement::new();
         implement.document("Some new thing.");
-        assert_eq!(
-            implement.documentation(),
-            Some(Rc::new("Some new thing.".to_owned()))
-        );
+        assert_eq!(implement.documentation(), Some(Rc::from("Some new thing.")));
     }
 }

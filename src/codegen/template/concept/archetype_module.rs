@@ -6,7 +6,7 @@ use std::rc::Rc;
 #[derive(Default)]
 pub struct ArchetypeModuleConfig {
     /// Names of Archetypes to be included directly in this module.
-    pub archetype_names: Vec<Rc<String>>,
+    pub archetype_names: Vec<Rc<str>>,
     /// Submodules that are not to be accessible outside of this module.
     pub private_submodules: Vec<String>,
     /// Submodules that are to be accessible outside of this module. Usually user-defined ones.
@@ -20,7 +20,7 @@ pub fn archetype_module_fragment(cfg: &ArchetypeModuleConfig) -> ModuleFragment 
     let mut module = ModuleFragment::new_file_module();
 
     for archetype_name in &cfg.archetype_names {
-        let snakey_name = archetype_name.as_str().to_snake_case().to_ascii_lowercase();
+        let snakey_name = archetype_name.to_snake_case().to_ascii_lowercase();
         let form_module_name = format!("{}_form", snakey_name);
         // archetype forms are private...
         module.add_submodule(form_module_name.clone());
@@ -28,7 +28,7 @@ pub fn archetype_module_fragment(cfg: &ArchetypeModuleConfig) -> ModuleFragment 
         module.re_export(format!(
             "{}::{}",
             form_module_name,
-            archetype_name.as_str().to_camel_case()
+            archetype_name.to_camel_case()
         ));
     }
 
@@ -60,9 +60,9 @@ mod tests {
     fn test_archetype_module() {
         let frag = archetype_module_fragment(&ArchetypeModuleConfig {
             archetype_names: vec![
-                Rc::new("primary".to_owned()),
-                Rc::new("concept-one".to_owned()),
-                Rc::new("concept-two".to_owned()),
+                Rc::from("primary"),
+                Rc::from("concept-one"),
+                Rc::from("concept-two"),
             ],
             private_submodules: vec![],
             public_submodules: vec!["subtype".to_owned(), "primary_extension".to_owned()],

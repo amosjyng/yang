@@ -137,7 +137,7 @@ fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -
         Some(existing_path) => (*existing_path).clone(),
         None => {
             let yin_crate = if build_info.crate_name().is_some() {
-                (*build_info.crate_name().unwrap()).clone()
+                (*build_info.crate_name().unwrap()).to_owned()
             } else if yin_override || target.is_newly_defined() {
                 "crate".to_owned()
             } else {
@@ -335,9 +335,9 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
 
 /// Generate code for a given module. Post-processing still needed.
 pub fn code_module(parent: Archetype) -> String {
-    let mut archetype_names = vec![parent.internal_name().unwrap()];
+    let mut archetype_names = vec![Rc::from(parent.internal_name().unwrap().as_str())];
     for child in parent.child_archetypes() {
-        archetype_names.push(child.internal_name().unwrap());
+        archetype_names.push(Rc::from(child.internal_name().unwrap().as_str()));
     }
 
     code_archetype_module(&ArchetypeModuleConfig {

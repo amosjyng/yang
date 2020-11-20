@@ -139,8 +139,8 @@ mod tests {
                 parent_name: "MyData".to_owned(),
                 ..TaoConfig::default()
             },
-            rust_primitive_name: Rc::new("asdf".to_owned()),
-            default_value: Rc::new("bsdf".to_owned()),
+            rust_primitive_name: Rc::from("asdf"),
+            default_value: Rc::from("bsdf"),
         });
         assert!(code.contains("impl FormTrait"));
         assert!(code.contains("set_value"));
