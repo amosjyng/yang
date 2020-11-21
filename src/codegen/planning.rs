@@ -333,16 +333,20 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
 /// Generate code for a given module. Post-processing still needed.
 pub fn code_module(request: Implement, module: Module, parent: Archetype) -> String {
     let mut public_submodules = vec![];
-    let mut archetype_names = vec![Rc::from(parent.internal_name().unwrap().as_str())];
+    let mut archetype_names = vec![];
+    if parent.is_newly_defined() {
+        archetype_names.push(Rc::from(parent.internal_name().unwrap().as_str()));
+    }
     for child in parent.child_archetypes() {
         if in_own_submodule(&child) {
             let child_submodule = BuildInfo::from(child.id()).representative_module().unwrap();
             public_submodules.push(
                 (*ModuleExtension::implementation_name(&child_submodule).unwrap()).to_owned(),
             );
-        } else {
+        } else if child.is_newly_defined() {
             archetype_names.push(Rc::from(child.internal_name().unwrap().as_str()));
-        }
+        } // else, if this child doesn't have their own module, and has also been already defined, 
+        // then we will re-export them later in this function
     }
 
     let mut private_submodules = vec![];
@@ -353,6 +357,13 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
     let mut re_exports = vec![];
     for re_export in module.re_exports() {
         re_exports.push((*re_export).to_owned());
+    }
+    if !parent.is_newly_defined() {
+        // Parent is already defined as part of a dependency, we're only creating this crate so
+        // that we can access the children as well. In which case, we should also re-export the
+        // concepts defined in the dependency, so that the end consumer does not depend directly on
+        // the dependency.
+        re_exports.push(format!("zamm_yin::{}::*", ancestor_path(&parent, "::")));
     }
 
     code_archetype_module(&ArchetypeModuleConfig {
