@@ -22,7 +22,7 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
     }
 
     /// Implement the module for this concept.
-    fn impl_mod(&self, doc: &str) -> Implement {
+    fn impl_mod(&self, doc: &str) -> Module {
         // todo: implementation info should be built as part of Yin, so that we know here what to
         // use for the intermediate modules
         let mut implementation = Implement::new();
@@ -30,7 +30,7 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
         new_module.set_most_prominent_member(&self.as_form());
         implementation.set_target(new_module.as_form());
         implementation.document(doc);
-        implementation
+        new_module
     }
 
     /// Create a new implementation with the specified ID and documentation string.

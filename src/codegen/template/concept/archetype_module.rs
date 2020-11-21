@@ -5,6 +5,8 @@ use std::rc::Rc;
 /// Config values at the time of Archetype module code generation.
 #[derive(Default)]
 pub struct ArchetypeModuleConfig {
+    /// Documentation for the archetype.
+    pub doc: Option<Rc<str>>,
     /// Names of Archetypes to be included directly in this module.
     pub archetype_names: Vec<Rc<str>>,
     /// Submodules that are not to be accessible outside of this module.
@@ -18,6 +20,10 @@ pub struct ArchetypeModuleConfig {
 /// Returns a module that represents an archetype and its descendants.
 pub fn archetype_module_fragment(cfg: &ArchetypeModuleConfig) -> ModuleFragment {
     let mut module = ModuleFragment::new_file_module();
+
+    if let Some(doc) = &cfg.doc {
+        module.set_documentation(doc.clone());
+    }
 
     for archetype_name in &cfg.archetype_names {
         let snakey_name = archetype_name.to_snake_case().to_ascii_lowercase();
@@ -59,6 +65,9 @@ mod tests {
     #[test]
     fn test_archetype_module() {
         let frag = archetype_module_fragment(&ArchetypeModuleConfig {
+            doc: Some(Rc::from(
+                "Primary is the ancestor of all other forms in this module.",
+            )),
             archetype_names: vec![
                 Rc::from("primary"),
                 Rc::from("concept-one"),
@@ -72,6 +81,8 @@ mod tests {
         assert_eq!(
             frag.body(),
             indoc! {"
+                //! Primary is the ancestor of all other forms in this module.
+                
                 pub mod primary_extension;
                 pub mod subtype;
 
