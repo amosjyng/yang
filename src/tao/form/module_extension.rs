@@ -2,6 +2,7 @@ use crate::tao::form::data::StringConcept;
 use crate::tao::form::Module;
 use crate::tao::form::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::{HasMember, MostProminentMember, ReExports};
+use heck::SnakeCase;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::ArchetypeTrait;
@@ -15,10 +16,14 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait {
         BuildInfo::from(self.id()).implementation_name()
     }
 
-    /// Set most prominent member of the module.
+    /// Set most prominent member of the module. By default, this also sets the name of the module
+    /// to be a snake-cased version of that member's name.
     fn set_most_prominent_member(&mut self, member: &Form) {
         self.essence_mut()
             .add_outgoing(MostProminentMember::TYPE_ID, member.essence());
+        if let Some(name) = member.internal_name() {
+            BuildInfo::from(self.id()).set_implementation_name(&name.to_snake_case())
+        }
     }
 
     /// Retrieve most prominent member of the module.
@@ -71,6 +76,12 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait {
             .map(|f| Rc::from(StringConcept::from(*f).value().unwrap().as_str()))
             .collect()
     }
+
+    /// Define the submodule for the given trait extension, and mark the trait for re-export.
+    fn has_extension(&mut self, extension: &str) {
+        self.add_submodule(extension.split("::").next().unwrap());
+        self.re_export(extension);
+    }
 }
 
 impl ModuleExtension for Module {}
@@ -85,10 +96,15 @@ mod tests {
     #[test]
     fn set_and_retrieve_most_prominent_member() {
         initialize_kb();
-        let my_type = Tao::archetype().individuate_as_archetype().as_form();
+        let mut my_type = Tao::archetype().individuate_as_archetype().as_form();
+        my_type.set_internal_name("my-amazing-type".to_owned());
         let mut module = Module::new();
         module.set_most_prominent_member(&my_type);
         assert_eq!(module.most_prominent_member(), Some(my_type));
+        assert_eq!(
+            module.implementation_name(),
+            Some(Rc::from("my_amazing_type"))
+        );
     }
 
     #[test]
@@ -111,6 +127,22 @@ mod tests {
         initialize_kb();
         let mut module = Module::new();
         module.re_export("submod::X");
+        assert_eq!(module.re_exports(), vec![Rc::from("submod::X")]);
+    }
+
+    #[test]
+    fn add_and_retrieve_extension() {
+        initialize_kb();
+        let mut module = Module::new();
+        module.has_extension("submod::X");
+        assert_eq!(
+            module
+                .submodules()
+                .iter()
+                .map(|s| s.implementation_name())
+                .collect::<Vec<Option<Rc<str>>>>(),
+            vec![Some(Rc::from("submod"))]
+        );
         assert_eq!(module.re_exports(), vec![Rc::from("submod::X")]);
     }
 }
