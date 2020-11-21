@@ -205,6 +205,30 @@ crate_name.implement_with_doc("Crate that a concept was built as a part of.");
 implementation_name.implement_with_doc("Name the concept actually took on when implemented.");
 ```
 
+Last but not least, let's make sure to also define the modules for concepts that were first introduced in Yin, but which we have since created new children for:
+
+```rust
+let mut form_mod = Form::archetype().impl_mod("All things that can be interacted with have form.");
+form_mod.has_extension("build_info_extension::BuildInfoExtension");
+form_mod.has_extension("defined_marker::DefinedMarker");
+form_mod.has_extension("module_extension::ModuleExtension");
+
+let mut archetype_mod = Archetype::archetype().impl_mod("Types of forms, as opposed to the forms themselves.");
+archetype_mod.has_extension("attribute_activation::CodegenFlags");
+archetype_mod.has_extension("create_implementation::CreateImplementation");
+
+let mut data_mod = Data::archetype().impl_mod(
+    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
+);
+data_mod.has_extension("data_extension::DataExtension");
+
+Relation::archetype().impl_mod("Relations between the forms.");
+Flag::archetype().impl_mod("Relations involving only one form.");
+Attribute::archetype().impl_mod("Relations between two forms.");
+```
+
+We should really save the build info, so that one day we will no longer need to redefine the documentation for these modules.
+
 ## Appendix
 
 ### Dependencies
@@ -212,7 +236,7 @@ implementation_name.implement_with_doc("Name the concept actually took on when i
 These are the versions of Yin and Yang used to make this build happen:
 
 ```toml
-zamm_yang = "0.1.2"
+zamm_yang = "0.1.3"
 ```
 
 ### Imports
@@ -229,6 +253,7 @@ use zamm_yang::tao::archetype::CreateImplementation;
 use zamm_yang::tao::archetype::CodegenFlags;
 use zamm_yang::tao::form::Form;
 use zamm_yang::tao::form::FormTrait;
+use zamm_yang::tao::form::ModuleExtension;
 use zamm_yang::tao::callbacks::handle_all_implementations;
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::node_wrappers::CommonNodeTrait;
@@ -237,6 +262,9 @@ use zamm_yang::node_wrappers::CommonNodeTrait;
 These are the imports specific to building on top of Yin:
 
 ```rust
+use zamm_yang::tao::form::data::Data;
+use zamm_yang::tao::archetype::Archetype;
+use zamm_yang::tao::relation::Relation;
 use zamm_yang::tao::relation::attribute::Attribute;
 use zamm_yang::tao::relation::flag::Flag;
 ```
