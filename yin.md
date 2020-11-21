@@ -236,7 +236,7 @@ We should really save the build info, so that one day we will no longer need to 
 These are the versions of Yin and Yang used to make this build happen:
 
 ```toml
-zamm_yang = "0.1.2"
+zamm_yang = "0.1.3"
 ```
 
 ### Imports
