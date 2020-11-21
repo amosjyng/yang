@@ -71,6 +71,12 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait {
             .map(|f| Rc::from(StringConcept::from(*f).value().unwrap().as_str()))
             .collect()
     }
+
+    /// Define the submodule for the given trait extension, and mark the trait for re-export.
+    fn has_extension(&mut self, extension: &str) {
+        self.add_submodule(extension.split("::").next().unwrap());
+        self.re_export(extension);
+    }
 }
 
 impl ModuleExtension for Module {}
@@ -111,6 +117,22 @@ mod tests {
         initialize_kb();
         let mut module = Module::new();
         module.re_export("submod::X");
+        assert_eq!(module.re_exports(), vec![Rc::from("submod::X")]);
+    }
+
+    #[test]
+    fn add_and_retrieve_extension() {
+        initialize_kb();
+        let mut module = Module::new();
+        module.has_extension("submod::X");
+        assert_eq!(
+            module
+                .submodules()
+                .iter()
+                .map(|s| s.implementation_name())
+                .collect::<Vec<Option<Rc<str>>>>(),
+            vec![Some(Rc::from("submod"))]
+        );
         assert_eq!(module.re_exports(), vec![Rc::from("submod::X")]);
     }
 }
