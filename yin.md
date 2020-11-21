@@ -208,6 +208,16 @@ implementation_name.implement_with_doc("Name the concept actually took on when i
 Last but not least, let's make sure to also define the modules for concepts that were first introduced in Yin, but which we have since created new children for:
 
 ```rust
+let mut form_mod = Form::archetype().impl_mod("All things that can be interacted with have form.");
+form_mod.has_extension("build_info_extension::BuildInfoExtension");
+form_mod.has_extension("defined_marker::DefinedMarker");
+form_mod.has_extension("module_extension::ModuleExtension");
+
+let mut data_mod = Data::archetype().impl_mod(
+    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
+);
+data_mod.has_extension("data_extension::DataExtension");
+
 Relation::archetype().impl_mod("Relations between the forms.");
 Flag::archetype().impl_mod("Relations involving only one form.");
 Attribute::archetype().impl_mod("Relations between two forms.");
@@ -240,6 +250,7 @@ use zamm_yang::tao::archetype::CreateImplementation;
 use zamm_yang::tao::archetype::CodegenFlags;
 use zamm_yang::tao::form::Form;
 use zamm_yang::tao::form::FormTrait;
+use zamm_yang::tao::form::ModuleExtension;
 use zamm_yang::tao::callbacks::handle_all_implementations;
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::node_wrappers::CommonNodeTrait;
@@ -248,6 +259,7 @@ use zamm_yang::node_wrappers::CommonNodeTrait;
 These are the imports specific to building on top of Yin:
 
 ```rust
+use zamm_yang::tao::form::data::Data;
 use zamm_yang::tao::relation::Relation;
 use zamm_yang::tao::relation::attribute::Attribute;
 use zamm_yang::tao::relation::flag::Flag;

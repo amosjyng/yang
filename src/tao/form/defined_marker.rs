@@ -3,10 +3,6 @@ use zamm_yin::tao::archetype::{Archetype, AttributeArchetype, AttributeArchetype
 use zamm_yin::tao::form::{Form, FormTrait};
 
 /// Define new concept when reading from a Yin.md
-#[deprecated(
-    since = "0.1.2",
-    note = "Please use AttributeArchetypeFormTrait instead."
-)]
 pub trait DefinedMarker: FormTrait + CommonNodeTrait {
     /// Dummy function to handle API change in the move to AttributeArchetypeFormTrait. This is
     /// here because BackwardsCompatibility was not implemented at the time.
