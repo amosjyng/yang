@@ -205,6 +205,16 @@ crate_name.implement_with_doc("Crate that a concept was built as a part of.");
 implementation_name.implement_with_doc("Name the concept actually took on when implemented.");
 ```
 
+Last but not least, let's make sure to also define the modules for concepts that were first introduced in Yin, but which we have since created new children for:
+
+```rust
+Relation::archetype().impl_mod("Relations between the forms.");
+Flag::archetype().impl_mod("Relations involving only one form.");
+Attribute::archetype().impl_mod("Relations between two forms.");
+```
+
+We should really save the build info, so that one day we will no longer need to redefine the documentation for these modules.
+
 ## Appendix
 
 ### Dependencies
@@ -238,6 +248,7 @@ use zamm_yang::node_wrappers::CommonNodeTrait;
 These are the imports specific to building on top of Yin:
 
 ```rust
+use zamm_yang::tao::relation::Relation;
 use zamm_yang::tao::relation::attribute::Attribute;
 use zamm_yang::tao::relation::flag::Flag;
 ```
