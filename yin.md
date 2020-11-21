@@ -225,7 +225,6 @@ use zamm_yang::tao::initialize_kb;
 use zamm_yang::tao::Tao;
 use zamm_yang::tao::archetype::ArchetypeTrait;
 use zamm_yang::tao::archetype::ArchetypeFormTrait;
-use zamm_yang::tao::archetype::AttributeArchetypeFormTrait;
 use zamm_yang::tao::archetype::CreateImplementation;
 use zamm_yang::tao::archetype::CodegenFlags;
 use zamm_yang::tao::form::Form;
