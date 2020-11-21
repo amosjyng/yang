@@ -1,9 +1,11 @@
 use crate::tao::form::{BuildInfo, BuildInfoExtension, Crate};
-use crate::tao::relation::attribute::SupportsMembership;
+use crate::tao::relation::attribute::{SupportsMembership, Version};
 use std::rc::Rc;
-use zamm_yin::node_wrappers::CommonNodeTrait;
+use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
+use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::FormTrait;
+use zamm_yin::Wrapper;
 
 /// Trait to extend Crate functionality that has not been auto-generated.
 pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
@@ -27,6 +29,23 @@ pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
                 let crate_name = c.implementation_name();
                 crate_name.is_some() && &*crate_name.unwrap() == name
             })
+    }
+
+    /// Set the crate version.
+    fn set_version(&mut self, version: &str) {
+        let mut version_string = StringConcept::new();
+        version_string.set_value(version.to_owned());
+        self.essence_mut()
+            .add_outgoing(Version::TYPE_ID, version_string.essence());
+    }
+
+    /// Get the crate version.
+    fn version(&self) -> Option<Rc<str>> {
+        // no need to worry about inheritance because crates don't inherit from each other.
+        self.essence()
+            .outgoing_nodes(Version::TYPE_ID)
+            .first()
+            .map(|f| Rc::from(StringConcept::from(*f).value().unwrap().as_str()))
     }
 }
 
@@ -57,5 +76,13 @@ mod tests {
         assert_eq!(Crate::lookup("one"), Some(c1));
         assert_eq!(Crate::lookup("two"), Some(c2));
         assert_eq!(Crate::lookup("three"), None);
+    }
+
+    #[test]
+    fn add_and_retrieve_version() {
+        initialize_kb();
+        let mut c = Crate::new();
+        c.set_version("0.1.0");
+        assert_eq!(c.version(), Some(Rc::from("0.1.0")));
     }
 }

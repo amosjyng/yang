@@ -130,10 +130,17 @@ So to finish up with build information that applies to any implemented concept, 
 ```rust
 define!(crate_concept);
 crate_concept.set_internal_name("crate".to_owned());
-crate_concept.add_parent(Form::archetype().as_archetype());
+crate_concept.add_parent(Form::archetype());
 ```
 
 We can reuse the existing generic `HasMember` relation for describing the relationship between a concept and its crate, because there is nothing special about this particular membership scenario that warrants a separate membership concept specifically for this.
+
+Crates are versioned:
+
+```rust
+define!(version);
+version.add_parent(Attribute::archetype().as_archetype());
+```
 
 Concepts and crates alike might also have their own implementation name:
 
@@ -201,7 +208,7 @@ lens.implement_with_doc(
 );
 
 crate_concept.implement_with_doc("Crate that a concept was built as a part of.");
-
+version.implement_with_doc("Version number for a versioned object.");
 implementation_name.implement_with_doc("Name the concept actually took on when implemented.");
 ```
 

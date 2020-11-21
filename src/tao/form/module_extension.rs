@@ -62,7 +62,7 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait + SupportsMembership {
 
     /// Retrieve all symbols re-exported by this module.
     fn re_exports(&self) -> Vec<Rc<str>> {
-        // no need to worry about inheritance because ReExports is not Inherits
+        // no need to worry about inheritance because modules don't inherit from each other
         self.essence()
             .outgoing_nodes(ReExports::TYPE_ID)
             .iter()
