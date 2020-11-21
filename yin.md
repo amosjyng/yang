@@ -213,6 +213,10 @@ form_mod.has_extension("build_info_extension::BuildInfoExtension");
 form_mod.has_extension("defined_marker::DefinedMarker");
 form_mod.has_extension("module_extension::ModuleExtension");
 
+let mut archetype_mod = Archetype::archetype().impl_mod("Types of forms, as opposed to the forms themselves.");
+archetype_mod.has_extension("attribute_activation::CodegenFlags");
+archetype_mod.has_extension("create_implementation::CreateImplementation");
+
 let mut data_mod = Data::archetype().impl_mod(
     "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
 );
@@ -260,6 +264,7 @@ These are the imports specific to building on top of Yin:
 
 ```rust
 use zamm_yang::tao::form::data::Data;
+use zamm_yang::tao::archetype::Archetype;
 use zamm_yang::tao::relation::Relation;
 use zamm_yang::tao::relation::attribute::Attribute;
 use zamm_yang::tao::relation::flag::Flag;

@@ -1,14 +1,12 @@
-/// Extensions to Yin archetypes.
 pub mod archetype;
+mod auto_init;
 /// Callbacks that should be triggered upon certain conditions in Yin being met.
 pub mod callbacks;
-pub mod relation;
 pub mod form;
-mod auto_init;
 mod implement_extension;
-/// Command to implement something.
 mod implement_form;
 mod lens_form;
+pub mod relation;
 
 use auto_init::initialize_types;
 pub use auto_init::YIN_MAX_ID;
