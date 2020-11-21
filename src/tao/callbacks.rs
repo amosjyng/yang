@@ -40,7 +40,7 @@ fn handle_archetype_implementation(request: Implement, codegen_cfg: &CodegenConf
 fn handle_module_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
     let target_module = Module::from(request.target().unwrap().id());
     let primary_archetype = Archetype::from(target_module.most_prominent_member().unwrap().id());
-    let code = code_module(target_module, primary_archetype);
+    let code = code_module(request, target_module, primary_archetype);
     output_code(&code, &module_file_path(&primary_archetype), codegen_cfg);
 }
 
