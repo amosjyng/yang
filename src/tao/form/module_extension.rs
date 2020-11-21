@@ -21,9 +21,9 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait {
     fn set_most_prominent_member(&mut self, member: &Form) {
         self.essence_mut()
             .add_outgoing(MostProminentMember::TYPE_ID, member.essence());
-        member
-            .internal_name()
-            .map(|name| BuildInfo::from(self.id()).set_implementation_name(&name.to_snake_case()));
+        if let Some(name) = member.internal_name() {
+            BuildInfo::from(self.id()).set_implementation_name(&name.to_snake_case())
+        }
     }
 
     /// Retrieve most prominent member of the module.
