@@ -1,6 +1,6 @@
 use crate::tao::form::{BuildInfo, Crate, CrateExtension, Module};
 use crate::tao::relation::attribute::{
-    HasMember, ImplementationName, ImportPath, MostProminentMember,
+    HasMember, ImplementationName, ImportPath, MostProminentMember, SupportsMembership,
 };
 use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::StrongValue;

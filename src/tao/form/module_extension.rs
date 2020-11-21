@@ -1,7 +1,7 @@
 use crate::tao::form::data::StringConcept;
 use crate::tao::form::Module;
 use crate::tao::form::{BuildInfo, BuildInfoExtension};
-use crate::tao::relation::attribute::{HasMember, MostProminentMember, ReExports};
+use crate::tao::relation::attribute::{MostProminentMember, ReExports, SupportsMembership};
 use heck::SnakeCase;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
@@ -10,7 +10,7 @@ use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::Wrapper;
 
 /// Trait to extend Module functionality that has not been auto-generated.
-pub trait ModuleExtension: FormTrait + CommonNodeTrait {
+pub trait ModuleExtension: FormTrait + CommonNodeTrait + SupportsMembership {
     /// Retrieve the public name that this module is actually implemented with.
     fn implementation_name(&self) -> Option<Rc<str>> {
         BuildInfo::from(self.id()).implementation_name()
@@ -35,12 +35,6 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait {
             .map(|f| Form::from(*f))
     }
 
-    /// Add a member to the module.
-    fn add_member(&mut self, member: &Form) {
-        self.essence_mut()
-            .add_outgoing(HasMember::TYPE_ID, member.essence());
-    }
-
     /// Add a new submodule as a member of the current one.
     fn add_submodule(&mut self, name: &str) -> Module {
         let new_submodule = Module::new();
@@ -51,11 +45,10 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait {
 
     /// Get the submodules of this module.
     fn submodules(&self) -> Vec<Module> {
-        // no need to worry about inheritance because HasMember is not Inherits
-        self.essence()
-            .outgoing_nodes(HasMember::TYPE_ID)
+        self.members()
             .iter()
-            .map(|f| Module::from(*f))
+            .filter(|f| f.has_ancestor(Module::archetype()))
+            .map(|f| Module::from(f.id()))
             .collect()
     }
 
@@ -84,6 +77,7 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait {
     }
 }
 
+impl SupportsMembership for Module {}
 impl ModuleExtension for Module {}
 
 #[cfg(test)]

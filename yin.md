@@ -225,7 +225,9 @@ data_mod.has_extension("data_extension::DataExtension");
 
 Relation::archetype().impl_mod("Relations between the forms.");
 Flag::archetype().impl_mod("Relations involving only one form.");
-Attribute::archetype().impl_mod("Relations between two forms.");
+
+let mut attr_mod = Attribute::archetype().impl_mod("Relations between two forms.");
+attr_mod.has_extension("supports_membership::SupportsMembership");
 ```
 
 We should really save the build info, so that one day we will no longer need to redefine the documentation for these modules.

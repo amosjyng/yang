@@ -1,13 +1,12 @@
 use crate::tao::form::{BuildInfo, BuildInfoExtension, Crate};
-use crate::tao::relation::attribute::HasMember;
+use crate::tao::relation::attribute::SupportsMembership;
 use std::rc::Rc;
-use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
+use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
-use zamm_yin::tao::form::{Form, FormTrait};
-use zamm_yin::Wrapper;
+use zamm_yin::tao::form::FormTrait;
 
 /// Trait to extend Crate functionality that has not been auto-generated.
-pub trait CrateExtension: FormTrait + CommonNodeTrait {
+pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
     /// Set the public name for the crate.
     fn set_implementation_name(&mut self, name: &str) {
         BuildInfo::from(self.id()).set_implementation_name(name);
@@ -29,24 +28,9 @@ pub trait CrateExtension: FormTrait + CommonNodeTrait {
                 crate_name.is_some() && &*crate_name.unwrap() == name
             })
     }
-
-    /// Add a member to the crate.
-    fn add_member(&mut self, member: &Form) {
-        self.essence_mut()
-            .add_outgoing(HasMember::TYPE_ID, member.essence());
-    }
-
-    /// Get the members of this crate.
-    fn members(&self) -> Vec<Form> {
-        // no need to worry about inheritance because HasMember is not Inherits
-        self.essence()
-            .outgoing_nodes(HasMember::TYPE_ID)
-            .iter()
-            .map(|f| Form::from(*f))
-            .collect()
-    }
 }
 
+impl SupportsMembership for Crate {}
 impl CrateExtension for Crate {}
 
 #[cfg(test)]
@@ -73,14 +57,5 @@ mod tests {
         assert_eq!(Crate::lookup("one"), Some(c1));
         assert_eq!(Crate::lookup("two"), Some(c2));
         assert_eq!(Crate::lookup("three"), None);
-    }
-
-    #[test]
-    fn add_and_retrieve_members() {
-        initialize_kb();
-        let f = Form::new();
-        let mut c = Crate::new();
-        c.add_member(&f);
-        assert_eq!(c.members(), vec![f]);
     }
 }
