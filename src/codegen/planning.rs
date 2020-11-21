@@ -12,6 +12,7 @@ use crate::codegen::{output_code, StructConfig};
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::DataExtension;
 use crate::tao::form::{BuildInfo, BuildInfoExtension};
+use crate::tao::form::{Module, ModuleExtension};
 use crate::tao::{Implement, ImplementExtension};
 use heck::KebabCase;
 use heck::{CamelCase, SnakeCase};
@@ -334,14 +335,26 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
 }
 
 /// Generate code for a given module. Post-processing still needed.
-pub fn code_module(parent: Archetype) -> String {
+pub fn code_module(module: Module, parent: Archetype) -> String {
     let mut archetype_names = vec![Rc::from(parent.internal_name().unwrap().as_str())];
     for child in parent.child_archetypes() {
         archetype_names.push(Rc::from(child.internal_name().unwrap().as_str()));
     }
 
+    let mut private_submodules = vec![];
+    for submodule in module.submodules() {
+        private_submodules.push((*submodule.implementation_name().unwrap()).to_owned());
+    }
+
+    let mut re_exports = vec![];
+    for re_export in module.re_exports() {
+        re_exports.push((*re_export).to_owned());
+    }
+
     code_archetype_module(&ArchetypeModuleConfig {
         archetype_names,
+        private_submodules,
+        re_exports,
         ..ArchetypeModuleConfig::default()
     })
 }

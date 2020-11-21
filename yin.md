@@ -75,6 +75,20 @@ define!(module);
 module.add_parent(Form::archetype());
 ```
 
+Things that are grouped inside of a module will be considered a member of the module:
+
+```rust
+define!(has_member);
+has_member.add_parent(Attribute::archetype().as_archetype());
+```
+
+Rust modules sometimes re-export things so that it looks like it's coming from that module.
+
+```rust
+define!(re_exports);
+re_exports.add_parent(Attribute::archetype().as_archetype());
+```
+
 It seems to make sense to group a concept and its descendants inside the same module. For such modules, we'll mark the concept as the most prominent member of the module.
 
 ```rust
@@ -148,6 +162,12 @@ newly_defined.implement_with_doc(
 );
 
 module.implement_with_doc("Concept representing a Rust module.");
+
+has_member.implement_with_doc(
+    "Marks the value as being part of the owner. The owner should presumably be a collection of some sort."
+);
+
+re_exports.implement_with_doc("Marks the owner module as re-exporting the value symbol.");
 
 most_prominent_member.implement_with_doc(
     "The most prominent member of a Rust module. The module will take its name after this member."
