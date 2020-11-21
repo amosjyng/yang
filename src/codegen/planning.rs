@@ -51,10 +51,12 @@ fn grab_new_implementation_id(yin: bool) -> usize {
 
 fn in_own_submodule(target: &Archetype) -> bool {
     // todo: filter by type, once Yin has that functionality
-    target.root_node_logic_activated() || !target.child_archetypes().is_empty()
+    target.force_own_module()
+        || target.root_node_logic_activated()
+        || !target.child_archetypes().is_empty()
 }
 
-fn ancestor_path(target: &Archetype, separator: &str, force_own_module: bool) -> String {
+fn ancestor_path(target: &Archetype, separator: &str) -> String {
     let build_info = BuildInfo::from(target.id());
     match build_info.import_path() {
         Some(existing_path) => {
@@ -72,13 +74,7 @@ fn ancestor_path(target: &Archetype, separator: &str, force_own_module: bool) ->
             let parent_path = if target.root_node_logic_activated() {
                 None
             } else {
-                // always produce own module for parents, because obviously they have a child in
-                // the form of the current concept
-                Some(ancestor_path(
-                    &target.parents().first().unwrap(),
-                    separator,
-                    true,
-                ))
+                Some(ancestor_path(&target.parents().first().unwrap(), separator))
             };
 
             let target_name = target
@@ -87,7 +83,7 @@ fn ancestor_path(target: &Archetype, separator: &str, force_own_module: bool) ->
                 .as_str()
                 .to_snake_case()
                 .to_ascii_lowercase();
-            if force_own_module || in_own_submodule(target) {
+            if in_own_submodule(target) {
                 match parent_path {
                     Some(actual_parent_path) => {
                         format!("{}{}{}", actual_parent_path, separator, target_name)
@@ -116,7 +112,7 @@ pub fn archetype_file_path(target: &Archetype) -> String {
     // https://rust-lang.github.io/rust-clippy/master/index.html#module_inception
     format!(
         "src/{}/{}_form.rs",
-        ancestor_path(target, "/", target.force_own_module()),
+        ancestor_path(target, "/"),
         snake_name(target)
     )
 }
@@ -124,15 +120,15 @@ pub fn archetype_file_path(target: &Archetype) -> String {
 /// Get the output path for a given concept.
 pub fn module_file_path(target: &Archetype) -> String {
     // module path should always be forced if mod.rs is being generated for it
-    assert!(target.force_own_module() || in_own_submodule(target));
-    format!("src/{}/mod.rs", ancestor_path(target, "/", true))
+    assert!(in_own_submodule(target));
+    format!("src/{}/mod.rs", ancestor_path(target, "/"))
 }
 
 /// Returns the import path, not including the crate itself.
 ///
 /// `yin_override` needed for now because Yin is not yet fully described by its own yin.md.
 /// todo: remove once Yin supports that
-fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -> String {
+fn import_path(target: &Archetype, yin_override: bool) -> String {
     let build_info = BuildInfo::from(target.id());
     match build_info.import_path() {
         Some(existing_path) => (*existing_path).to_owned(),
@@ -148,7 +144,7 @@ fn import_path(target: &Archetype, force_own_module: bool, yin_override: bool) -
             format!(
                 "{}::{}::{}",
                 yin_crate,
-                ancestor_path(&target, "::", force_own_module),
+                ancestor_path(&target, "::"),
                 struct_name
             )
         }
@@ -163,7 +159,7 @@ fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig {
         .unwrap_or_else(|| Rc::from(target.internal_name().unwrap().to_camel_case().as_str()));
     StructConfig {
         name: (*name).to_owned(),
-        import: import_path(target, target.force_own_module(), yin_override),
+        import: import_path(target, yin_override),
     }
 }
 
@@ -500,17 +496,14 @@ mod tests {
     #[test]
     fn import_path_tao() {
         initialize_kb();
-        assert_eq!(
-            import_path(&Tao::archetype(), false, false),
-            "zamm_yin::tao::Tao"
-        );
+        assert_eq!(import_path(&Tao::archetype(), false), "zamm_yin::tao::Tao");
     }
 
     #[test]
     fn import_path_attributes() {
         initialize_kb();
         assert_eq!(
-            import_path(&Attribute::archetype().as_archetype(), false, false),
+            import_path(&Attribute::archetype().as_archetype(), false),
             "zamm_yin::tao::relation::attribute::Attribute"
         );
     }
@@ -519,7 +512,7 @@ mod tests {
     fn import_path_nested() {
         initialize_kb();
         assert_eq!(
-            import_path(&Owner::archetype().as_archetype(), false, false),
+            import_path(&Owner::archetype().as_archetype(), false),
             "zamm_yin::tao::relation::attribute::Owner"
         );
     }
@@ -527,8 +520,9 @@ mod tests {
     #[test]
     fn import_path_forced_own_module() {
         initialize_kb();
+        Owner::archetype().mark_own_module();
         assert_eq!(
-            import_path(&Owner::archetype().as_archetype(), true, false),
+            import_path(&Owner::archetype().as_archetype(), false),
             "zamm_yin::tao::relation::attribute::owner::Owner"
         );
     }
@@ -539,7 +533,7 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_newly_defined();
         assert_eq!(
-            import_path(&owner.as_archetype(), false, false),
+            import_path(&owner.as_archetype(), false),
             "crate::tao::relation::attribute::Owner"
         );
     }
@@ -553,7 +547,7 @@ mod tests {
         owner.mark_own_module();
         owner.mark_newly_defined();
         assert_eq!(
-            import_path(&owner.as_archetype(), true, false),
+            import_path(&owner.as_archetype(), false),
             "crate::tao::newfangled::module::attribute::owner::Owner"
         );
     }
@@ -570,7 +564,7 @@ mod tests {
         // been implemented as part of a dependency
         BuildInfo::from(owner.id()).set_crate_name("mycrate");
         assert_eq!(
-            import_path(&owner.as_archetype(), true, false),
+            import_path(&owner.as_archetype(), false),
             "mycrate::tao::newfangled::module::attribute::owner::Owner"
         );
     }
@@ -584,8 +578,9 @@ mod tests {
         let mut type2 = type1.individuate_as_archetype();
         type2.set_internal_name("world".to_owned());
         type2.mark_newly_defined();
+        type2.mark_own_module();
         assert_eq!(
-            import_path(&type2, true, false),
+            import_path(&type2, false),
             "crate::tao::hello::world::World"
         );
     }
@@ -597,7 +592,7 @@ mod tests {
         root.set_internal_name("my-root".to_owned());
         root.mark_newly_defined();
         root.activate_root_node_logic();
-        assert_eq!(import_path(&root, false, false), "crate::my_root::MyRoot");
+        assert_eq!(import_path(&root, false), "crate::my_root::MyRoot");
     }
 
     #[test]
