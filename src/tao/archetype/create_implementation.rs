@@ -1,6 +1,7 @@
-use crate::tao::form::{Module, ModuleExtension};
+use crate::tao::form::{BuildInfoExtension, Module, ModuleExtension};
 use crate::tao::BuildInfo;
 use crate::tao::{Implement, ImplementExtension};
+use heck::SnakeCase;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::{Form, FormTrait};
@@ -27,6 +28,8 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
         // use for the intermediate modules
         let mut implementation = Implement::new();
         let mut new_module = Module::new();
+        BuildInfo::from(new_module.id())
+            .set_implementation_name(&self.internal_name().unwrap().to_snake_case());
         new_module.set_most_prominent_member(&self.as_form());
         implementation.set_target(new_module.as_form());
         implementation.document(doc);

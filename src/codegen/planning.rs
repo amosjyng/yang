@@ -332,9 +332,17 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
 
 /// Generate code for a given module. Post-processing still needed.
 pub fn code_module(request: Implement, module: Module, parent: Archetype) -> String {
+    let mut public_submodules = vec![];
     let mut archetype_names = vec![Rc::from(parent.internal_name().unwrap().as_str())];
     for child in parent.child_archetypes() {
-        archetype_names.push(Rc::from(child.internal_name().unwrap().as_str()));
+        if in_own_submodule(&child) {
+            let child_submodule = BuildInfo::from(child.id()).representative_module().unwrap();
+            public_submodules.push(
+                (*ModuleExtension::implementation_name(&child_submodule).unwrap()).to_owned(),
+            );
+        } else {
+            archetype_names.push(Rc::from(child.internal_name().unwrap().as_str()));
+        }
     }
 
     let mut private_submodules = vec![];
@@ -351,8 +359,8 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
         doc: request.documentation(),
         archetype_names,
         private_submodules,
+        public_submodules,
         re_exports,
-        ..ArchetypeModuleConfig::default()
     })
 }
 

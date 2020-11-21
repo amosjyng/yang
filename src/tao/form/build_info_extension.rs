@@ -1,5 +1,5 @@
-use crate::tao::form::BuildInfo;
-use crate::tao::relation::attribute::{Crate, ImplementationName, ImportPath};
+use crate::tao::form::{BuildInfo, Module};
+use crate::tao::relation::attribute::{Crate, ImplementationName, ImportPath, MostProminentMember};
 use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::{unwrap_value, StrongValue};
 use zamm_yin::node_wrappers::BaseNodeTrait;
@@ -84,6 +84,16 @@ pub trait BuildInfoExtension: FormTrait {
             })
             .flatten()
     }
+
+    /// Get the module that represents this archetype as its primary concept.
+    fn representative_module(&self) -> Option<Module> {
+        self.essence()
+            .inheritance_wrapper()
+            .base_wrapper()
+            .incoming_nodes(MostProminentMember::TYPE_ID)
+            .first()
+            .map(|b| Module::from(b.id()))
+    }
 }
 
 impl BuildInfoExtension for BuildInfo {}
@@ -91,6 +101,7 @@ impl BuildInfoExtension for BuildInfo {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tao::form::ModuleExtension;
     use crate::tao::initialize_kb;
     use zamm_yin::node_wrappers::CommonNodeTrait;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
@@ -155,5 +166,36 @@ mod tests {
         assert_eq!(info2.crate_name(), None);
         assert_eq!(info2.import_path(), None);
         assert_eq!(info2.implementation_name(), None);
+    }
+
+    #[test]
+    fn test_reversed_module_membership() {
+        initialize_kb();
+        let my_type = Tao::archetype().individuate_as_archetype();
+        let mut module = Module::new();
+        module.set_most_prominent_member(&my_type.as_form());
+        assert_eq!(
+            BuildInfo::from(my_type.id()).representative_module(),
+            Some(module)
+        );
+    }
+
+    #[test]
+    fn test_reversed_module_membership_not_inherited() {
+        initialize_kb();
+        let my_type = Tao::archetype().individuate_as_archetype();
+        let my_subtype = my_type.individuate_as_archetype();
+        let mut parent_module = Module::new();
+        parent_module.set_most_prominent_member(&my_type.as_form());
+        let mut child_module = Module::new();
+        child_module.set_most_prominent_member(&my_subtype.as_form());
+        assert_eq!(
+            BuildInfo::from(my_type.id()).representative_module(),
+            Some(parent_module)
+        );
+        assert_eq!(
+            BuildInfo::from(my_subtype.id()).representative_module(),
+            Some(child_module)
+        );
     }
 }
