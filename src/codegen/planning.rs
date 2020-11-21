@@ -53,7 +53,8 @@ fn in_own_submodule(target: &Archetype) -> bool {
     // todo: filter by type, once Yin has that functionality
     target.force_own_module()
         || target.root_node_logic_activated()
-        || !target.child_archetypes().is_empty()
+        // todo: this is a hack to check if the children are archetypes or not
+        || target.child_archetypes().iter().any(|c| c.internal_name().is_some())
 }
 
 fn ancestor_path(target: &Archetype, separator: &str) -> String {
@@ -332,38 +333,46 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
 
 /// Generate code for a given module. Post-processing still needed.
 pub fn code_module(request: Implement, module: Module, parent: Archetype) -> String {
-    let mut public_submodules = vec![];
     let mut archetype_names = vec![];
+    let mut public_submodules = vec![];
+    let mut private_submodules = vec![];
+    let mut re_exports = vec![];
+
     if parent.is_newly_defined() {
         archetype_names.push(Rc::from(parent.internal_name().unwrap().as_str()));
-    }
-    for child in parent.child_archetypes() {
-        if in_own_submodule(&child) {
-            let child_submodule = BuildInfo::from(child.id()).representative_module().unwrap();
-            public_submodules.push(
-                (*ModuleExtension::implementation_name(&child_submodule).unwrap()).to_owned(),
-            );
-        } else if child.is_newly_defined() {
-            archetype_names.push(Rc::from(child.internal_name().unwrap().as_str()));
-        } // else, if this child doesn't have their own module, and has also been already defined, 
-        // then we will re-export them later in this function
-    }
-
-    let mut private_submodules = vec![];
-    for submodule in module.submodules() {
-        private_submodules.push((*submodule.implementation_name().unwrap()).to_owned());
-    }
-
-    let mut re_exports = vec![];
-    for re_export in module.re_exports() {
-        re_exports.push((*re_export).to_owned());
-    }
-    if !parent.is_newly_defined() {
+    } else {
         // Parent is already defined as part of a dependency, we're only creating this crate so
         // that we can access the children as well. In which case, we should also re-export the
         // concepts defined in the dependency, so that the end consumer does not depend directly on
         // the dependency.
         re_exports.push(format!("zamm_yin::{}::*", ancestor_path(&parent, "::")));
+    }
+
+    for child in parent.child_archetypes() {
+        if in_own_submodule(&child) {
+            let child_submodule = match BuildInfo::from(child.id()).representative_module() {
+                Some(existing_module) => existing_module,
+                None => {
+                    let mut new_submodule = Module::new();
+                    new_submodule.set_most_prominent_member(&child.as_form());
+                    new_submodule
+                }
+            };
+            public_submodules.push(
+                (*ModuleExtension::implementation_name(&child_submodule).unwrap()).to_owned(),
+            );
+        } else if child.is_newly_defined() {
+            archetype_names.push(Rc::from(child.internal_name().unwrap().as_str()));
+        } // else, if this child doesn't have their own module, and has also been already defined,
+          // then we will re-export them later in this function
+    }
+
+    for submodule in module.submodules() {
+        private_submodules.push((*submodule.implementation_name().unwrap()).to_owned());
+    }
+
+    for re_export in module.re_exports() {
+        re_exports.push((*re_export).to_owned());
     }
 
     code_archetype_module(&ArchetypeModuleConfig {
@@ -424,15 +433,36 @@ mod tests {
     }
 
     #[test]
-    fn own_submodule_attributes() {
+    fn own_submodule_parent() {
         initialize_kb();
-        assert!(in_own_submodule(&Attribute::archetype().as_archetype()));
+        let mut parent = Tao::archetype().individuate_as_archetype();
+        parent.set_internal_name("parent".to_owned());
+        let mut child = parent.individuate_as_archetype();
+        child.set_internal_name("child".to_owned());
+        assert!(in_own_submodule(&parent));
     }
 
     #[test]
     fn own_submodule_nested() {
         initialize_kb();
-        assert!(!in_own_submodule(&Owner::archetype().as_archetype()));
+        let mut parent = Tao::archetype().individuate_as_archetype();
+        parent.set_internal_name("parent".to_owned());
+        let mut child = parent.individuate_as_archetype();
+        child.set_internal_name("child".to_owned());
+        assert!(!in_own_submodule(&child));
+    }
+
+    #[test]
+    fn own_submodule_forced() {
+        initialize_kb();
+        let mut parent = Tao::archetype().individuate_as_archetype();
+        parent.set_internal_name("parent".to_owned());
+        let mut child = parent.individuate_as_archetype();
+        child.set_internal_name("child".to_owned());
+        // these are individuals, not subtypes, so don't count towards a submodule
+        child.individuate_as_form();
+        child.individuate_as_form();
+        assert!(!in_own_submodule(&child));
     }
 
     #[test]
