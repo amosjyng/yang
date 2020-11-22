@@ -13,7 +13,7 @@ mod nested;
 pub use appended::AppendedFragment;
 pub use atomic::AtomicFragment;
 pub use file::FileFragment;
-pub use function::FunctionFragment;
+pub use function::{FunctionFragment, SelfReference};
 pub use module::ModuleFragment;
 pub use nested::NestedFragment;
 
