@@ -9,12 +9,10 @@ use std::cmp::Ordering;
 use std::rc::Rc;
 
 /// Fragment for a module declaration.
-#[derive(Default)]
 pub struct ModuleFragment {
     name: Option<String>,
     declaration: ItemDeclaration,
     test: bool,
-    declare_only: bool,
     uses_entire_file: bool,
     re_exports: Vec<String>,
     submodules: Vec<Rc<RefCell<ModuleFragment>>>,
@@ -43,20 +41,6 @@ impl ModuleFragment {
         let mut new_self = Self::new("tests".to_owned());
         new_self.mark_as_test();
         new_self
-    }
-
-    /// Causes the generated code to only declare the existence of a module, without actually
-    /// specifying any of its contents.
-    ///
-    /// This should be done when a module is implemented externally inside its own `.rs.` file,
-    /// because the contents will reside inside that module's `.rs` file instead.
-    pub fn mark_as_declare_only(&mut self) {
-        self.declare_only = true;
-    }
-
-    /// Mark the module as requiring full implementation.
-    pub fn mark_for_full_implementation(&mut self) {
-        self.declare_only = false;
     }
 
     /// Adds a submodule to the current module.
@@ -112,6 +96,22 @@ impl ModuleFragment {
     }
 }
 
+impl Default for ModuleFragment {
+    fn default() -> Self {
+        let mut declaration = ItemDeclaration::default();
+        declaration.mark_for_full_implementation(); // opposite default for modules
+        Self {
+            name: None,
+            declaration,
+            test: false,
+            uses_entire_file: false,
+            re_exports: vec![],
+            submodules: vec![],
+            content: Rc::new(RefCell::new(AppendedFragment::default())),
+        }
+    }
+}
+
 impl ItemDeclarationAPI for ModuleFragment {
     fn mark_as_public(&mut self) {
         self.declaration.mark_as_public();
@@ -131,6 +131,14 @@ impl ItemDeclarationAPI for ModuleFragment {
 
     fn set_body(&mut self, body: Rc<RefCell<dyn CodeFragment>>) {
         self.declaration.set_body(body);
+    }
+
+    fn mark_as_declare_only(&mut self) {
+        self.declaration.mark_as_declare_only();
+    }
+
+    fn mark_for_full_implementation(&mut self) {
+        self.declaration.mark_for_full_implementation();
     }
 }
 
@@ -157,69 +165,62 @@ impl Eq for ModuleFragment {}
 
 impl CodeFragment for ModuleFragment {
     fn body(&self) -> String {
-        let name = self.name.as_ref();
+        let mut imports = self.content.borrow().imports();
+        if self.test {
+            imports.push("super::*".to_owned());
+        }
+        let mut imports_str =
+            imports_as_str(&imports.iter().map(|s| s.as_str()).collect::<Vec<&str>>());
+        if !imports_str.is_empty() {
+            imports_str += "\n\n";
+        }
 
-        if self.declare_only {
-            let mut declaration = self.declaration.clone();
-            declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(format!(
-                "mod {}",
-                name.unwrap()
-            )))));
-            declaration.body()
+        let mut re_exports_str = re_exports_as_str(
+            &self
+                .re_exports
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<&str>>(),
+        );
+        if !re_exports_str.is_empty() {
+            re_exports_str += "\n\n";
+        }
+
+        let mut submodules_frag = AppendedFragment::default();
+        submodules_frag.append(Rc::new(RefCell::new(self.submodules_by_publicity(true))));
+        submodules_frag.append(Rc::new(RefCell::new(self.submodules_by_publicity(false))));
+
+        let mut internals = AppendedFragment::default();
+        internals.append(Rc::new(RefCell::new(submodules_frag)));
+        if !imports_str.is_empty() {
+            internals.append(Rc::new(RefCell::new(AtomicFragment::new(imports_str))));
+        }
+        if !re_exports_str.is_empty() {
+            internals.append(Rc::new(RefCell::new(AtomicFragment::new(re_exports_str))));
+        }
+        internals.append(self.content.clone());
+        let internals_rc = Rc::new(RefCell::new(internals));
+
+        if self.uses_entire_file {
+            let mut f = FileFragment::new();
+            if let Some(doc) = &self.declaration.doc {
+                f.set_preamble(AtomicFragment::new(into_parent_docstring(&doc, 0)));
+            }
+            f.append(internals_rc);
+            f.generate_code()
         } else {
-            let mut imports = self.content.borrow().imports();
-            if self.test {
-                imports.push("super::*".to_owned());
-            }
-            let mut imports_str =
-                imports_as_str(&imports.iter().map(|s| s.as_str()).collect::<Vec<&str>>());
-            if !imports_str.is_empty() {
-                imports_str += "\n\n";
-            }
-
-            let mut re_exports_str = re_exports_as_str(
-                &self
-                    .re_exports
-                    .iter()
-                    .map(|s| s.as_str())
-                    .collect::<Vec<&str>>(),
-            );
-            if !re_exports_str.is_empty() {
-                re_exports_str += "\n\n";
-            }
-
-            let mut submodules_frag = AppendedFragment::default();
-            submodules_frag.append(Rc::new(RefCell::new(self.submodules_by_publicity(true))));
-            submodules_frag.append(Rc::new(RefCell::new(self.submodules_by_publicity(false))));
-
-            let mut internals = AppendedFragment::default();
-            internals.append(Rc::new(RefCell::new(submodules_frag)));
-            if !imports_str.is_empty() {
-                internals.append(Rc::new(RefCell::new(AtomicFragment::new(imports_str))));
-            }
-            if !re_exports_str.is_empty() {
-                internals.append(Rc::new(RefCell::new(AtomicFragment::new(re_exports_str))));
-            }
-            internals.append(self.content.clone());
-            let internals_rc = Rc::new(RefCell::new(internals));
-
-            if self.uses_entire_file {
-                let mut f = FileFragment::new();
-                if let Some(doc) = &self.declaration.doc {
-                    f.set_preamble(AtomicFragment::new(into_parent_docstring(&doc, 0)));
-                }
-                f.append(internals_rc);
-                f.generate_code()
-            } else {
-                let mut declaration = self.declaration.clone();
-                // todo: try using FileFragment to generate the internals here too
-                declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(format!(
-                    "mod {name}",
-                    name = name.unwrap()
-                )))));
+            let mut declaration = self.declaration.clone();
+            // todo: try using FileFragment to generate the internals here too
+            declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(format!(
+                "mod {name}",
+                name = self.name.as_ref().unwrap()
+            )))));
+            if declaration.body.is_some() {
+                // basically using that option as a boolean right now, because we need to
+                // override with the imports
                 declaration.set_body(internals_rc);
-                declaration.body()
             }
+            declaration.body()
         }
     }
 
