@@ -42,30 +42,61 @@ fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f
 }
 
+/// Get the getter fragment for the flag.
+fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
+    let mut f = FunctionFragment::new(format!("is_{}", cfg.property_name));
+    f.set_documentation(format!("Whether this is marked as {}", cfg.doc));
+    f.set_self_reference(SelfReference::Immutable);
+    f.set_return("bool".to_owned());
+    f.add_import(cfg.flag.import.clone());
+    f.add_import(format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate));
+    f.add_import(format!("{}::tao::form::FormTrait", cfg.yin_crate));
+    f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
+        "self.essence().has_flag({}::TYPE_ID)",
+        cfg.flag.name
+    )))));
+    f
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::codegen::template::basic::CodeFragment;
     use indoc::indoc;
 
+    fn test_config() -> FlagConfig {
+        FlagConfig {
+            property_name: Rc::from("newly_defined"),
+            doc: Rc::from("newly defined as part of the current build."),
+            flag: StructConfig {
+                name: "NewlyDefined".to_owned(),
+                import: "crate::tao::relation::flag::NewlyDefined".to_owned(),
+            },
+            yin_crate: Rc::from("zamm_yin"),
+        }
+    }
+
     #[test]
     fn test_setter_fragment_body() {
         assert_eq!(
-            setter_fragment(&FlagConfig {
-                property_name: Rc::from("newly_defined"),
-                doc: Rc::from("newly defined as part of the current build."),
-                flag: StructConfig {
-                    name: "NewlyDefined".to_owned(),
-                    import: "crate::tao::relation::flag::NewlyDefined".to_owned(),
-                },
-                yin_crate: Rc::from("zamm_yin"),
-            })
-            .body(),
+            setter_fragment(&test_config()).body(),
             indoc! {"
-            /// Mark this as newly defined as part of the current build.
-            fn mark_newly_defined(&mut self) {
-                self.essence_mut().add_flag(NewlyDefined::TYPE_ID);
-            }"}
+                /// Mark this as newly defined as part of the current build.
+                fn mark_newly_defined(&mut self) {
+                    self.essence_mut().add_flag(NewlyDefined::TYPE_ID);
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_getter_fragment_body() {
+        assert_eq!(
+            getter_fragment(&test_config()).body(),
+            indoc! {"
+                /// Whether this is marked as newly defined as part of the current build.
+                fn is_newly_defined(&self) -> bool {
+                    self.essence().has_flag(NewlyDefined::TYPE_ID)
+                }"}
         );
     }
 }
