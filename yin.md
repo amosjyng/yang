@@ -243,10 +243,16 @@ We should really save the build info, so that one day we will no longer need to 
 
 ### Dependencies
 
-These are the versions of Yin and Yang used to make this build happen:
+This is the version of Yang used to make this build happen:
 
 ```toml
-zamm_yang = "0.1.3"
+zamm_yang = "0.1.4"
+```
+
+Yang does his best to be backwards-compatible, so we should let old Yang know that this is new Yang speaking:
+
+```rust
+Crate::yin().set_version("0.1.1");
 ```
 
 ### Imports
@@ -261,6 +267,8 @@ use zamm_yang::tao::archetype::ArchetypeTrait;
 use zamm_yang::tao::archetype::ArchetypeFormTrait;
 use zamm_yang::tao::archetype::CreateImplementation;
 use zamm_yang::tao::archetype::CodegenFlags;
+use zamm_yang::tao::form::Crate;
+use zamm_yang::tao::form::CrateExtension;
 use zamm_yang::tao::form::Form;
 use zamm_yang::tao::form::FormTrait;
 use zamm_yang::tao::form::ModuleExtension;

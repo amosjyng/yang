@@ -8,6 +8,6 @@ fn main() {
     tao::initialize_kb();
 
     let mut target = Target::new();
-    target.set_internal_name("Hello, world.".to_string());
-    println!("{}", target.internal_name().unwrap());
+    target.set_internal_name_str("Hello, world.");
+    println!("{}", target.internal_name_str().unwrap());
 }

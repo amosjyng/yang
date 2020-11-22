@@ -6,7 +6,6 @@ use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::{BuildInfo, BuildInfoExtension};
 use crate::tao::form::{Module, ModuleExtension};
 use crate::tao::{Implement, ImplementExtension};
-use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
@@ -19,7 +18,7 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
     let mut re_exports = vec![];
 
     if parent.is_newly_defined() {
-        archetype_names.push(Rc::from(parent.internal_name().unwrap().as_str()));
+        archetype_names.push(parent.internal_name_str().unwrap());
     } else {
         // Parent is already defined as part of a dependency, we're only creating this crate so
         // that we can access the children as well. In which case, we should also re-export the
@@ -42,7 +41,7 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
                 (*ModuleExtension::implementation_name(&child_submodule).unwrap()).to_owned(),
             );
         } else if child.is_newly_defined() {
-            archetype_names.push(Rc::from(child.internal_name().unwrap().as_str()));
+            archetype_names.push(child.internal_name_str().unwrap());
         } // else, if this child doesn't have their own module, and has also been already defined,
           // then we will re-export them later in this function
     }

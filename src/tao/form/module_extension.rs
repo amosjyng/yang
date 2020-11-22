@@ -21,7 +21,7 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait + SupportsMembership {
     fn set_most_prominent_member(&mut self, member: &Form) {
         self.essence_mut()
             .add_outgoing(MostProminentMember::TYPE_ID, member.essence());
-        if let Some(name) = member.internal_name() {
+        if let Some(name) = member.internal_name_str() {
             BuildInfo::from(self.id()).set_implementation_name(&name.to_snake_case())
         }
     }
@@ -91,7 +91,7 @@ mod tests {
     fn set_and_retrieve_most_prominent_member() {
         initialize_kb();
         let mut my_type = Tao::archetype().individuate_as_archetype().as_form();
-        my_type.set_internal_name("my-amazing-type".to_owned());
+        my_type.set_internal_name_str("my-amazing-type");
         let mut module = Module::new();
         module.set_most_prominent_member(&my_type);
         assert_eq!(module.most_prominent_member(), Some(my_type));
