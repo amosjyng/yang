@@ -46,6 +46,8 @@ pub struct FunctionFragment {
     doc: Option<String>,
     /// Whether or not this function should be publicly exported out of the function.
     public: bool,
+    /// Whether or not this is a test function.
+    test: bool,
     /// The type of reference to &self in a function argument.
     reference: SelfReference,
     /// Arguments of the function.
@@ -76,6 +78,11 @@ impl FunctionFragment {
     /// Set the function to be public.
     pub fn make_public(&mut self) {
         self.public = true;
+    }
+
+    /// Set the function to be a test function.
+    pub fn mark_as_test(&mut self) {
+        self.test = true;
     }
 
     /// Set the return type for the function.
@@ -110,6 +117,7 @@ impl CodeFragment for FunctionFragment {
             Some(d) => into_docstring(&d, 0),
             None => String::new(),
         };
+        let test = if self.test { "#[test]" } else { "" };
         let public = if self.public { "pub " } else { "" };
         let mut args = self
             .args
@@ -129,9 +137,10 @@ impl CodeFragment for FunctionFragment {
         let nested = NestedFragment {
             imports: Vec::new(), // todo: should NestedFragment be a trait instead?
             preamble: formatdoc! {"
-                {doc}
+                {doc}{test}
                 {public}fn {name}({args}){return_type} {{",
                 doc = doc,
+                test = test,
                 public = public,
                 name = self.name,
                 args = args_str,
@@ -194,6 +203,21 @@ mod tests {
             f.body(),
             indoc! {"
                 pub fn foo() {
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_test_function() {
+        let mut f = FunctionFragment::new("foo".to_owned());
+        f.mark_as_test();
+
+        assert_eq!(f.imports(), Vec::<String>::new());
+        assert_eq!(
+            f.body(),
+            indoc! {"
+                #[test]
+                fn foo() {
                 }"}
         );
     }
