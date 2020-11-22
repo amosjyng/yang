@@ -59,7 +59,12 @@ define!(uses_data_logic);
 uses_data_logic.add_parent(Flag::archetype());
 ```
 
-Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
+Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore. We should make a note of the properties that are nonhereditary:
+
+```rust
+define!(nonhereditary);
+nonhereditary.add_parent(Flag::archetype());
+```
 
 Due to current limitations with Yang, we cannot set Tao as the parent here. We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
 
@@ -199,7 +204,7 @@ uses_data_logic.implement_with_doc(
 uses_root_node_logic.implement_with_doc(
     "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this."
 );
-
+nonhereditary.implement_with_doc("Marks a property as not behing inherited.");
 import_path.implement_with_doc("Describes the import path of a defined struct.");
 build_info.implement_with_doc("Represents build information about a generated concept.");
 
