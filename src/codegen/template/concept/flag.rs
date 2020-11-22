@@ -1,4 +1,6 @@
-use crate::codegen::template::basic::{AtomicFragment, FunctionFragment, SelfReference};
+use crate::codegen::template::basic::{
+    AtomicFragment, FunctionFragment, ItemDeclarationAPI, SelfReference,
+};
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -39,7 +41,7 @@ impl Default for FlagConfig {
 /// Get the setter fragment for the flag.
 fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     let mut f = FunctionFragment::new(format!("{}{}", SETTER_PREFIX, cfg.property_name));
-    f.set_documentation(format!("Mark this as {}", cfg.doc));
+    f.document(format!("Mark this as {}", cfg.doc));
     f.set_self_reference(SelfReference::Mutable);
     f.add_import(cfg.flag.import.clone());
     f.add_import(format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate));
@@ -54,7 +56,7 @@ fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
 /// Get the getter fragment for the flag.
 fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     let mut f = FunctionFragment::new(format!("{}{}", GETTER_PREFIX, cfg.property_name));
-    f.set_documentation(format!("Whether this is marked as {}", cfg.doc));
+    f.document(format!("Whether this is marked as {}", cfg.doc));
     f.set_self_reference(SelfReference::Immutable);
     f.set_return("bool".to_owned());
     f.add_import(cfg.flag.import.clone());

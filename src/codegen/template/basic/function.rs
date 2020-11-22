@@ -1,6 +1,4 @@
-use super::{AppendedFragment, CodeFragment, NestedFragment};
-use crate::codegen::docstring::into_docstring;
-use indoc::formatdoc;
+use super::{AppendedFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI, NestedFragment};
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -42,12 +40,8 @@ impl FunctionArgument {
 pub struct FunctionFragment {
     /// Name of the function.
     name: String,
-    /// Documentation string for the function.
-    doc: Option<String>,
-    /// Whether or not this function should be publicly exported out of the function.
-    public: bool,
-    /// Whether or not this is a test function.
-    test: bool,
+    /// Declaration fragment.
+    declaration: ItemDeclaration,
     /// The type of reference to &self in a function argument.
     reference: SelfReference,
     /// Arguments of the function.
@@ -66,23 +60,13 @@ impl FunctionFragment {
         Self {
             name,
             content: Rc::new(RefCell::new(AppendedFragment::new_with_separator("\n"))),
-            ..FunctionFragment::default()
+            ..Self::default()
         }
-    }
-
-    /// Set documentation for the function.
-    pub fn set_documentation(&mut self, doc: String) {
-        self.doc = Some(doc);
-    }
-
-    /// Set the function to be public.
-    pub fn make_public(&mut self) {
-        self.public = true;
     }
 
     /// Set the function to be a test function.
     pub fn mark_as_test(&mut self) {
-        self.test = true;
+        self.declaration.add_attribute("test".to_owned());
     }
 
     /// Set the return type for the function.
@@ -111,14 +95,26 @@ impl FunctionFragment {
     }
 }
 
+impl ItemDeclarationAPI for FunctionFragment {
+    fn mark_as_public(&mut self) {
+        self.declaration.mark_as_public();
+    }
+
+    fn is_public(&self) -> bool {
+        self.declaration.is_public()
+    }
+
+    fn add_attribute(&mut self, attribute: String) {
+        self.declaration.add_attribute(attribute);
+    }
+
+    fn document(&mut self, documentation: String) {
+        self.declaration.document(documentation);
+    }
+}
+
 impl CodeFragment for FunctionFragment {
     fn body(&self) -> String {
-        let doc = match &self.doc {
-            Some(d) => into_docstring(&d, 0),
-            None => String::new(),
-        };
-        let test = if self.test { "#[test]" } else { "" };
-        let public = if self.public { "pub " } else { "" };
         let mut args = self
             .args
             .iter()
@@ -134,22 +130,19 @@ impl CodeFragment for FunctionFragment {
             Some(actual_return_type) => format!(" -> {}", actual_return_type),
             None => String::default(),
         };
-        let nested = NestedFragment {
+        let mut declaration = self.declaration.clone();
+        declaration.set_definition(Rc::new(RefCell::new(NestedFragment {
             imports: Vec::new(), // todo: should NestedFragment be a trait instead?
-            preamble: formatdoc! {"
-                {doc}{test}
-                {public}fn {name}({args}){return_type} {{",
-                doc = doc,
-                test = test,
-                public = public,
+            preamble: format!(
+                "fn {name}({args}){return_type} {{",
                 name = self.name,
                 args = args_str,
                 return_type = return_type
-            },
+            ),
             nesting: Some(self.content.clone()),
             postamble: "}".to_owned(),
-        };
-        nested.body()
+        })));
+        declaration.body()
     }
 
     fn imports(&self) -> Vec<String> {
@@ -181,7 +174,7 @@ mod tests {
     #[test]
     fn test_documented_function() {
         let mut f = FunctionFragment::new("foo".to_owned());
-        f.set_documentation("This is a function.".to_owned());
+        f.document("This is a function.".to_owned());
 
         assert_eq!(f.imports(), Vec::<String>::new());
         assert_eq!(
@@ -196,7 +189,7 @@ mod tests {
     #[test]
     fn test_public_function() {
         let mut f = FunctionFragment::new("foo".to_owned());
-        f.make_public();
+        f.mark_as_public();
 
         assert_eq!(f.imports(), Vec::<String>::new());
         assert_eq!(
@@ -225,7 +218,7 @@ mod tests {
     #[test]
     fn test_function_return() {
         let mut f = FunctionFragment::new("foo".to_owned());
-        f.make_public();
+        f.mark_as_public();
         f.set_return("()".to_owned());
 
         assert_eq!(f.imports(), Vec::<String>::new());
@@ -317,8 +310,8 @@ mod tests {
     #[test]
     fn test_function_imports() {
         let mut f = FunctionFragment::new("foo".to_owned());
-        f.set_documentation("This function adds two custom numbers together.".to_owned());
-        f.make_public();
+        f.document("This function adds two custom numbers together.".to_owned());
+        f.mark_as_public();
         f.add_import("crate::MyNum".to_owned());
         f.set_return("MyNum".to_owned());
         f.add_arg("x".to_owned(), "MyNum".to_owned());
