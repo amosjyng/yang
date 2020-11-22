@@ -35,8 +35,7 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
             .incoming_nodes(HasMember::TYPE_ID)
             .iter()
             .map(|n| Form::from(n.id()))
-            .filter(|f| f.has_ancestor(Crate::archetype()))
-            .next()
+            .find(|f| f.has_ancestor(Crate::archetype()))
             .map(|c| Crate::from(c.id()).implementation_name())
             .flatten()
     }
