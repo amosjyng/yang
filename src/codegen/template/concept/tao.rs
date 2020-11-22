@@ -4,6 +4,38 @@ use indoc::formatdoc;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+/// Backwards-compatibility logic for the internal name API.
+pub struct InternalNameConfig {
+    /// Getter function for the internal name.
+    pub getter: &'static str,
+    /// Setter function for the internal name.
+    pub setter: &'static str,
+    /// Suffix to get strings into the right place.
+    pub suffix: &'static str,
+}
+
+impl InternalNameConfig {
+    /// Default internal name config, compatible with all Yin 0.1.x versions.
+    pub const DEFAULT: Self = Self {
+        getter: "internal_name",
+        setter: "set_internal_name",
+        suffix: ".to_owned()",
+    };
+
+    /// Internal name config, only for Yin versions >= 0.1.1.
+    pub const YIN_AT_LEAST_0_1_1: Self = Self {
+        getter: "internal_name_str",
+        setter: "set_internal_name_str",
+        suffix: "",
+    };
+}
+
+impl Default for InternalNameConfig {
+    fn default() -> Self {
+        Self::DEFAULT
+    }
+}
+
 /// Templating config values for all concepts.
 pub struct TaoConfig {
     /// Name to use for the yin crate.
@@ -14,6 +46,8 @@ pub struct TaoConfig {
     pub this: StructConfig,
     /// Name of the concept.
     pub internal_name: String,
+    /// Config for which API to use for internal names. For backwards compatibility.
+    pub internal_name_cfg: InternalNameConfig,
     /// The form representing the concept.
     pub form: StructConfig,
     /// Name of the parent class.
@@ -43,6 +77,7 @@ impl Default for TaoConfig {
             imports: Some("zamm_yin::tao::YIN_MAX_ID".to_owned()),
             this: StructConfig::default(),
             internal_name: "dummy".to_owned(),
+            internal_name_cfg: InternalNameConfig::DEFAULT,
             form: StructConfig::default(),
             parent_name: "Tao".to_owned(),
             parent_import: "tao::Tao".to_owned(),
@@ -169,8 +204,8 @@ pub fn tao_test_fragment(cfg: &TaoConfig) -> ModuleFragment {
                 initialize_kb();
                 assert_eq!({name}::archetype().id(), {name}::TYPE_ID);
                 assert_eq!(
-                    {name}::archetype().internal_name(),
-                    Some(Rc::new({name}::TYPE_NAME.to_string()))
+                    {name}::archetype().{internal_name_getter}(),
+                    Some(Rc::from({name}::TYPE_NAME{internal_name_suffix}))
                 );
             }}
 
@@ -193,7 +228,7 @@ pub fn tao_test_fragment(cfg: &TaoConfig) -> ModuleFragment {
             fn from_name() {{
                 initialize_kb();
                 let mut concept = {name}::new();
-                concept.set_internal_name("A".to_owned());
+                concept.{internal_name_setter}("A"{internal_name_suffix});
                 assert_eq!({name}::try_from("A").map(|c| c.id()), Ok(concept.id()));
                 assert!({name}::try_from("B").is_err());
             }}
@@ -205,6 +240,9 @@ pub fn tao_test_fragment(cfg: &TaoConfig) -> ModuleFragment {
                 assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
             }}"#,
             name = cfg.this.name,
+            internal_name_getter = cfg.internal_name_cfg.getter,
+            internal_name_setter = cfg.internal_name_cfg.setter,
+            internal_name_suffix = cfg.internal_name_cfg.suffix,
             introduced_attributes = cfg.introduced_attributes,
             all_attributes = cfg.all_attributes,
         },
@@ -219,4 +257,35 @@ pub fn code_tao(cfg: &TaoConfig) -> String {
     file.append(Rc::new(RefCell::new(tao_fragment(cfg))));
     file.set_tests(Rc::new(RefCell::new(tao_test_fragment(cfg))));
     file.generate_code()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_internal_name_used() {
+        let code = code_tao(&TaoConfig {
+            internal_name_cfg: InternalNameConfig::DEFAULT,
+            ..TaoConfig::default()
+        });
+        assert!(code.contains(".set_internal_name("));
+        assert!(!code.contains(".set_internal_name_str("));
+        assert!(code.contains(".internal_name("));
+        assert!(!code.contains(".internal_name_str("));
+        assert!(code.contains(".to_owned()"));
+    }
+
+    #[test]
+    fn test_new_yin_internal_name_used() {
+        let code = code_tao(&TaoConfig {
+            internal_name_cfg: InternalNameConfig::YIN_AT_LEAST_0_1_1,
+            ..TaoConfig::default()
+        });
+        assert!(!code.contains(".set_internal_name("));
+        assert!(code.contains(".set_internal_name_str("));
+        assert!(!code.contains(".internal_name("));
+        assert!(code.contains(".internal_name_str("));
+        assert!(!code.contains(".to_owned()"));
+    }
 }
