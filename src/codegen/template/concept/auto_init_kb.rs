@@ -1,5 +1,7 @@
 use crate::codegen::docstring::into_docstring;
-use crate::codegen::template::basic::{AtomicFragment, FileFragment, FunctionFragment};
+use crate::codegen::template::basic::{
+    AtomicFragment, FileFragment, FunctionFragment, ItemDeclarationAPI,
+};
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use itertools::Itertools;
@@ -21,8 +23,8 @@ pub struct KBInitConfig {
 /// themselves. The caller will also have to initialize archetype relations themselves.
 fn init_types_fragment(cfg: &KBInitConfig) -> FunctionFragment {
     let mut init_fn = FunctionFragment::new("initialize_types".to_owned());
-    init_fn.make_public();
-    init_fn.set_documentation("Adds all concepts to knowledge graph.".to_owned());
+    init_fn.mark_as_public();
+    init_fn.document("Adds all concepts to knowledge graph.".to_owned());
 
     init_fn.add_import(format!("{}::graph::InjectionGraph", cfg.yin_crate));
     init_fn.add_import(format!("{}::graph::Graph", cfg.yin_crate));

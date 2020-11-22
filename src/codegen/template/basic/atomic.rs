@@ -1,6 +1,7 @@
 use super::CodeFragment;
 
 /// Code fragment that cannot be broken down any further.
+#[derive(Default)]
 pub struct AtomicFragment {
     /// Imports for the fragment.
     pub imports: Vec<String>,
