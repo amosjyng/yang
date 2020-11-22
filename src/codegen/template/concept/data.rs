@@ -41,6 +41,10 @@ pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
             ),
             "std::rc::Rc".to_owned(),
         ],
+        // we allow for the potential use of Rc<String> here right now because String is in fact a
+        // proper Rust type just like any other, and it is too much trouble to craft a bespoke
+        // implementation for it right now when we'll do a more proper job of allowing editing in
+        // the future
         atom: formatdoc! {r#"
             impl {name} {{
                 /// Set {primitive} value for this concept.
@@ -50,6 +54,7 @@ pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 }}
 
                 /// Retrieve {primitive}-valued StrongValue.
+                #[allow(clippy::rc_buffer)]
                 pub fn value(&self) -> Option<Rc<{primitive}>> {{
                     unwrap_value::<{primitive}>(self.essence().value())
                 }}
