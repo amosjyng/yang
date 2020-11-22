@@ -47,6 +47,21 @@ pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
             .first()
             .map(|f| Rc::from(StringConcept::from(*f).value().unwrap().as_str()))
     }
+
+    /// Name for the Yin crate
+    const YIN_CRATE_NAME: &'static str = "zamm_yin";
+    /// Name for the Yang crate
+    const YANG_CRATE_NAME: &'static str = "zamm_yang";
+
+    /// Get the Yin crate as a concept.
+    fn yin() -> Crate {
+        Crate::lookup(Self::YIN_CRATE_NAME).unwrap()
+    }
+
+    /// Get the Yang crate as a concept.
+    fn yang() -> Crate {
+        Crate::lookup(Self::YANG_CRATE_NAME).unwrap()
+    }
 }
 
 impl SupportsMembership for Crate {}
@@ -56,6 +71,14 @@ impl CrateExtension for Crate {}
 mod tests {
     use super::*;
     use crate::tao::initialize_kb;
+
+    #[test]
+    fn test_const_crate_init() {
+        initialize_kb();
+        // this not only tests that they are different crates, but also implicitly tests that
+        // they've been successfully retrieved, and therefore successfully initialized
+        assert_ne!(Crate::yin(), Crate::yang());
+    }
 
     #[test]
     fn set_and_retrieve_implementation_name() {
