@@ -14,7 +14,7 @@ pub fn in_own_submodule(target: &Archetype) -> bool {
     target.force_own_module()
         || target.root_node_logic_activated()
         // todo: this is a hack to check if the children are archetypes or not
-        || target.child_archetypes().iter().any(|c| c.internal_name().is_some())
+        || target.child_archetypes().iter().any(|c| c.internal_name_str().is_some())
 }
 
 /// The import path for concepts, starting from Tao and leading to the given archetype.
@@ -40,9 +40,8 @@ pub fn ancestor_path(target: &Archetype, separator: &str) -> String {
             };
 
             let target_name = target
-                .internal_name()
+                .internal_name_str()
                 .unwrap()
-                .as_str()
                 .to_snake_case()
                 .to_ascii_lowercase();
             if in_own_submodule(target) {
@@ -61,9 +60,8 @@ pub fn ancestor_path(target: &Archetype, separator: &str) -> String {
 
 fn snake_name(target: &Archetype) -> String {
     target
-        .internal_name()
+        .internal_name_str()
         .unwrap()
-        .as_str()
         .to_snake_case()
         .to_ascii_lowercase()
 }
@@ -102,7 +100,7 @@ pub fn import_path(target: &Archetype, yin_override: bool) -> String {
             } else {
                 "zamm_yin".to_owned()
             };
-            let struct_name = target.internal_name().unwrap().as_str().to_camel_case();
+            let struct_name = target.internal_name_str().unwrap().to_camel_case();
             format!(
                 "{}::{}::{}",
                 yin_crate,
@@ -118,7 +116,7 @@ pub fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig
     let build_info = BuildInfo::from(target.id());
     let name = build_info
         .implementation_name()
-        .unwrap_or_else(|| Rc::from(target.internal_name().unwrap().to_camel_case().as_str()));
+        .unwrap_or_else(|| Rc::from(target.internal_name_str().unwrap().to_camel_case().as_str()));
     StructConfig {
         name: (*name).to_owned(),
         import: import_path(target, yin_override),
@@ -143,9 +141,9 @@ mod tests {
     fn own_submodule_parent() {
         initialize_kb();
         let mut parent = Tao::archetype().individuate_as_archetype();
-        parent.set_internal_name("parent".to_owned());
+        parent.set_internal_name_str("parent");
         let mut child = parent.individuate_as_archetype();
-        child.set_internal_name("child".to_owned());
+        child.set_internal_name_str("child");
         assert!(in_own_submodule(&parent));
     }
 
@@ -153,9 +151,9 @@ mod tests {
     fn own_submodule_nested() {
         initialize_kb();
         let mut parent = Tao::archetype().individuate_as_archetype();
-        parent.set_internal_name("parent".to_owned());
+        parent.set_internal_name_str("parent");
         let mut child = parent.individuate_as_archetype();
-        child.set_internal_name("child".to_owned());
+        child.set_internal_name_str("child");
         assert!(!in_own_submodule(&child));
     }
 
@@ -163,9 +161,9 @@ mod tests {
     fn own_submodule_forced() {
         initialize_kb();
         let mut parent = Tao::archetype().individuate_as_archetype();
-        parent.set_internal_name("parent".to_owned());
+        parent.set_internal_name_str("parent");
         let mut child = parent.individuate_as_archetype();
-        child.set_internal_name("child".to_owned());
+        child.set_internal_name_str("child");
         // these are individuals, not subtypes, so don't count towards a submodule
         child.individuate_as_form();
         child.individuate_as_form();
@@ -329,10 +327,10 @@ mod tests {
     fn import_path_multiple_descendants() {
         initialize_kb();
         let mut type1 = Tao::archetype().individuate_as_archetype();
-        type1.set_internal_name("hello".to_owned());
+        type1.set_internal_name_str("hello");
         type1.mark_newly_defined();
         let mut type2 = type1.individuate_as_archetype();
-        type2.set_internal_name("world".to_owned());
+        type2.set_internal_name_str("world");
         type2.mark_newly_defined();
         type2.mark_own_module();
         assert_eq!(
@@ -345,7 +343,7 @@ mod tests {
     fn import_path_custom_root() {
         initialize_kb();
         let mut root = Tao::archetype().individuate_as_archetype();
-        root.set_internal_name("my-root".to_owned());
+        root.set_internal_name_str("my-root");
         root.mark_newly_defined();
         root.activate_root_node_logic();
         assert_eq!(import_path(&root, false), "crate::my_root::MyRoot");

@@ -212,7 +212,7 @@ mod tests {
     fn test_default_no_activations() {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
-        target.set_internal_name("MyAttrType".to_owned());
+        target.set_internal_name_str("MyAttrType");
         target.mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(target.as_form());
@@ -234,7 +234,7 @@ mod tests {
     fn code_cfg_for_yin() {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
-        target.set_internal_name("MyDataType".to_owned());
+        target.set_internal_name_str("MyDataType");
         target.mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(target.as_form());
@@ -255,7 +255,7 @@ mod tests {
     fn test_default_doc_newline() {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
-        target.set_internal_name("MyAttrType".to_owned());
+        target.set_internal_name_str("MyAttrType");
         target.mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(target.as_form());
@@ -282,7 +282,7 @@ mod tests {
     fn code_cfg_for_root_node_activated() {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
-        target.set_internal_name("MyRoot".to_owned());
+        target.set_internal_name_str("MyRoot");
         target.mark_newly_defined();
         target.activate_root_node_logic();
 
@@ -295,7 +295,7 @@ mod tests {
     fn code_cfg_for_attribute_activated() {
         initialize_kb();
         let mut target = AttributeArchetype::from(Tao::archetype().individuate_as_archetype().id());
-        target.set_internal_name("MyAttrType".to_owned());
+        target.set_internal_name_str("MyAttrType");
         target.mark_newly_defined();
         target.activate_attribute_logic();
         // todo: reset after set_owner_archetype and set_value_archetype moved to
@@ -329,7 +329,7 @@ mod tests {
     fn code_cfg_for_data_activated() {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
-        target.set_internal_name("MyDataType".to_owned());
+        target.set_internal_name_str("MyDataType");
         target.mark_newly_defined();
         target.activate_data_logic();
 
