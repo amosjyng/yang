@@ -1,4 +1,4 @@
-use super::{AtomicFragment, CodeFragment};
+use super::{AtomicFragment, CodeFragment, NestedFragment};
 use crate::codegen::docstring::into_docstring;
 use itertools::Itertools;
 use std::cell::RefCell;
@@ -17,6 +17,9 @@ pub trait ItemDeclarationAPI {
 
     /// Add an attribute to the declaration.
     fn add_attribute(&mut self, attribute: String);
+
+    /// Set an implementation to go along with the declaration.
+    fn set_body(&mut self, body: Rc<RefCell<dyn CodeFragment>>);
 }
 
 /// Fragment containing all universal modifiers for an item declaration.
@@ -30,6 +33,9 @@ pub struct ItemDeclaration {
     pub attributes: Vec<String>,
     /// Actual definition of the item, whether it be a variable, function, or module.
     pub definition: Rc<RefCell<dyn CodeFragment>>,
+    /// Some items, such as functions and submodules, may have actual implementations that go along
+    /// with their declaration.
+    pub body: Option<Rc<RefCell<dyn CodeFragment>>>,
 }
 
 impl ItemDeclaration {
@@ -54,6 +60,7 @@ impl Default for ItemDeclaration {
             public: false,
             attributes: vec![],
             definition: Rc::new(RefCell::new(AtomicFragment::default())),
+            body: None,
         }
     }
 }
@@ -74,6 +81,10 @@ impl ItemDeclarationAPI for ItemDeclaration {
     fn document(&mut self, documentation: String) {
         self.doc = Some(documentation);
     }
+
+    fn set_body(&mut self, body: Rc<RefCell<dyn CodeFragment>>) {
+        self.body = Some(body);
+    }
 }
 
 impl CodeFragment for ItemDeclaration {
@@ -92,7 +103,7 @@ impl CodeFragment for ItemDeclaration {
         if !attrs.is_empty() {
             attrs.push('\n');
         }
-        format!(
+        let preamble = format!(
             "{doc}{attrs}{public}{definition}",
             doc = doc,
             attrs = attrs,
@@ -100,7 +111,17 @@ impl CodeFragment for ItemDeclaration {
             definition = self.definition.borrow().body(),
         )
         .trim()
-        .to_owned()
+        .to_owned();
+        match &self.body {
+            Some(actual_implementation) => NestedFragment {
+                imports: vec![],
+                preamble: format!("{} {{", preamble),
+                nesting: Some(actual_implementation.clone()),
+                postamble: "}".to_owned(),
+            }
+            .body(),
+            None => format!("{};", preamble),
+        }
     }
 
     fn imports(&self) -> Vec<String> {
@@ -115,7 +136,7 @@ mod tests {
 
     fn simple_declaration() -> ItemDeclaration {
         ItemDeclaration::new(Rc::new(RefCell::new(AtomicFragment::new(
-            "fn foo() -> bool;".to_owned(),
+            "fn foo() -> bool".to_owned(),
         ))))
     }
 

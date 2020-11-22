@@ -1,6 +1,6 @@
 use super::{
     AppendedFragment, AtomicFragment, CodeFragment, FileFragment, ItemDeclaration,
-    ItemDeclarationAPI, NestedFragment,
+    ItemDeclarationAPI,
 };
 use crate::codegen::docstring::into_parent_docstring;
 use crate::codegen::template::imports::{imports_as_str, re_exports_as_str};
@@ -128,6 +128,10 @@ impl ItemDeclarationAPI for ModuleFragment {
     fn document(&mut self, documentation: String) {
         self.declaration.document(documentation);
     }
+
+    fn set_body(&mut self, body: Rc<RefCell<dyn CodeFragment>>) {
+        self.declaration.set_body(body);
+    }
 }
 
 impl Ord for ModuleFragment {
@@ -158,7 +162,7 @@ impl CodeFragment for ModuleFragment {
         if self.declare_only {
             let mut declaration = self.declaration.clone();
             declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(format!(
-                "mod {};",
+                "mod {}",
                 name.unwrap()
             )))));
             declaration.body()
@@ -209,12 +213,11 @@ impl CodeFragment for ModuleFragment {
             } else {
                 let mut declaration = self.declaration.clone();
                 // todo: try using FileFragment to generate the internals here too
-                declaration.set_definition(Rc::new(RefCell::new(NestedFragment {
-                    imports: Vec::new(),
-                    preamble: format!("mod {name} {{", name = name.unwrap()),
-                    nesting: Some(internals_rc),
-                    postamble: "}".to_owned(),
-                })));
+                declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(format!(
+                    "mod {name}",
+                    name = name.unwrap()
+                )))));
+                declaration.set_body(internals_rc);
                 declaration.body()
             }
         }

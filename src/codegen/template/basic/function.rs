@@ -1,4 +1,4 @@
-use super::{AppendedFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI, NestedFragment};
+use super::{AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI};
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -82,6 +82,10 @@ impl ItemDeclarationAPI for FunctionFragment {
     fn document(&mut self, documentation: String) {
         self.declaration.document(documentation);
     }
+
+    fn set_body(&mut self, body: Rc<RefCell<dyn CodeFragment>>) {
+        self.declaration.set_body(body);
+    }
 }
 
 impl CodeFragment for FunctionFragment {
@@ -96,17 +100,13 @@ impl CodeFragment for FunctionFragment {
             None => String::default(),
         };
         let mut declaration = self.declaration.clone();
-        declaration.set_definition(Rc::new(RefCell::new(NestedFragment {
-            imports: Vec::new(), // todo: should NestedFragment be a trait instead?
-            preamble: format!(
-                "fn {name}({args}){return_type} {{",
-                name = self.name,
-                args = args,
-                return_type = return_type
-            ),
-            nesting: Some(self.content.clone()),
-            postamble: "}".to_owned(),
-        })));
+        declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(format!(
+            "fn {name}({args}){return_type}",
+            name = self.name,
+            args = args,
+            return_type = return_type
+        )))));
+        declaration.set_body(self.content.clone());
         declaration.body()
     }
 
