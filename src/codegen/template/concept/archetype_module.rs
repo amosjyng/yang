@@ -1,4 +1,4 @@
-use crate::codegen::template::basic::{CodeFragment, ModuleFragment};
+use crate::codegen::template::basic::{CodeFragment, ItemDeclarationAPI, ModuleFragment};
 use heck::{CamelCase, SnakeCase};
 use std::rc::Rc;
 
@@ -22,7 +22,7 @@ pub fn archetype_module_fragment(cfg: &ArchetypeModuleConfig) -> ModuleFragment 
     let mut module = ModuleFragment::new_file_module();
 
     if let Some(doc) = &cfg.doc {
-        module.set_documentation(doc.clone());
+        module.document(doc.to_string());
     }
 
     for archetype_name in &cfg.archetype_names {

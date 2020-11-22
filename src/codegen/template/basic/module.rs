@@ -1,7 +1,9 @@
-use super::{AppendedFragment, AtomicFragment, CodeFragment, FileFragment, NestedFragment};
-use crate::codegen::docstring::{into_docstring, into_parent_docstring};
+use super::{
+    AppendedFragment, AtomicFragment, CodeFragment, FileFragment, ItemDeclaration,
+    ItemDeclarationAPI, NestedFragment,
+};
+use crate::codegen::docstring::into_parent_docstring;
 use crate::codegen::template::imports::{imports_as_str, re_exports_as_str};
-use indoc::formatdoc;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::rc::Rc;
@@ -10,8 +12,7 @@ use std::rc::Rc;
 #[derive(Default)]
 pub struct ModuleFragment {
     name: Option<String>,
-    doc: Option<Rc<str>>,
-    public: bool,
+    declaration: ItemDeclaration,
     test: bool,
     declare_only: bool,
     uses_entire_file: bool,
@@ -44,16 +45,6 @@ impl ModuleFragment {
         new_self
     }
 
-    /// Set documentation for this module.
-    pub fn set_documentation(&mut self, documentation: Rc<str>) {
-        self.doc = Some(documentation);
-    }
-
-    /// Mark a module as being a publicly accessible one.
-    pub fn mark_as_public(&mut self) {
-        self.public = true;
-    }
-
     /// Causes the generated code to only declare the existence of a module, without actually
     /// specifying any of its contents.
     ///
@@ -81,6 +72,7 @@ impl ModuleFragment {
 
     /// Mark a module as being a test module.
     pub fn mark_as_test(&mut self) {
+        self.declaration.add_attribute("cfg(test)".to_owned());
         self.test = true;
     }
 
@@ -107,7 +99,7 @@ impl ModuleFragment {
         let mut submodules_subset = self
             .submodules
             .iter()
-            .filter(|s| s.borrow().public == publicity)
+            .filter(|s| s.borrow().is_public() == publicity)
             .collect::<Vec<&Rc<RefCell<ModuleFragment>>>>();
         submodules_subset.sort();
         // single newline separation between short module declarations
@@ -117,6 +109,24 @@ impl ModuleFragment {
             submodules_frag.append(module.clone());
         }
         submodules_frag
+    }
+}
+
+impl ItemDeclarationAPI for ModuleFragment {
+    fn mark_as_public(&mut self) {
+        self.declaration.mark_as_public();
+    }
+
+    fn is_public(&self) -> bool {
+        self.declaration.is_public()
+    }
+
+    fn add_attribute(&mut self, attribute: String) {
+        self.declaration.add_attribute(attribute);
+    }
+
+    fn document(&mut self, documentation: String) {
+        self.declaration.document(documentation);
     }
 }
 
@@ -143,24 +153,15 @@ impl Eq for ModuleFragment {}
 
 impl CodeFragment for ModuleFragment {
     fn body(&self) -> String {
-        let public = if self.public { "pub " } else { "" };
-        let cfg_test = if self.test { "#[cfg(test)]" } else { "" };
+        let name = self.name.as_ref();
 
         if self.declare_only {
-            let doc = match &self.doc {
-                Some(d) => into_docstring(&d, 0),
-                None => String::new(),
-            };
-            formatdoc!(
-                "
-                {doc}
-                {public}mod {name};",
-                doc = doc,
-                public = public,
-                name = self.name.as_ref().unwrap()
-            )
-            .trim_start()
-            .to_owned()
+            let mut declaration = self.declaration.clone();
+            declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(format!(
+                "mod {};",
+                name.unwrap()
+            )))));
+            declaration.body()
         } else {
             let mut imports = self.content.borrow().imports();
             if self.test {
@@ -200,31 +201,21 @@ impl CodeFragment for ModuleFragment {
 
             if self.uses_entire_file {
                 let mut f = FileFragment::new();
-                if let Some(doc) = &self.doc {
+                if let Some(doc) = &self.declaration.doc {
                     f.set_preamble(AtomicFragment::new(into_parent_docstring(&doc, 0)));
                 }
                 f.append(internals_rc);
                 f.generate_code()
             } else {
-                let doc = match &self.doc {
-                    Some(d) => into_docstring(&d, 0),
-                    None => String::new(),
-                };
+                let mut declaration = self.declaration.clone();
                 // todo: try using FileFragment to generate the internals here too
-                let nested = NestedFragment {
+                declaration.set_definition(Rc::new(RefCell::new(NestedFragment {
                     imports: Vec::new(),
-                    preamble: formatdoc! {"
-                        {cfg_test}{doc}
-                        {public}mod {name} {{",
-                        doc = doc,
-                        public = public,
-                        name = self.name.as_ref().unwrap(),
-                        cfg_test = cfg_test,
-                    },
+                    preamble: format!("mod {name} {{", name = name.unwrap()),
                     nesting: Some(internals_rc),
                     postamble: "}".to_owned(),
-                };
-                nested.body()
+                })));
+                declaration.body()
             }
         }
     }
@@ -267,7 +258,7 @@ mod tests {
     #[test]
     fn test_documented_module() {
         let mut test_mod = ModuleFragment::new("my_mod".to_owned());
-        test_mod.set_documentation(Rc::from("My amazing module."));
+        test_mod.document("My amazing module.".to_owned());
         test_mod.append(Rc::new(RefCell::new(AtomicFragment {
             imports: Vec::new(),
             atom: indoc! {r#"
@@ -339,7 +330,7 @@ mod tests {
         let mut test_mod = ModuleFragment::new("my_dom".to_owned());
         let test_sub = test_mod.add_submodule("my_sub".to_owned());
         test_sub.borrow_mut().mark_as_public();
-        test_sub.borrow_mut().set_documentation(Rc::from("Subbed."));
+        test_sub.borrow_mut().document("Subbed.".to_owned());
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
         assert_eq!(
@@ -422,7 +413,7 @@ mod tests {
     #[test]
     fn test_as_entire_file() {
         let mut test_mod = ModuleFragment::new_file_module();
-        test_mod.set_documentation(Rc::from("This produces great things."));
+        test_mod.document("This produces great things.".to_owned());
         test_mod.add_submodule("my_sub".to_owned());
 
         test_mod.re_export("my_sub::StructA".to_owned());

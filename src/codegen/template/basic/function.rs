@@ -71,6 +71,10 @@ impl ItemDeclarationAPI for FunctionFragment {
         self.declaration.mark_as_public();
     }
 
+    fn is_public(&self) -> bool {
+        self.declaration.is_public()
+    }
+
     fn add_attribute(&mut self, attribute: String) {
         self.declaration.add_attribute(attribute);
     }

@@ -9,6 +9,9 @@ pub trait ItemDeclarationAPI {
     /// Mark this as a public declaration.
     fn mark_as_public(&mut self);
 
+    /// Whether this has been marked as a public declaration or not.
+    fn is_public(&self) -> bool;
+
     /// Set the documentation for the fragment.
     fn document(&mut self, documentation: String);
 
@@ -58,6 +61,10 @@ impl Default for ItemDeclaration {
 impl ItemDeclarationAPI for ItemDeclaration {
     fn mark_as_public(&mut self) {
         self.public = true;
+    }
+
+    fn is_public(&self) -> bool {
+        self.public
     }
 
     fn add_attribute(&mut self, attribute: String) {
