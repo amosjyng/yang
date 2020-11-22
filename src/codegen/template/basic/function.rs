@@ -1,4 +1,4 @@
-use super::{AppendedFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI, NestedFragment};
+use super::{AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI};
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -19,7 +19,6 @@ impl FunctionArgument {
 }
 
 /// Fragment for a function.
-#[derive(Default)]
 pub struct FunctionFragment {
     /// Name of the function.
     name: String,
@@ -40,7 +39,6 @@ impl FunctionFragment {
     pub fn new(name: String) -> Self {
         Self {
             name,
-            content: Rc::new(RefCell::new(AppendedFragment::new_with_separator("\n"))),
             ..Self::default()
         }
     }
@@ -66,6 +64,22 @@ impl FunctionFragment {
     }
 }
 
+impl Default for FunctionFragment {
+    fn default() -> Self {
+        let mut declaration = ItemDeclaration::default();
+        let content = Rc::new(RefCell::new(AppendedFragment::new_with_separator("\n")));
+        declaration.set_body(content.clone());
+        Self {
+            name: String::default(),
+            declaration,
+            args: vec![],
+            return_type: None,
+            imports: vec![],
+            content,
+        }
+    }
+}
+
 impl ItemDeclarationAPI for FunctionFragment {
     fn mark_as_public(&mut self) {
         self.declaration.mark_as_public();
@@ -82,6 +96,18 @@ impl ItemDeclarationAPI for FunctionFragment {
     fn document(&mut self, documentation: String) {
         self.declaration.document(documentation);
     }
+
+    fn set_body(&mut self, body: Rc<RefCell<dyn CodeFragment>>) {
+        self.declaration.set_body(body);
+    }
+
+    fn mark_as_declare_only(&mut self) {
+        self.declaration.mark_as_declare_only();
+    }
+
+    fn mark_for_full_implementation(&mut self) {
+        self.declaration.mark_for_full_implementation();
+    }
 }
 
 impl CodeFragment for FunctionFragment {
@@ -96,17 +122,12 @@ impl CodeFragment for FunctionFragment {
             None => String::default(),
         };
         let mut declaration = self.declaration.clone();
-        declaration.set_definition(Rc::new(RefCell::new(NestedFragment {
-            imports: Vec::new(), // todo: should NestedFragment be a trait instead?
-            preamble: format!(
-                "fn {name}({args}){return_type} {{",
-                name = self.name,
-                args = args,
-                return_type = return_type
-            ),
-            nesting: Some(self.content.clone()),
-            postamble: "}".to_owned(),
-        })));
+        declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(format!(
+            "fn {name}({args}){return_type}",
+            name = self.name,
+            args = args,
+            return_type = return_type
+        )))));
         declaration.body()
     }
 
@@ -134,6 +155,15 @@ mod tests {
                 fn foo() {
                 }"}
         );
+    }
+
+    #[test]
+    fn test_function_declare_only() {
+        let mut f = FunctionFragment::new("foo".to_owned());
+        f.mark_as_declare_only();
+
+        assert_eq!(f.imports(), Vec::<String>::new());
+        assert_eq!(f.body(), "fn foo();");
     }
 
     #[test]
