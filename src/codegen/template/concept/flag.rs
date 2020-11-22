@@ -1,7 +1,13 @@
 use crate::codegen::template::basic::{AtomicFragment, FunctionFragment, SelfReference};
 use crate::codegen::StructConfig;
+use indoc::formatdoc;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+/// Prefix for setter function name.
+const SETTER_PREFIX: &str = "mark_as_";
+/// Prefix for getter function name.
+const GETTER_PREFIX: &str = "is_";
 
 /// Config values at the time of Flag getter/setter code generation.
 pub struct FlagConfig {
@@ -12,6 +18,8 @@ pub struct FlagConfig {
     pub doc: Rc<str>,
     /// Concept representing the flag.
     pub flag: StructConfig,
+    /// Concept representing the owner of the flag.
+    pub owner_type: StructConfig,
     /// String to use for the Yin crate.
     pub yin_crate: Rc<str>,
 }
@@ -22,6 +30,7 @@ impl Default for FlagConfig {
             property_name: Rc::from(""),
             doc: Rc::from(""),
             flag: StructConfig::default(),
+            owner_type: StructConfig::default(),
             yin_crate: Rc::from("zamm_yin"),
         }
     }
@@ -29,7 +38,7 @@ impl Default for FlagConfig {
 
 /// Get the setter fragment for the flag.
 fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
-    let mut f = FunctionFragment::new(format!("mark_{}", cfg.property_name));
+    let mut f = FunctionFragment::new(format!("{}{}", SETTER_PREFIX, cfg.property_name));
     f.set_documentation(format!("Mark this as {}", cfg.doc));
     f.set_self_reference(SelfReference::Mutable);
     f.add_import(cfg.flag.import.clone());
@@ -44,7 +53,7 @@ fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
 
 /// Get the getter fragment for the flag.
 fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
-    let mut f = FunctionFragment::new(format!("is_{}", cfg.property_name));
+    let mut f = FunctionFragment::new(format!("{}{}", GETTER_PREFIX, cfg.property_name));
     f.set_documentation(format!("Whether this is marked as {}", cfg.doc));
     f.set_self_reference(SelfReference::Immutable);
     f.set_return("bool".to_owned());
@@ -55,6 +64,27 @@ fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
         "self.essence().has_flag({}::TYPE_ID)",
         cfg.flag.name
     )))));
+    f
+}
+
+/// Test that the getter and setter work as intended.
+fn test_fragment(cfg: &FlagConfig) -> FunctionFragment {
+    let mut f = FunctionFragment::new(format!("test_mark_and_check_{}", cfg.property_name));
+    f.mark_as_test();
+    f.add_import("crate::tao::initialize_kb".to_owned());
+    f.add_import(cfg.owner_type.import.clone());
+    f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
+        initialize_kb();
+        let mut new_instance = {owner}::new();
+        assert!(!new_instance.{getter}{property}());
+
+        new_instance.{setter}{property}();
+        assert!(new_instance.{getter}{property}());
+    ", owner = cfg.owner_type.name,
+        getter = GETTER_PREFIX,
+        setter = SETTER_PREFIX,
+        property = cfg.property_name
+    }))));
     f
 }
 
@@ -72,6 +102,10 @@ mod tests {
                 name: "NewlyDefined".to_owned(),
                 import: "crate::tao::relation::flag::NewlyDefined".to_owned(),
             },
+            owner_type: StructConfig {
+                name: "Tao".to_owned(),
+                import: "zamm_yin::tao::Tao".to_owned(),
+            },
             yin_crate: Rc::from("zamm_yin"),
         }
     }
@@ -82,7 +116,7 @@ mod tests {
             setter_fragment(&test_config()).body(),
             indoc! {"
                 /// Mark this as newly defined as part of the current build.
-                fn mark_newly_defined(&mut self) {
+                fn mark_as_newly_defined(&mut self) {
                     self.essence_mut().add_flag(NewlyDefined::TYPE_ID);
                 }"}
         );
@@ -96,6 +130,23 @@ mod tests {
                 /// Whether this is marked as newly defined as part of the current build.
                 fn is_newly_defined(&self) -> bool {
                     self.essence().has_flag(NewlyDefined::TYPE_ID)
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_test_fragment_body() {
+        assert_eq!(
+            test_fragment(&test_config()).body(),
+            indoc! {"
+                #[test]
+                fn test_mark_and_check_newly_defined() {
+                    initialize_kb();
+                    let mut new_instance = Tao::new();
+                    assert!(!new_instance.is_newly_defined());
+            
+                    new_instance.mark_as_newly_defined();
+                    assert!(new_instance.is_newly_defined());
                 }"}
         );
     }
