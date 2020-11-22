@@ -4,7 +4,20 @@ use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+/// API for all items to be modified in the same way.
+pub trait ItemDeclarationAPI {
+    /// Mark this as a public declaration.
+    fn mark_as_public(&mut self);
+
+    /// Set the documentation for the fragment.
+    fn document(&mut self, documentation: String);
+
+    /// Add an attribute to the declaration.
+    fn add_attribute(&mut self, attribute: String);
+}
+
 /// Fragment containing all universal modifiers for an item declaration.
+#[derive(Clone)]
 pub struct ItemDeclaration {
     /// Documentation string for the item.
     pub doc: Option<String>,
@@ -25,24 +38,9 @@ impl ItemDeclaration {
         }
     }
 
-    /// Mark this as a public declaration.
-    pub fn mark_as_public(&mut self) {
-        self.public = true;
-    }
-
-    /// Set the documentation for the fragment.
-    pub fn document(&mut self, documentation: String) {
-        self.doc = Some(documentation);
-    }
-
     /// Set the fragment that defines this item.
     pub fn set_definition(&mut self, definition: Rc<RefCell<dyn CodeFragment>>) {
         self.definition = definition;
-    }
-
-    /// Add an attribute to the declaration.
-    pub fn add_attribute(&mut self, attribute: String) {
-        self.attributes.push(attribute);
     }
 }
 
@@ -54,6 +52,20 @@ impl Default for ItemDeclaration {
             attributes: vec![],
             definition: Rc::new(RefCell::new(AtomicFragment::default())),
         }
+    }
+}
+
+impl ItemDeclarationAPI for ItemDeclaration {
+    fn mark_as_public(&mut self) {
+        self.public = true;
+    }
+
+    fn add_attribute(&mut self, attribute: String) {
+        self.attributes.push(attribute);
+    }
+
+    fn document(&mut self, documentation: String) {
+        self.doc = Some(documentation);
     }
 }
 

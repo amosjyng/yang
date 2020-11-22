@@ -15,7 +15,7 @@ pub use appended::AppendedFragment;
 pub use atomic::AtomicFragment;
 pub use file::FileFragment;
 pub use function::FunctionFragment;
-pub use item_declaration::ItemDeclaration;
+pub use item_declaration::{ItemDeclaration, ItemDeclarationAPI};
 pub use module::ModuleFragment;
 pub use nested::NestedFragment;
 
