@@ -3,13 +3,15 @@ use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::concept::attribute::{code_attribute, AttributeFormatConfig};
 use crate::codegen::template::concept::data::{code_data_concept, DataFormatConfig};
 use crate::codegen::template::concept::form::code_form;
-use crate::codegen::template::concept::tao::{code_tao, TaoConfig};
+use crate::codegen::template::concept::tao::{code_tao, InternalNameConfig, TaoConfig};
 use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::DataExtension;
+use crate::tao::form::{Crate, CrateExtension};
 use crate::tao::{Implement, ImplementExtension};
 use heck::KebabCase;
 use itertools::Itertools;
+use semver::Version;
 use std::convert::TryFrom;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
@@ -51,6 +53,17 @@ fn generic_config(
         concept_to_struct(&Form::archetype(), codegen_cfg.yin)
     } else {
         this.clone()
+    };
+
+    let internal_name_cfg = match Crate::yin().version() {
+        None => InternalNameConfig::DEFAULT,
+        Some(yin_version) => {
+            if Version::parse(&*yin_version).unwrap() >= Version::from((0, 1, 1)) {
+                InternalNameConfig::YIN_AT_LEAST_0_1_1
+            } else {
+                InternalNameConfig::DEFAULT
+            }
+        }
     };
 
     let doc = match &request.documentation() {
@@ -120,6 +133,7 @@ fn generic_config(
         imports,
         this,
         internal_name,
+        internal_name_cfg,
         form,
         parent_name: parent_struct.name,
         parent_import: parent_struct.import,

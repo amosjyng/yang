@@ -1,23 +1,28 @@
-use crate::tao::form::{BuildInfo, Module};
-use crate::tao::relation::attribute::{Crate, ImplementationName, ImportPath, MostProminentMember};
+use crate::tao::form::{BuildInfo, Crate, CrateExtension, Module};
+use crate::tao::relation::attribute::{
+    HasMember, ImplementationName, ImportPath, MostProminentMember, SupportsMembership,
+};
 use std::rc::Rc;
-use zamm_yin::graph::value_wrappers::{unwrap_value, StrongValue};
-use zamm_yin::node_wrappers::BaseNodeTrait;
-use zamm_yin::node_wrappers::CommonNodeTrait;
+use zamm_yin::graph::value_wrappers::StrongValue;
+use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::form::data::StringConcept;
-use zamm_yin::tao::form::FormTrait;
+use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::Wrapper;
 
 /// Trait to extend BuildInfo functionality that has not been auto-generated.
-pub trait BuildInfoExtension: FormTrait {
+pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
     /// Set crate which the object was built as a part of.
     fn set_crate_name(&mut self, name: &str) {
-        let mut s = StringConcept::new();
-        // todo: set using StringConcept API once that is correctly generated once more
-        s.essence_mut()
-            .set_value(Rc::new(StrongValue::new(name.to_owned())));
-        self.essence_mut().add_outgoing(Crate::TYPE_ID, s.essence());
+        let mut c = match Crate::lookup(name) {
+            Some(found_crate) => found_crate,
+            None => {
+                let mut new_crate = Crate::new();
+                new_crate.set_implementation_name(name);
+                new_crate
+            }
+        };
+        c.add_member(&Form::from(self.id()));
     }
 
     /// Retrieve crate which the object was built as a part of. This is called `crate_name` instead
@@ -27,9 +32,11 @@ pub trait BuildInfoExtension: FormTrait {
         self.essence()
             .inheritance_wrapper()
             .base_wrapper()
-            .outgoing_nodes(Crate::TYPE_ID)
-            .first()
-            .map(|s| unwrap_value::<String>(s.value()).map(|rc| Rc::from(rc.as_str())))
+            .incoming_nodes(HasMember::TYPE_ID)
+            .iter()
+            .map(|n| Form::from(n.id()))
+            .find(|f| f.has_ancestor(Crate::archetype()))
+            .map(|c| Crate::from(c.id()).implementation_name())
             .flatten()
     }
 

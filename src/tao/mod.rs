@@ -8,12 +8,14 @@ mod implement_form;
 mod lens_form;
 pub mod relation;
 
+use crate::tao::form::{Crate, CrateExtension};
 use auto_init::initialize_types;
 pub use auto_init::YIN_MAX_ID;
 use form::BuildInfo;
 pub use implement_extension::ImplementExtension;
 pub use implement_form::Implement;
 pub use lens_form::Lens;
+use zamm_yin::tao::archetype::ArchetypeTrait;
 pub use zamm_yin::tao::*;
 
 /// Only here for backwards compatibility reasons.
@@ -28,4 +30,9 @@ pub struct ImplementConfig;
 pub fn initialize_kb() {
     zamm_yin::tao::initialize_kb();
     initialize_types();
+
+    let mut yin = Crate::new();
+    yin.set_implementation_name(Crate::YIN_CRATE_NAME);
+    let mut yang = Crate::new();
+    yang.set_implementation_name(Crate::YANG_CRATE_NAME);
 }

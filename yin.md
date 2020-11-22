@@ -125,24 +125,31 @@ What *does* make sense is distinguishing context-dependent lens from universal o
 define!(lens);
 ```
 
-So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate:
+So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
 
 ```rust
-define!(crate_name);
-crate_name.set_internal_name("crate".to_owned());
-crate_name.add_parent(Attribute::archetype().as_archetype());
+define!(crate_concept);
+crate_concept.set_internal_name("crate".to_owned());
+crate_concept.add_parent(Form::archetype());
 ```
 
-Technically, this should instead be a `part-of-crate` relation between the crate (as its own separate concept apart from the part-of-crate relationship) and the implementation of the concept (as its own separate concept apart from the original concept). Furthermore, as it stands right now this relation points only to the name of the crate, as opposed to the crate itself. However, these distinctions don't matter right now.
+We can reuse the existing generic `HasMember` relation for describing the relationship between a concept and its crate, because there is nothing special about this particular membership scenario that warrants a separate membership concept specifically for this.
 
-Besides, it is only natural for the human mind to use the name of the crate as a metonymy for the crate itself, just as humans also tend to use a filename or a file icon as a metonymy for the inode that points to the actual blocks of data on disk. How often do we stop to remind ourselves that the filename is only a symbolic handle for the actual data, or that when we're dragging a file icon from one folder to another, we're not dragging the data but only the visual representation of the data? We don't do so very often, because such details usually don't matter, and so we will also skip them here.
+Crates are versioned:
 
-And might also have their own implementation name:
+```rust
+define!(version);
+version.add_parent(Attribute::archetype().as_archetype());
+```
+
+Concepts and crates alike might also have their own implementation name:
 
 ```rust
 define!(implementation_name);
 implementation_name.add_parent(Attribute::archetype().as_archetype());
 ```
+
+It is only natural for the human mind to use the name of the crate as a metonymy for the crate itself, just as humans also tend to use a filename or a file icon as a metonymy for the inode that points to the actual blocks of data on disk. How often do we stop to remind ourselves that the filename is only a symbolic handle for the actual data, or that when we're dragging a file icon from one folder to another, we're not dragging the data but only the visual representation of the data? We don't do so very often, because such details usually don't matter. It does matter here, however, so we will keep them separate and distinct.
 
 ### Implementation
 
@@ -200,8 +207,8 @@ lens.implement_with_doc(
     "Describes a way of looking at things that is only well-defined within a specific context."
 );
 
-crate_name.implement_with_doc("Crate that a concept was built as a part of.");
-
+crate_concept.implement_with_doc("Crate that a concept was built as a part of.");
+version.implement_with_doc("Version number for a versioned object.");
 implementation_name.implement_with_doc("Name the concept actually took on when implemented.");
 ```
 
@@ -210,6 +217,7 @@ Last but not least, let's make sure to also define the modules for concepts that
 ```rust
 let mut form_mod = Form::archetype().impl_mod("All things that can be interacted with have form.");
 form_mod.has_extension("build_info_extension::BuildInfoExtension");
+form_mod.has_extension("crate_extension::CrateExtension");
 form_mod.has_extension("defined_marker::DefinedMarker");
 form_mod.has_extension("module_extension::ModuleExtension");
 
@@ -224,7 +232,9 @@ data_mod.has_extension("data_extension::DataExtension");
 
 Relation::archetype().impl_mod("Relations between the forms.");
 Flag::archetype().impl_mod("Relations involving only one form.");
-Attribute::archetype().impl_mod("Relations between two forms.");
+
+let mut attr_mod = Attribute::archetype().impl_mod("Relations between two forms.");
+attr_mod.has_extension("supports_membership::SupportsMembership");
 ```
 
 We should really save the build info, so that one day we will no longer need to redefine the documentation for these modules.
