@@ -5,7 +5,7 @@ pub mod callbacks;
 pub mod form;
 mod implement_extension;
 mod implement_form;
-pub mod lens;
+pub mod perspective;
 pub mod relation;
 
 use crate::tao::form::{Crate, CrateExtension};
