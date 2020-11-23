@@ -98,7 +98,9 @@ impl ItemDeclarationAPI for ItemDeclaration {
     }
 
     fn mark_for_full_implementation(&mut self) {
-        self.body = Some(Rc::new(RefCell::new(AtomicFragment::default())));
+        if self.body.is_none() {
+            self.body = Some(Rc::new(RefCell::new(AtomicFragment::default())));
+        }
     }
 }
 
@@ -206,12 +208,7 @@ mod tests {
         i.mark_for_full_implementation();
 
         assert_eq!(i.imports(), Vec::<String>::new());
-        assert_eq!(
-            i.body(),
-            indoc! {"
-            fn foo() -> bool {
-            }"}
-        );
+        assert_eq!(i.body(), "fn foo() -> bool {}");
     }
 
     #[test]
