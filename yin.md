@@ -130,6 +130,13 @@ What *does* make sense is distinguishing context-dependent lens from universal o
 define!(lens);
 ```
 
+One lens through which to look at things is the knowledge graph lens, through which everything described here are equally first-class concept nodes. There are superficial differences between the nodes and how well-connected, yes, but all nodes are fundamentally equivalent as pieces of knowledge. We look at knowledge the same way humanism looks at humans.
+
+```rust
+define!(knowledge_graph);
+knowledge_graph.add_parent(lens);
+```
+
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
 
 ```rust
@@ -211,6 +218,8 @@ build_info.implement_with_doc("Represents build information about a generated co
 lens.implement_with_doc(
     "Describes a way of looking at things that is only well-defined within a specific context."
 );
+lens.impl_mod("Perspectives on the world.");
+knowledge_graph.implement_with_doc("Look at all information as knowledge graph entities.");
 
 crate_concept.implement_with_doc("Crate that a concept was built as a part of.");
 version.implement_with_doc("Version number for a versioned object.");

@@ -5,7 +5,7 @@ pub mod callbacks;
 pub mod form;
 mod implement_extension;
 mod implement_form;
-mod lens_form;
+pub mod lens;
 pub mod relation;
 
 use crate::tao::form::{Crate, CrateExtension};
@@ -14,7 +14,6 @@ pub use auto_init::YIN_MAX_ID;
 use form::BuildInfo;
 pub use implement_extension::ImplementExtension;
 pub use implement_form::Implement;
-pub use lens_form::Lens;
 use zamm_yin::tao::archetype::ArchetypeTrait;
 pub use zamm_yin::tao::*;
 
