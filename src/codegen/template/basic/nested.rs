@@ -37,7 +37,7 @@ impl CodeFragment for NestedFragment {
             .nesting
             .as_ref()
             .map(|n| n.borrow().body().trim().to_owned())
-            .unwrap_or(String::default());
+            .unwrap_or_default();
         if trimmed_body.is_empty() {
             trimmed_preamble + trimmed_postamble
         } else {
