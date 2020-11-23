@@ -58,7 +58,7 @@ impl FunctionFragment {
         self.imports.push(import);
     }
 
-    /// Add a fragment to the internals of this module.
+    /// Add a fragment to the internals of this function.
     pub fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
         self.content.borrow_mut().append(fragment);
     }

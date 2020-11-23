@@ -5,6 +5,7 @@ mod atomic;
 /// Fragment for an entire code file.
 mod file;
 mod function;
+mod impl_fragment;
 mod item_declaration;
 /// Fragment for a module declaration.
 mod module;
@@ -16,6 +17,7 @@ pub use appended::AppendedFragment;
 pub use atomic::AtomicFragment;
 pub use file::FileFragment;
 pub use function::FunctionFragment;
+pub use impl_fragment::ImplementationFragment;
 pub use item_declaration::{ItemDeclaration, ItemDeclarationAPI};
 pub use module::ModuleFragment;
 pub use nested::NestedFragment;

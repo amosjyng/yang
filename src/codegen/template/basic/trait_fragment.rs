@@ -17,7 +17,7 @@ pub struct TraitFragment {
 }
 
 impl TraitFragment {
-    /// Create a new function with the given name.
+    /// Create a new trait with the given name.
     pub fn new(name: String) -> Self {
         Self {
             name,
@@ -30,7 +30,7 @@ impl TraitFragment {
         self.required_traits.push(required_trait);
     }
 
-    /// Add a fragment to the internals of this module.
+    /// Add a fragment to the internals of this trait.
     pub fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
         self.content.borrow_mut().append(fragment);
     }
