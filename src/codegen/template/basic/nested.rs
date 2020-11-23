@@ -31,17 +31,22 @@ impl NestedFragment {
 
 impl CodeFragment for NestedFragment {
     fn body(&self) -> String {
-        let mut result = self.preamble.trim().to_owned() + "\n";
-        if let Some(n) = self.nesting.as_ref() {
-            let body = n.borrow().body();
-            let trimmed_body = body.trim();
-            if !trimmed_body.is_empty() {
-                for line in trimmed_body.split('\n') {
-                    result += &(add_indent(RUST_INDENTATION, line) + "\n");
-                }
+        let trimmed_preamble = self.preamble.trim().to_owned();
+        let trimmed_postamble = self.postamble.trim();
+        let trimmed_body = self
+            .nesting
+            .as_ref()
+            .map(|n| n.borrow().body().trim().to_owned())
+            .unwrap_or_default();
+        if trimmed_body.is_empty() {
+            trimmed_preamble + trimmed_postamble
+        } else {
+            let mut result = trimmed_preamble + "\n";
+            for line in trimmed_body.split('\n') {
+                result += &(add_indent(RUST_INDENTATION, line) + "\n");
             }
+            result + trimmed_postamble
         }
-        result + self.postamble.trim()
     }
 
     fn imports(&self) -> Vec<String> {
@@ -111,14 +116,7 @@ mod tests {
             nested.imports(),
             vec!["std::official::RustStruct".to_owned(),]
         );
-        assert_eq!(
-            nested.body(),
-            indoc! {"
-                RustStruct {
-                }
-            "}
-            .trim()
-        );
+        assert_eq!(nested.body(), "RustStruct {}");
     }
 
     #[test]
@@ -133,13 +131,6 @@ mod tests {
             nested.imports(),
             vec!["std::official::RustStruct".to_owned(),]
         );
-        assert_eq!(
-            nested.body(),
-            indoc! {"
-                RustStruct {
-                }
-            "}
-            .trim()
-        );
+        assert_eq!(nested.body(), "RustStruct {}");
     }
 }

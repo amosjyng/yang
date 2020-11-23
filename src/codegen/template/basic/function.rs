@@ -58,7 +58,7 @@ impl FunctionFragment {
         self.imports.push(import);
     }
 
-    /// Add a fragment to the internals of this module.
+    /// Add a fragment to the internals of this function.
     pub fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
         self.content.borrow_mut().append(fragment);
     }
@@ -149,12 +149,7 @@ mod tests {
         let f = FunctionFragment::new("foo".to_owned());
 
         assert_eq!(f.imports(), Vec::<String>::new());
-        assert_eq!(
-            f.body(),
-            indoc! {"
-                fn foo() {
-                }"}
-        );
+        assert_eq!(f.body(), "fn foo() {}");
     }
 
     #[test]
@@ -176,8 +171,7 @@ mod tests {
             f.body(),
             indoc! {"
                 /// This is a function.
-                fn foo() {
-                }"}
+                fn foo() {}"}
         );
     }
 
@@ -187,12 +181,7 @@ mod tests {
         f.mark_as_public();
 
         assert_eq!(f.imports(), Vec::<String>::new());
-        assert_eq!(
-            f.body(),
-            indoc! {"
-                pub fn foo() {
-                }"}
-        );
+        assert_eq!(f.body(), "pub fn foo() {}");
     }
 
     #[test]
@@ -202,12 +191,7 @@ mod tests {
         f.set_return("()".to_owned());
 
         assert_eq!(f.imports(), Vec::<String>::new());
-        assert_eq!(
-            f.body(),
-            indoc! {"
-                pub fn foo() -> () {
-                }"}
-        );
+        assert_eq!(f.body(), "pub fn foo() -> () {}");
     }
 
     #[test]

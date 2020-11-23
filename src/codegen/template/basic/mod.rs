@@ -5,19 +5,23 @@ mod atomic;
 /// Fragment for an entire code file.
 mod file;
 mod function;
+mod impl_fragment;
 mod item_declaration;
 /// Fragment for a module declaration.
 mod module;
 /// Code fragment that nests another code fragment inside.
 mod nested;
+mod trait_fragment;
 
 pub use appended::AppendedFragment;
 pub use atomic::AtomicFragment;
 pub use file::FileFragment;
 pub use function::FunctionFragment;
+pub use impl_fragment::ImplementationFragment;
 pub use item_declaration::{ItemDeclaration, ItemDeclarationAPI};
 pub use module::ModuleFragment;
 pub use nested::NestedFragment;
+pub use trait_fragment::TraitFragment;
 
 /// Number of spaces Rust is usually indented by.
 const RUST_INDENTATION: usize = 4;

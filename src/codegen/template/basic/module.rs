@@ -360,8 +360,7 @@ mod tests {
             test_mod.body(),
             indoc! {"
                 mod my_dom {
-                    mod my_sub {
-                    }
+                    mod my_sub {}
                 }"}
         );
     }
