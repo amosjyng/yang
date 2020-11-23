@@ -1,4 +1,4 @@
-use crate::codegen::template::basic::{AtomicFragment, FileFragment, ModuleFragment};
+use crate::codegen::template::basic::{AtomicFragment, FileFragment};
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -93,7 +93,7 @@ impl Default for TaoConfig {
 }
 
 /// Get the Tao body fragment.
-pub fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
+fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
     let mut imports = vec![
         "std::convert::TryFrom".to_owned(),
         "std::fmt".to_owned(),
@@ -181,8 +181,7 @@ pub fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
 }
 
 /// Get the Tao test fragment
-pub fn tao_test_fragment(cfg: &TaoConfig) -> ModuleFragment {
-    let mut test_mod = ModuleFragment::new_test_module();
+fn tao_test_fragment(cfg: &TaoConfig) -> AtomicFragment {
     let mut imports = vec![
         "crate::tao::initialize_kb".to_owned(),
         "std::rc::Rc".to_owned(),
@@ -196,7 +195,7 @@ pub fn tao_test_fragment(cfg: &TaoConfig) -> ModuleFragment {
     for attr_import in &cfg.introduced_attribute_imports {
         imports.push(attr_import.clone());
     }
-    let test_body = AtomicFragment {
+    AtomicFragment {
         imports,
         atom: formatdoc! {r#"
             #[test]
@@ -246,17 +245,20 @@ pub fn tao_test_fragment(cfg: &TaoConfig) -> ModuleFragment {
             introduced_attributes = cfg.introduced_attributes,
             all_attributes = cfg.all_attributes,
         },
-    };
-    test_mod.append(Rc::new(RefCell::new(test_body)));
-    test_mod
+    }
+}
+
+/// Returns a file fragment, which may be appended to further.
+pub fn tao_file_fragment(cfg: &TaoConfig) -> FileFragment {
+    let mut file = FileFragment::default();
+    file.append(Rc::new(RefCell::new(tao_fragment(cfg))));
+    file.append_test(Rc::new(RefCell::new(tao_test_fragment(cfg))));
+    file
 }
 
 /// Generate code for a Tao concept config.
 pub fn code_tao(cfg: &TaoConfig) -> String {
-    let mut file = FileFragment::default();
-    file.append(Rc::new(RefCell::new(tao_fragment(cfg))));
-    file.set_tests(Rc::new(RefCell::new(tao_test_fragment(cfg))));
-    file.generate_code()
+    tao_file_fragment(cfg).generate_code()
 }
 
 #[cfg(test)]

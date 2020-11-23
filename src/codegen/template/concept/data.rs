@@ -1,7 +1,6 @@
 use super::form::form_fragment;
-use super::tao::tao_test_fragment;
 use super::tao::TaoConfig;
-use crate::codegen::template::basic::{AtomicFragment, FileFragment};
+use crate::codegen::template::basic::AtomicFragment;
 use indoc::formatdoc;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -27,7 +26,7 @@ impl Default for DataFormatConfig {
 }
 
 /// Get the body fragment for a data concept.
-pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
+fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![
             format!("{}::node_wrappers::BaseNodeTrait", cfg.tao_cfg.yin_crate),
@@ -64,8 +63,8 @@ pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     }
 }
 
-/// Get the string concept test fragment.
-pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
+/// Get the data concept test fragment.
+fn data_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![],
         atom: formatdoc! {r#"
@@ -92,12 +91,9 @@ pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
 
 /// Generate code for a Data concept.
 pub fn code_data_concept(cfg: &DataFormatConfig) -> String {
-    let mut file = FileFragment::default();
-    file.append(Rc::new(RefCell::new(form_fragment(&cfg.tao_cfg))));
+    let mut file = form_fragment(&cfg.tao_cfg);
     file.append(Rc::new(RefCell::new(data_concept_fragment(cfg))));
-    let mut test_frag = tao_test_fragment(&cfg.tao_cfg);
-    test_frag.append(Rc::new(RefCell::new(string_concept_test_fragment(cfg))));
-    file.set_tests(Rc::new(RefCell::new(test_frag)));
+    file.append_test(Rc::new(RefCell::new(data_concept_test_fragment(cfg))));
     file.generate_code()
 }
 

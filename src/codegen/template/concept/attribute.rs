@@ -1,7 +1,6 @@
 use super::form::form_fragment;
-use super::tao::tao_test_fragment;
 use super::tao::TaoConfig;
-use crate::codegen::template::basic::{AtomicFragment, FileFragment};
+use crate::codegen::template::basic::AtomicFragment;
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -109,11 +108,8 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
 
 /// Generate code for an Attribute config.
 pub fn code_attribute(cfg: &AttributeFormatConfig) -> String {
-    let mut file = FileFragment::default();
-    file.append(Rc::new(RefCell::new(form_fragment(&cfg.tao_cfg))));
+    let mut file = form_fragment(&cfg.tao_cfg);
     file.append(Rc::new(RefCell::new(attribute_fragment(&cfg))));
-    let mut test_frag = tao_test_fragment(&cfg.tao_cfg);
-    test_frag.append(Rc::new(RefCell::new(attribute_test_fragment(&cfg))));
-    file.set_tests(Rc::new(RefCell::new(test_frag)));
+    file.append_test(Rc::new(RefCell::new(attribute_test_fragment(&cfg))));
     file.generate_code()
 }
