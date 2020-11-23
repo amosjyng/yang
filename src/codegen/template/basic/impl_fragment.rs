@@ -138,12 +138,7 @@ mod tests {
             },
         );
 
-        assert_eq!(
-            f.body(),
-            indoc! {"
-                impl Foo for Bar {
-                }"}
-        );
+        assert_eq!(f.body(), "impl Foo for Bar {}");
     }
 
     #[test]

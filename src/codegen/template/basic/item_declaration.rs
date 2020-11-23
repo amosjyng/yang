@@ -208,12 +208,7 @@ mod tests {
         i.mark_for_full_implementation();
 
         assert_eq!(i.imports(), Vec::<String>::new());
-        assert_eq!(
-            i.body(),
-            indoc! {"
-            fn foo() -> bool {
-            }"}
-        );
+        assert_eq!(i.body(), "fn foo() -> bool {}");
     }
 
     #[test]

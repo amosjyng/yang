@@ -120,12 +120,7 @@ mod tests {
         let f = TraitFragment::new("Foo".to_owned());
 
         assert_eq!(f.imports(), Vec::<String>::new());
-        assert_eq!(
-            f.body(),
-            indoc! {"
-                trait Foo {
-                }"}
-        );
+        assert_eq!(f.body(), "trait Foo {}");
     }
 
     #[test]
@@ -138,8 +133,7 @@ mod tests {
             f.body(),
             indoc! {"
                 /// This is a trait.
-                trait Foo {
-                }"}
+                trait Foo {}"}
         );
     }
 
@@ -149,12 +143,7 @@ mod tests {
         f.mark_as_public();
 
         assert_eq!(f.imports(), Vec::<String>::new());
-        assert_eq!(
-            f.body(),
-            indoc! {"
-                pub trait Foo {
-                }"}
-        );
+        assert_eq!(f.body(), "pub trait Foo {}");
     }
 
     #[test]
