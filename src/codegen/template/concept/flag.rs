@@ -1,5 +1,5 @@
 use crate::codegen::template::basic::{
-    AtomicFragment, FunctionFragment, ItemDeclarationAPI, SelfReference,
+    AtomicFragment, FileFragment, FunctionFragment, ItemDeclarationAPI, SelfReference,
 };
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
@@ -88,6 +88,13 @@ fn test_fragment(cfg: &FlagConfig) -> FunctionFragment {
         property = cfg.property_name
     }))));
     f
+}
+
+/// Add these flags to a file.
+pub fn add_flag_to_file(cfg: &FlagConfig, file: &mut FileFragment) {
+    file.append(Rc::new(RefCell::new(getter_fragment(cfg))));
+    file.append(Rc::new(RefCell::new(setter_fragment(cfg))));
+    file.append_test(Rc::new(RefCell::new(test_fragment(cfg))));
 }
 
 #[cfg(test)]
