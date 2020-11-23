@@ -230,8 +230,7 @@ mod tests {
             f.body(),
             indoc! {"
                 #[test]
-                fn foo() {
-                }"}
+                fn foo() {}"}
         );
     }
 
