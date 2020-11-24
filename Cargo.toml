@@ -16,7 +16,7 @@ indoc = "1.0"
 itertools = "0.9.0"
 path_abs = "0.5.0"
 textwrap = "0.12.1"
-zamm_yin = "0.1.1"
+zamm_yin = "0.1.2"
 semver = "0.9.0"
 
 [build-dependencies]
