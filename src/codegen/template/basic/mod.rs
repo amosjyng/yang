@@ -16,7 +16,7 @@ mod trait_fragment;
 pub use appended::AppendedFragment;
 pub use atomic::AtomicFragment;
 pub use file::FileFragment;
-pub use function::FunctionFragment;
+pub use function::{FunctionFragment, SelfReference};
 pub use impl_fragment::ImplementationFragment;
 pub use item_declaration::{ItemDeclaration, ItemDeclarationAPI};
 pub use module::ModuleFragment;

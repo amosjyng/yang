@@ -6,17 +6,17 @@ use std::rc::Rc;
 /// Fragment for a trait implementation.
 pub struct ImplementationFragment {
     /// Config for the trait being implemented.
-    trait_cfg: StructConfig,
+    pub trait_cfg: StructConfig,
     /// Config for the struct the trait is being implemented for.
-    struct_cfg: StructConfig,
+    pub struct_cfg: StructConfig,
     /// Whether this implementation is in the same file the trait is defined in.
-    same_file_as_trait: bool,
+    pub same_file_as_trait: bool,
     /// Whether this implementation is in the same file the struct is defined in.
-    same_file_as_struct: bool,
+    pub same_file_as_struct: bool,
     /// Declaration fragment for this trait.
-    declaration: ItemDeclaration,
+    pub declaration: ItemDeclaration,
     /// Actual internal code fragments for the trait.
-    content: Rc<RefCell<AppendedFragment>>,
+    pub content: Rc<RefCell<AppendedFragment>>,
 }
 
 impl ImplementationFragment {

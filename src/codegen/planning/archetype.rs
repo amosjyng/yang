@@ -1,9 +1,9 @@
 use super::concept_to_struct;
 use crate::codegen::docstring::into_docstring;
-use crate::codegen::template::concept::attribute::{code_attribute, AttributeFormatConfig};
-use crate::codegen::template::concept::data::{code_data_concept, DataFormatConfig};
-use crate::codegen::template::concept::form::code_form;
-use crate::codegen::template::concept::tao::{code_tao, InternalNameConfig, TaoConfig};
+use crate::codegen::template::concept::attribute::{add_attr_fragments, AttributeFormatConfig};
+use crate::codegen::template::concept::data::{add_data_fragments, DataFormatConfig};
+use crate::codegen::template::concept::form::add_form_fragment;
+use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
 use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::DataExtension;
@@ -190,15 +190,19 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
 
     let base_cfg = generic_config(&request, &target, &parent, codegen_cfg);
 
-    if target.root_node_logic_activated() {
-        code_tao(&base_cfg)
-    } else if activate_archetype(&target, &parent) {
-        code_attribute(&attribute_config(base_cfg, &target, codegen_cfg))
-    } else if activate_data(&target) {
-        code_data_concept(&data_config(base_cfg, &target))
-    } else {
-        code_form(&base_cfg)
+    let mut file = tao_file_fragment(&base_cfg);
+
+    if !target.root_node_logic_activated() {
+        add_form_fragment(&base_cfg, &mut file);
     }
+
+    if activate_archetype(&target, &parent) {
+        add_attr_fragments(&attribute_config(base_cfg, &target, codegen_cfg), &mut file);
+    } else if activate_data(&target) {
+        add_data_fragments(&data_config(base_cfg, &target), &mut file);
+    }
+
+    file.generate_code()
 }
 
 #[cfg(test)]
@@ -336,5 +340,17 @@ mod tests {
         assert!(!target.root_node_logic_activated());
         assert!(!activate_archetype(&target, &primary_parent(&target)));
         assert!(activate_data(&target));
+    }
+
+    #[test]
+    fn integration_test_root_node_generation() {
+        initialize_kb();
+        let mut my_root = Tao::archetype().individuate_as_archetype();
+        my_root.activate_root_node_logic();
+        my_root.set_internal_name_str("my-root");
+        let mut i = Implement::new();
+        i.set_target(my_root.as_form());
+        let code = code_archetype(i, &CodegenConfig::default());
+        assert!(!code.contains("impl FormTrait"));
     }
 }

@@ -1,5 +1,3 @@
-use super::form::form_fragment;
-use super::tao::tao_test_fragment;
 use super::tao::TaoConfig;
 use crate::codegen::template::basic::{AtomicFragment, FileFragment};
 use indoc::formatdoc;
@@ -27,7 +25,7 @@ impl Default for DataFormatConfig {
 }
 
 /// Get the body fragment for a data concept.
-pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
+fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![
             format!("{}::node_wrappers::BaseNodeTrait", cfg.tao_cfg.yin_crate),
@@ -64,8 +62,8 @@ pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     }
 }
 
-/// Get the string concept test fragment.
-pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
+/// Get the data concept test fragment.
+fn data_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![],
         atom: formatdoc! {r#"
@@ -91,14 +89,9 @@ pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
 }
 
 /// Generate code for a Data concept.
-pub fn code_data_concept(cfg: &DataFormatConfig) -> String {
-    let mut file = FileFragment::default();
-    file.append(Rc::new(RefCell::new(form_fragment(&cfg.tao_cfg))));
+pub fn add_data_fragments(cfg: &DataFormatConfig, file: &mut FileFragment) {
     file.append(Rc::new(RefCell::new(data_concept_fragment(cfg))));
-    let mut test_frag = tao_test_fragment(&cfg.tao_cfg);
-    test_frag.append(Rc::new(RefCell::new(string_concept_test_fragment(cfg))));
-    file.set_tests(Rc::new(RefCell::new(test_frag)));
-    file.generate_code()
+    file.append_test(Rc::new(RefCell::new(data_concept_test_fragment(cfg))));
 }
 
 #[cfg(test)]
@@ -108,21 +101,33 @@ mod tests {
 
     #[test]
     fn test_string_output() {
-        let code = code_data_concept(&DataFormatConfig {
-            rust_primitive_name: Rc::from("String"),
-            ..DataFormatConfig::default()
-        });
+        let mut f = FileFragment::new();
+        add_data_fragments(
+            &DataFormatConfig {
+                rust_primitive_name: Rc::from("String"),
+                ..DataFormatConfig::default()
+            },
+            &mut f,
+        );
+        let code = f.generate_code();
         assert!(code.contains("String"));
         assert!(!code.contains("i64"));
+        assert!(code.contains("set_value"));
     }
 
     #[test]
     fn test_int_output() {
-        let code = code_data_concept(&DataFormatConfig {
-            rust_primitive_name: Rc::from("i64"),
-            ..DataFormatConfig::default()
-        });
+        let mut f = FileFragment::new();
+        add_data_fragments(
+            &DataFormatConfig {
+                rust_primitive_name: Rc::from("i64"),
+                ..DataFormatConfig::default()
+            },
+            &mut f,
+        );
+        let code = f.generate_code();
         // todo: assert no "String" in code after CommonNodeTrait gets automatically implemented
         assert!(code.contains("i64"));
+        assert!(code.contains("set_value"));
     }
 }

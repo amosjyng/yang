@@ -1,4 +1,4 @@
-use super::{AppendedFragment, AtomicFragment, CodeFragment};
+use super::{AppendedFragment, AtomicFragment, CodeFragment, ModuleFragment};
 use crate::codegen::template::imports::imports_as_str;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -9,7 +9,7 @@ use std::rc::Rc;
 pub struct FileFragment {
     preamble: Option<AtomicFragment>,
     contents: Rc<RefCell<AppendedFragment>>,
-    tests: Option<Rc<RefCell<dyn CodeFragment>>>,
+    tests: Vec<Rc<RefCell<dyn CodeFragment>>>,
 }
 
 impl FileFragment {
@@ -28,17 +28,21 @@ impl FileFragment {
         self.contents.borrow_mut().append(fragment);
     }
 
-    /// Set the test module for this file.
-    pub fn set_tests(&mut self, tests: Rc<RefCell<dyn CodeFragment>>) {
-        self.tests = Some(tests);
+    /// Add test code to the test module for this file.
+    pub fn append_test(&mut self, test: Rc<RefCell<dyn CodeFragment>>) {
+        self.tests.push(test);
     }
 
     /// Get the code for this fragment.
     pub fn generate_code(&self) -> String {
         let mut combined = AppendedFragment::default();
         combined.append(self.contents.clone());
-        if let Some(t) = self.tests.as_ref() {
-            combined.append(t.clone());
+        if !self.tests.is_empty() {
+            let mut test_mod = ModuleFragment::new_test_module();
+            for test in &self.tests {
+                test_mod.append(test.clone());
+            }
+            combined.append(Rc::new(RefCell::new(test_mod)));
         }
 
         let imports = imports_as_str(
@@ -68,7 +72,7 @@ impl FileFragment {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{AtomicFragment, ModuleFragment};
+    use super::super::AtomicFragment;
     use super::*;
     use indoc::indoc;
 
@@ -130,8 +134,7 @@ mod tests {
             .trim()
             .to_string(),
         })));
-        let mut test_mod = ModuleFragment::new_test_module();
-        test_mod.append(Rc::new(RefCell::new(AtomicFragment {
+        file.append_test(Rc::new(RefCell::new(AtomicFragment {
             imports: Vec::new(),
             atom: indoc! {"
                 #[test]
@@ -143,7 +146,6 @@ mod tests {
                 }"}
             .to_string(),
         })));
-        file.set_tests(Rc::new(RefCell::new(test_mod)));
 
         assert_eq!(
             file.generate_code(),

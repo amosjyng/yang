@@ -27,11 +27,17 @@ pub fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codegen::template::concept::form::code_form;
-    use crate::codegen::template::concept::tao::TaoConfig;
+    use crate::codegen::template::concept::form::add_form_fragment;
+    use crate::codegen::template::concept::tao::{tao_file_fragment, TaoConfig};
     use crate::codegen::StructConfig;
     use mark_autogen::AUTOGENERATION_MARKER;
     use mark_fmt::FMT_SKIP_MARKER;
+
+    fn code_form(cfg: &TaoConfig) -> String {
+        let mut f = tao_file_fragment(cfg);
+        add_form_fragment(&cfg, &mut f);
+        f.generate_code()
+    }
 
     #[test]
     fn test_post_process_comments() {

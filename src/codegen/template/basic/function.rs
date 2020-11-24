@@ -3,6 +3,23 @@ use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+/// The type of reference to &self in a function argument.
+pub enum SelfReference {
+    /// When this function makes no reference to a containing struct. Equivalent to no "self" in
+    /// the arguments list
+    None,
+    /// Equivalent to "&self" at the beginning of the arguments list.
+    Immutable,
+    /// Equivalent to "&mut self" at the beginning of the arguments list.
+    Mutable,
+}
+
+impl Default for SelfReference {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
 /// Function argument.
 pub struct FunctionArgument {
     /// Argument name.
@@ -24,6 +41,8 @@ pub struct FunctionFragment {
     name: String,
     /// Declaration fragment.
     declaration: ItemDeclaration,
+    /// The type of reference to &self in a function argument.
+    reference: SelfReference,
     /// Arguments of the function.
     args: Vec<FunctionArgument>,
     /// Type of data that the function returns.
@@ -43,9 +62,19 @@ impl FunctionFragment {
         }
     }
 
+    /// Set the function to be a test function.
+    pub fn mark_as_test(&mut self) {
+        self.declaration.add_attribute("test".to_owned());
+    }
+
     /// Set the return type for the function.
     pub fn set_return(&mut self, return_type: String) {
         self.return_type = Some(return_type);
+    }
+
+    /// Set the self reference type for the function, if it's part of a struct or a trait.
+    pub fn set_self_reference(&mut self, reference: SelfReference) {
+        self.reference = reference;
     }
 
     /// Add a new argument to the function.
@@ -72,6 +101,7 @@ impl Default for FunctionFragment {
         Self {
             name: String::default(),
             declaration,
+            reference: SelfReference::default(),
             args: vec![],
             return_type: None,
             imports: vec![],
@@ -112,11 +142,17 @@ impl ItemDeclarationAPI for FunctionFragment {
 
 impl CodeFragment for FunctionFragment {
     fn body(&self) -> String {
-        let args = self
+        let mut args = self
             .args
             .iter()
             .map(|a| format!("{}: {}", a.name, a.arg_type))
-            .format(", ");
+            .collect::<Vec<String>>();
+        match self.reference {
+            SelfReference::None => (),
+            SelfReference::Immutable => args.insert(0, "&self".to_owned()),
+            SelfReference::Mutable => args.insert(0, "&mut self".to_owned()),
+        };
+        let args_str = args.iter().format(", ").to_string();
         let return_type = match &self.return_type {
             Some(actual_return_type) => format!(" -> {}", actual_return_type),
             None => String::default(),
@@ -125,7 +161,7 @@ impl CodeFragment for FunctionFragment {
         declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(format!(
             "fn {name}({args}){return_type}",
             name = self.name,
-            args = args,
+            args = args_str,
             return_type = return_type
         )))));
         declaration.body()
@@ -185,6 +221,20 @@ mod tests {
     }
 
     #[test]
+    fn test_test_function() {
+        let mut f = FunctionFragment::new("foo".to_owned());
+        f.mark_as_test();
+
+        assert_eq!(f.imports(), Vec::<String>::new());
+        assert_eq!(
+            f.body(),
+            indoc! {"
+                #[test]
+                fn foo() {}"}
+        );
+    }
+
+    #[test]
     fn test_function_return() {
         let mut f = FunctionFragment::new("foo".to_owned());
         f.mark_as_public();
@@ -230,6 +280,43 @@ mod tests {
             indoc! {"
                 fn foo(x: i64, y: u64) -> i64 {
                     x + y
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_function_self() {
+        let mut f = FunctionFragment::new("check".to_owned());
+        f.set_self_reference(SelfReference::Immutable);
+        f.append(Rc::new(RefCell::new(AtomicFragment::new(
+            "assert(self.value > 0);".to_owned(),
+        ))));
+
+        assert_eq!(f.imports(), Vec::<String>::new());
+        assert_eq!(
+            f.body(),
+            indoc! {"
+                fn check(&self) {
+                    assert(self.value > 0);
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_function_self_with_other_args() {
+        let mut f = FunctionFragment::new("replace".to_owned());
+        f.set_self_reference(SelfReference::Mutable);
+        f.add_arg("new_value".to_owned(), "i64".to_owned());
+        f.append(Rc::new(RefCell::new(AtomicFragment::new(
+            "self.value = new_value;".to_owned(),
+        ))));
+
+        assert_eq!(f.imports(), Vec::<String>::new());
+        assert_eq!(
+            f.body(),
+            indoc! {"
+                fn replace(&mut self, new_value: i64) {
+                    self.value = new_value;
                 }"}
         );
     }

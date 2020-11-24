@@ -1,29 +1,40 @@
 use super::tao::TaoConfig;
-use super::tao::{tao_fragment, tao_test_fragment};
-use crate::codegen::template::basic::{AppendedFragment, AtomicFragment, FileFragment};
-use indoc::formatdoc;
+use crate::codegen::template::basic::{FileFragment, ImplementationFragment};
+use crate::codegen::StructConfig;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-/// Get both the Tao and Form fragments.
-pub fn form_fragment(cfg: &TaoConfig) -> AppendedFragment {
-    let form_specific_fragment = AtomicFragment {
-        imports: vec![format!("{}::tao::form::FormTrait", cfg.yin_crate)],
-        atom: formatdoc! {r#"
-            impl FormTrait for {name} {{}}
-            "#, name = cfg.this.name,
-        },
-    };
-    let mut combined_fragment = AppendedFragment::default();
-    combined_fragment.append(Rc::new(RefCell::new(tao_fragment(cfg))));
-    combined_fragment.append(Rc::new(RefCell::new(form_specific_fragment)));
-    combined_fragment
+fn form_fragment(cfg: &TaoConfig) -> ImplementationFragment {
+    let mut implementation = ImplementationFragment::new(
+        StructConfig::new(format!("{}::tao::form::FormTrait", cfg.yin_crate)),
+        cfg.this.clone(),
+    );
+    implementation.mark_same_file_as_struct();
+    implementation
 }
 
-/// Generate code for a form concept.
-pub fn code_form(cfg: &TaoConfig) -> String {
-    let mut file = FileFragment::default();
+/// Add the form fragment to a file.
+pub fn add_form_fragment(cfg: &TaoConfig, file: &mut FileFragment) {
     file.append(Rc::new(RefCell::new(form_fragment(cfg))));
-    file.set_tests(Rc::new(RefCell::new(tao_test_fragment(cfg))));
-    file.generate_code()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::codegen::template::basic::CodeFragment;
+
+    #[test]
+    fn test_form_fragment() {
+        assert_eq!(
+            form_fragment(&TaoConfig {
+                this: StructConfig {
+                    name: "MyConcept".to_owned(),
+                    ..StructConfig::default()
+                },
+                ..TaoConfig::default()
+            })
+            .body(),
+            "impl FormTrait for MyConcept {}"
+        );
+    }
 }

@@ -6,6 +6,8 @@ pub mod attribute;
 pub mod auto_init_kb;
 /// Data code template.
 pub mod data;
+/// Flag trait code template.
+pub mod flag;
 /// Form code template.
 pub mod form;
 /// Tao code template.

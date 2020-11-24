@@ -59,13 +59,44 @@ define!(uses_data_logic);
 uses_data_logic.add_parent(Flag::archetype());
 ```
 
-Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
+Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore. We should make a note of the properties that are nonhereditary:
 
-Due to current limitations with Yang, we cannot set Tao as the parent here. We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
+```rust
+define!(nonhereditary);
+nonhereditary.add_parent(Flag::archetype());
+```
+
+### Perspective
+
+All this can apply to any concept at all that's being implemented. However, these attributes are only meaningful within the context of code generation. As such, they should live inside a build config lens -- a way of viewing concepts through a different perspective than usual.
+
+Everything is a perspective. The `relation` branch of the knowledge base's inheritance tree views all nodes through the lens of relating other nodes to each other (even forms with multiple attributes can be considered higher n-ary relations), the `form` branch views all its leaf nodes as instances of their ancestor chain, the `archetype` branch views all non-leaf nodes as types to be reasoned with ala type theory. We don't put all these under a root `Perspective` node because when everything is a perspective, the distinction ceases to be meaningful. Alternatively, the only perspective that applies to everything is the `Tao` node, the lens through which everything is only just a number or a string label.
+
+What *does* make sense is distinguishing context-dependent perspectives from each other. There are no universal perspectives. Some context-dependent perspectives are more obvious than other ones: for example, there will not always be build-related information outside of the context of a software build. Others seem tantalizingly universal. You may think will always be forms and relations no matter which subject you look at; that is true only from an abstract meta perspective. On the more practical side of things, most people go through their daily lives without ever bothering to think explicitly of forms and relations between the forms. It is therefore not a universal perspective -- not because it can't be applied universally (it can), but because it's not universally required or useful.
+
+To put it in more geometric terms, there's no absolute perspective from which to look at a 3D scene. Every vantage point is as arbitrary as any other -- even the 4D one. Were we to be four-dimensional beings who could step out into the w-axis and look at the 3D scene in all its entirety simultaneously, we would still be viewing it from an arbitrary location on the w-axis, our vision pointed in the direction of an arbitrary 4-vector. Even the number of dimensions is arbitrary -- who's to say we can't look at the 3D scene projected onto a single-dimensional line? Or to look at it from the fifth dimension, the same way we look at open and closed intervals on the number line in our own 3D world? There is no objectively "correct" perspective.
+
+There is the origin, defined to be so by fiat. If there's any absolute perspective to be found, it is surely at the intersection of all the axes. But the thing about having the power to define things by fiat is that someone else can do just the same thing, and define their coordinate system with a different origin. You embed the foundations of your grand edifice deep, deep into the solid ground, only to discover that the entire Earth is a Brownian particle floating arbitrarily through the expanse of space.
+
+Everything is relative -- but of course even relativity is relative. Physics is to a large extent the study of fundamental truths that are absolute across all reference frames of this reality. In one direction is mathematics, the study of fundamental truths that are absolute across all potential realities, but still only true relative to their axioms. In the other direction are human social norms, absolute across all individuals in a small community, but relative to the rest of the myriad cultures and subcultures in the world. To say that everything is relative is a monism that borders on uselessness. Relativity is only meaningful when contrasted next to absoluteness, and the relative-absolute dichotomy is only one of many perspectives to view the world through.
+
+```rust
+define!(perspective);
+```
+
+One perspective through which to look at things is the knowledge graph perspective, through which everything described here are equally first-class concept nodes. There are superficial differences between the nodes and how well-connected, yes, but all nodes are fundamentally equivalent as pieces of knowledge. We look at knowledge the same way humanism looks at humans.
+
+```rust
+define!(knowledge_graph);
+knowledge_graph.add_parent(perspective);
+```
+
+As part of this perspective, We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
 
 ```rust
 define!(newly_defined);
 newly_defined.add_parent(Flag::archetype());
+aa(newly_defined).set_owner_archetype(knowledge_graph);
 ```
 
 Rust groups things by modules.
@@ -110,19 +141,9 @@ define!(import_path);
 import_path.add_parent(Attribute::archetype().as_archetype());
 ```
 
-All this can apply to any concept at all that's being implemented. However, these attributes are only meaningful within the context of code generation. As such, they should live inside a build config lens -- a way of viewing concepts through a different perspective than usual.
-
 ```rust
 define!(build_info);
 build_info.add_parent(Form::archetype());
-```
-
-Everything is a lens. The `relation` branch of the knowledge base's inheritance tree views all nodes through the lens of relating other nodes to each other (even forms with multiple attributes can be considered higher n-ary relations), the `form` branch views all its leaf nodes as instances of their ancestor chain, the `archetype` branch views all non-leaf nodes as types to be reasoned with ala type theory. We don't put all these under a root `Lens` node because when everything is a lens, the distinction ceases to be meaningful. Alternatively, the only lens that applies to everything is the `Tao` node, the lens through which everything is only just a number or a string label.
-
-What *does* make sense is distinguishing context-dependent lens from universal ones. There will always be forms and relations no matter which subject you look at; there will not always be build-related information outside of the context of a software build. We should define the lens accordingly:
-
-```rust
-define!(lens);
 ```
 
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
@@ -199,13 +220,15 @@ uses_data_logic.implement_with_doc(
 uses_root_node_logic.implement_with_doc(
     "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this."
 );
-
+nonhereditary.implement_with_doc("Marks a property as not behing inherited.");
 import_path.implement_with_doc("Describes the import path of a defined struct.");
 build_info.implement_with_doc("Represents build information about a generated concept.");
 
-lens.implement_with_doc(
+perspective.implement_with_doc(
     "Describes a way of looking at things that is only well-defined within a specific context."
 );
+perspective.impl_mod("Perspectives on the world.");
+knowledge_graph.implement_with_doc("Look at all information as knowledge graph entities.");
 
 crate_concept.implement_with_doc("Crate that a concept was built as a part of.");
 version.implement_with_doc("Version number for a versioned object.");
@@ -265,6 +288,7 @@ use zamm_yang::tao::initialize_kb;
 use zamm_yang::tao::Tao;
 use zamm_yang::tao::archetype::ArchetypeTrait;
 use zamm_yang::tao::archetype::ArchetypeFormTrait;
+use zamm_yang::tao::archetype::AttributeArchetypeFormTrait;
 use zamm_yang::tao::archetype::CreateImplementation;
 use zamm_yang::tao::archetype::CodegenFlags;
 use zamm_yang::tao::form::Crate;
@@ -275,6 +299,7 @@ use zamm_yang::tao::form::ModuleExtension;
 use zamm_yang::tao::callbacks::handle_all_implementations;
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::node_wrappers::CommonNodeTrait;
+use zamm_yang::helper::aa;
 ```
 
 These are the imports specific to building on top of Yin:
