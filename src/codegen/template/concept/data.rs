@@ -1,6 +1,5 @@
-use super::form::form_file_fragment;
 use super::tao::TaoConfig;
-use crate::codegen::template::basic::AtomicFragment;
+use crate::codegen::template::basic::{AtomicFragment, FileFragment};
 use indoc::formatdoc;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -90,11 +89,9 @@ fn data_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
 }
 
 /// Generate code for a Data concept.
-pub fn code_data_concept(cfg: &DataFormatConfig) -> String {
-    let mut file = form_file_fragment(&cfg.tao_cfg);
+pub fn add_data_fragments(cfg: &DataFormatConfig, file: &mut FileFragment) {
     file.append(Rc::new(RefCell::new(data_concept_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(data_concept_test_fragment(cfg))));
-    file.generate_code()
 }
 
 #[cfg(test)]
@@ -104,21 +101,33 @@ mod tests {
 
     #[test]
     fn test_string_output() {
-        let code = code_data_concept(&DataFormatConfig {
-            rust_primitive_name: Rc::from("String"),
-            ..DataFormatConfig::default()
-        });
+        let mut f = FileFragment::new();
+        add_data_fragments(
+            &DataFormatConfig {
+                rust_primitive_name: Rc::from("String"),
+                ..DataFormatConfig::default()
+            },
+            &mut f,
+        );
+        let code = f.generate_code();
         assert!(code.contains("String"));
         assert!(!code.contains("i64"));
+        assert!(code.contains("set_value"));
     }
 
     #[test]
     fn test_int_output() {
-        let code = code_data_concept(&DataFormatConfig {
-            rust_primitive_name: Rc::from("i64"),
-            ..DataFormatConfig::default()
-        });
+        let mut f = FileFragment::new();
+        add_data_fragments(
+            &DataFormatConfig {
+                rust_primitive_name: Rc::from("i64"),
+                ..DataFormatConfig::default()
+            },
+            &mut f,
+        );
+        let code = f.generate_code();
         // todo: assert no "String" in code after CommonNodeTrait gets automatically implemented
         assert!(code.contains("i64"));
+        assert!(code.contains("set_value"));
     }
 }

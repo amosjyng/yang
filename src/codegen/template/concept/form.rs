@@ -1,4 +1,4 @@
-use super::tao::{tao_file_fragment, TaoConfig};
+use super::tao::TaoConfig;
 use crate::codegen::template::basic::{FileFragment, ImplementationFragment};
 use crate::codegen::StructConfig;
 use std::cell::RefCell;
@@ -13,16 +13,9 @@ fn form_fragment(cfg: &TaoConfig) -> ImplementationFragment {
     implementation
 }
 
-/// Get both the Tao and Form fragments.
-pub fn form_file_fragment(cfg: &TaoConfig) -> FileFragment {
-    let mut file = tao_file_fragment(cfg);
+/// Add the form fragment to a file.
+pub fn add_form_fragment(cfg: &TaoConfig, file: &mut FileFragment) {
     file.append(Rc::new(RefCell::new(form_fragment(cfg))));
-    file
-}
-
-/// Generate code for a form concept.
-pub fn code_form(cfg: &TaoConfig) -> String {
-    form_file_fragment(cfg).generate_code()
 }
 
 #[cfg(test)]

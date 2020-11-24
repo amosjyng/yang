@@ -256,21 +256,17 @@ pub fn tao_file_fragment(cfg: &TaoConfig) -> FileFragment {
     file
 }
 
-/// Generate code for a Tao concept config.
-pub fn code_tao(cfg: &TaoConfig) -> String {
-    tao_file_fragment(cfg).generate_code()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_default_internal_name_used() {
-        let code = code_tao(&TaoConfig {
+        let code = tao_file_fragment(&TaoConfig {
             internal_name_cfg: InternalNameConfig::DEFAULT,
             ..TaoConfig::default()
-        });
+        })
+        .generate_code();
         assert!(code.contains(".set_internal_name("));
         assert!(!code.contains(".set_internal_name_str("));
         assert!(code.contains(".internal_name("));
@@ -280,10 +276,11 @@ mod tests {
 
     #[test]
     fn test_new_yin_internal_name_used() {
-        let code = code_tao(&TaoConfig {
+        let code = tao_file_fragment(&TaoConfig {
             internal_name_cfg: InternalNameConfig::YIN_AT_LEAST_0_1_1,
             ..TaoConfig::default()
-        });
+        })
+        .generate_code();
         assert!(!code.contains(".set_internal_name("));
         assert!(code.contains(".set_internal_name_str("));
         assert!(!code.contains(".internal_name("));
