@@ -1,4 +1,4 @@
-use super::form::form_fragment;
+use super::form::form_file_fragment;
 use super::tao::TaoConfig;
 use crate::codegen::template::basic::AtomicFragment;
 use indoc::formatdoc;
@@ -91,7 +91,7 @@ fn data_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
 
 /// Generate code for a Data concept.
 pub fn code_data_concept(cfg: &DataFormatConfig) -> String {
-    let mut file = form_fragment(&cfg.tao_cfg);
+    let mut file = form_file_fragment(&cfg.tao_cfg);
     file.append(Rc::new(RefCell::new(data_concept_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(data_concept_test_fragment(cfg))));
     file.generate_code()

@@ -1,25 +1,47 @@
-use super::tao::tao_file_fragment;
-use super::tao::TaoConfig;
-use crate::codegen::template::basic::{AtomicFragment, FileFragment};
-use indoc::formatdoc;
+use super::tao::{tao_file_fragment, TaoConfig};
+use crate::codegen::template::basic::{FileFragment, ImplementationFragment};
+use crate::codegen::StructConfig;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+fn form_fragment(cfg: &TaoConfig) -> ImplementationFragment {
+    let mut implementation = ImplementationFragment::new(
+        StructConfig::new(format!("{}::tao::form::FormTrait", cfg.yin_crate)),
+        cfg.this.clone(),
+    );
+    implementation.mark_same_file_as_struct();
+    implementation
+}
+
 /// Get both the Tao and Form fragments.
-pub fn form_fragment(cfg: &TaoConfig) -> FileFragment {
-    let form_specific_fragment = AtomicFragment {
-        imports: vec![format!("{}::tao::form::FormTrait", cfg.yin_crate)],
-        atom: formatdoc! {r#"
-            impl FormTrait for {name} {{}}
-            "#, name = cfg.this.name,
-        },
-    };
+pub fn form_file_fragment(cfg: &TaoConfig) -> FileFragment {
     let mut file = tao_file_fragment(cfg);
-    file.append(Rc::new(RefCell::new(form_specific_fragment)));
+    file.append(Rc::new(RefCell::new(form_fragment(cfg))));
     file
 }
 
 /// Generate code for a form concept.
 pub fn code_form(cfg: &TaoConfig) -> String {
-    form_fragment(cfg).generate_code()
+    form_file_fragment(cfg).generate_code()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::codegen::template::basic::CodeFragment;
+
+    #[test]
+    fn test_form_fragment() {
+        assert_eq!(
+            form_fragment(&TaoConfig {
+                this: StructConfig {
+                    name: "MyConcept".to_owned(),
+                    ..StructConfig::default()
+                },
+                ..TaoConfig::default()
+            })
+            .body(),
+            "impl FormTrait for MyConcept {}"
+        );
+    }
 }

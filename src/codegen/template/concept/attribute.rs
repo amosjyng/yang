@@ -1,4 +1,4 @@
-use super::form::form_fragment;
+use super::form::form_file_fragment;
 use super::tao::TaoConfig;
 use crate::codegen::template::basic::AtomicFragment;
 use crate::codegen::StructConfig;
@@ -108,7 +108,7 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
 
 /// Generate code for an Attribute config.
 pub fn code_attribute(cfg: &AttributeFormatConfig) -> String {
-    let mut file = form_fragment(&cfg.tao_cfg);
+    let mut file = form_file_fragment(&cfg.tao_cfg);
     file.append(Rc::new(RefCell::new(attribute_fragment(&cfg))));
     file.append_test(Rc::new(RefCell::new(attribute_test_fragment(&cfg))));
     file.generate_code()
