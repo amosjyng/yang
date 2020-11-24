@@ -48,7 +48,7 @@ impl StructConfig {
     pub fn new(import: String) -> Self {
         Self {
             name: import.split("::").last().unwrap().to_owned(),
-            import: import,
+            import,
         }
     }
 }
