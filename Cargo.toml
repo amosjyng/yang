@@ -1,23 +1,23 @@
-[build-dependencies]
-zamm = "0.1.1"
+[package]
+name = "zamm_yang"
+version = "0.1.5-beta"
+authors = ["Amos Jun-yeung Ng <me@amos.ng>"]
+edition = "2018"
+description = "A basic, experimental code generator"
+readme = "README.md"
+repository = "https://github.com/amosjyng/yang"
+license = "GPL-3.0"
+keywords = ["codegen", "code-generation"]
+categories = ["development-tools"]
 
 [dependencies]
 heck = "0.3.1"
 indoc = "1.0"
 itertools = "0.9.0"
 path_abs = "0.5.0"
-semver = "0.9.0"
 textwrap = "0.12.1"
 zamm_yin = "=0.1.1"
+semver = "0.9.0"
 
-[package]
-authors = ["Amos Jun-yeung Ng <me@amos.ng>"]
-categories = ["development-tools"]
-description = "A basic, experimental code generator"
-edition = "2018"
-keywords = ["codegen", "code-generation"]
-license = "GPL-3.0"
-name = "zamm_yang"
-readme = "README.md"
-repository = "https://github.com/amosjyng/yang"
-version = "0.1.5"
+[build-dependencies]
+zamm = "0.1.1"
