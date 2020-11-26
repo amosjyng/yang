@@ -87,8 +87,8 @@ define!(perspective);
 One perspective through which to look at things is the knowledge graph perspective, through which everything described here are equally first-class concept nodes. There are superficial differences between the nodes and how well-connected, yes, but all nodes are fundamentally equivalent as pieces of knowledge. We look at knowledge the same way humanism looks at humans.
 
 ```rust
-define!(knowledge_graph);
-knowledge_graph.add_parent(perspective);
+define!(knowledge_graph_node);
+knowledge_graph_node.add_parent(perspective);
 ```
 
 As part of this perspective, We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
@@ -96,7 +96,7 @@ As part of this perspective, We should start tracking what has and hasn't gotten
 ```rust
 define!(newly_defined);
 newly_defined.add_parent(Flag::archetype());
-aa(newly_defined).set_owner_archetype(knowledge_graph);
+aa(newly_defined).set_owner_archetype(knowledge_graph_node);
 ```
 
 Rust groups things by modules.
@@ -228,7 +228,7 @@ perspective.implement_with_doc(
     "Describes a way of looking at things that is only well-defined within a specific context."
 );
 perspective.impl_mod("Perspectives on the world.");
-knowledge_graph.implement_with_doc("Look at all information as knowledge graph entities.");
+knowledge_graph_node.implement_with_doc("Look at all information as knowledge graph entities.");
 
 crate_concept.implement_with_doc("Crate that a concept was built as a part of.");
 version.implement_with_doc("Version number for a versioned object.");
@@ -269,7 +269,7 @@ We should really save the build info, so that one day we will no longer need to 
 This is the version of Yang used to make this build happen:
 
 ```toml
-zamm_yang = "0.1.4"
+zamm_yang = "0.1.5"
 ```
 
 Yang does his best to be backwards-compatible, so we should let old Yang know that this is new Yang speaking:
