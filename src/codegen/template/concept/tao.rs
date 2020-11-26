@@ -5,6 +5,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Backwards-compatibility logic for the internal name API.
+#[derive(Clone)]
 pub struct InternalNameConfig {
     /// Getter function for the internal name.
     pub getter: &'static str,
@@ -37,6 +38,7 @@ impl Default for InternalNameConfig {
 }
 
 /// Templating config values for all concepts.
+#[derive(Clone)]
 pub struct TaoConfig {
     /// Name to use for the yin crate.
     pub yin_crate: String,
