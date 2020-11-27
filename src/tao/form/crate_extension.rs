@@ -48,10 +48,12 @@ pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
             .map(|f| Rc::from(StringConcept::from(*f).value().unwrap().as_str()))
     }
 
-    /// Name for the Yin crate
+    /// Name for the Yin crate.
     const YIN_CRATE_NAME: &'static str = "zamm_yin";
-    /// Name for the Yang crate
+    /// Name for the Yang crate.
     const YANG_CRATE_NAME: &'static str = "zamm_yang";
+    /// Internal name for the current crate.
+    const CURRENT_CRATE_INTERNAL_NAME: &'static str = "this-crate";
 
     /// Get the Yin crate as a concept.
     fn yin() -> Crate {
@@ -61,6 +63,11 @@ pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
     /// Get the Yang crate as a concept.
     fn yang() -> Crate {
         Crate::lookup(Self::YANG_CRATE_NAME).unwrap()
+    }
+
+    /// Get the current crate as a concept.
+    fn current() -> Crate {
+        Crate::lookup(Self::CURRENT_CRATE_INTERNAL_NAME).unwrap()
     }
 }
 
@@ -78,6 +85,7 @@ mod tests {
         // this not only tests that they are different crates, but also implicitly tests that
         // they've been successfully retrieved, and therefore successfully initialized
         assert_ne!(Crate::yin(), Crate::yang());
+        assert!(Crate::current().id() > 0); // just checking it exists
     }
 
     #[test]

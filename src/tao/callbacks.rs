@@ -4,7 +4,7 @@ use crate::codegen::planning::{
 };
 use crate::codegen::track_autogen::save_autogen;
 use crate::codegen::{output_code, CodegenConfig};
-use crate::tao::form::{Module, ModuleExtension};
+use crate::tao::form::{Crate, CrateExtension, Module, ModuleExtension};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
@@ -46,6 +46,11 @@ fn handle_module_implementation(request: Implement, codegen_cfg: &CodegenConfig)
 
 /// Handle all defined implementation requests.
 pub fn handle_all_implementations(codegen_cfg: &CodegenConfig) {
+    let mut current_build = Crate::current();
+    if codegen_cfg.yin && current_build.implementation_name().is_none() {
+        current_build.set_implementation_name("zamm_yin");
+    }
+
     let archetype_requests = archetypes_to_implement();
     // handle initialization first to ensure all concepts land with the right concept IDs
     handle_init(&archetype_requests, codegen_cfg);
