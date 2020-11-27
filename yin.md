@@ -294,6 +294,12 @@ Yang does his best to be backwards-compatible, so we should let old Yang know th
 Crate::yin().set_version("0.1.1");
 ```
 
+We should also let him know what our current crate name is. There is as of yet no way to let him know that this is the same crate as the `Crate::yang()` in the knowledge base, or that this crate is a newer version of himself. Unfortunately, there is no self-awareness yet, only instinct.
+
+```rust
+Crate::current().set_implementation_name("zamm_yang");
+```
+
 ### Imports
 
 These are the generic imports for general Yang generation:
