@@ -143,7 +143,7 @@ mod tests {
             setter_fragment(&test_config()).body(),
             indoc! {"
                 /// Mark this as newly defined as part of the current build.
-                fn mark_as_newly_defined(&mut self) {
+                fn mark_newly_defined(&mut self) {
                     self.essence_mut().add_flag(NewlyDefined::TYPE_ID);
                 }"}
         );
@@ -172,7 +172,7 @@ mod tests {
                     let mut new_instance = Tao::new();
                     assert!(!new_instance.is_newly_defined());
             
-                    new_instance.mark_as_newly_defined();
+                    new_instance.mark_newly_defined();
                     assert!(new_instance.is_newly_defined());
                 }"}
         );
