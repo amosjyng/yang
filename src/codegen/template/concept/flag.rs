@@ -103,6 +103,28 @@ fn test_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f
 }
 
+/// Test that the getter and setter work as intended when inherited.
+fn test_inheritance_fragment(cfg: &FlagConfig) -> FunctionFragment {
+    let mut f = FunctionFragment::new(format!("test_{}_inheritance", cfg.property_name));
+    f.mark_as_test();
+    f.add_import("crate::tao::initialize_kb".to_owned());
+    f.add_import(cfg.owner_type.import.clone());
+    f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
+        initialize_kb();
+        let new_type = {owner}::archetype().individuate_as_archetype();
+        let new_instance = {owner}::from(new_type.individuate_as_form().id());
+        assert!(!new_instance.{getter}{property}());
+
+        {owner}::from(new_type.id()).{setter}{property}();
+        assert!(new_instance.{getter}{property}());
+    ", owner = cfg.owner_type.name,
+        getter = GETTER_PREFIX,
+        setter = SETTER_PREFIX,
+        property = cfg.property_name
+    }))));
+    f
+}
+
 /// Add these flags to an implementation and its corresponding test module.
 pub fn add_flag_to_impl(
     cfg: &FlagConfig,
@@ -112,6 +134,7 @@ pub fn add_flag_to_impl(
     implementation.append(Rc::new(RefCell::new(getter_fragment(cfg))));
     implementation.append(Rc::new(RefCell::new(setter_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(test_fragment(cfg))));
+    file.append_test(Rc::new(RefCell::new(test_inheritance_fragment(cfg))));
 }
 
 #[cfg(test)]
@@ -173,6 +196,24 @@ mod tests {
                     assert!(!new_instance.is_newly_defined());
             
                     new_instance.mark_newly_defined();
+                    assert!(new_instance.is_newly_defined());
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_test_inheritance_fragment_body() {
+        assert_eq!(
+            test_inheritance_fragment(&test_config()).body(),
+            indoc! {"
+                #[test]
+                fn test_newly_defined_inheritance() {
+                    initialize_kb();
+                    let new_type = Tao::archetype().individuate_as_archetype();
+                    let new_instance = Tao::from(new_type.individuate_as_form().id());
+                    assert!(!new_instance.is_newly_defined());
+
+                    Tao::from(new_type.id()).mark_newly_defined();
                     assert!(new_instance.is_newly_defined());
                 }"}
         );
