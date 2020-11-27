@@ -1,5 +1,6 @@
 use crate::tao::form::{BuildInfo, BuildInfoExtension, Crate};
 use crate::tao::relation::attribute::{SupportsMembership, Version};
+use std::convert::TryFrom;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
@@ -67,7 +68,7 @@ pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
 
     /// Get the current crate as a concept.
     fn current() -> Crate {
-        Crate::lookup(Self::CURRENT_CRATE_INTERNAL_NAME).unwrap()
+        Crate::try_from(Self::CURRENT_CRATE_INTERNAL_NAME).unwrap()
     }
 }
 
@@ -85,7 +86,8 @@ mod tests {
         // this not only tests that they are different crates, but also implicitly tests that
         // they've been successfully retrieved, and therefore successfully initialized
         assert_ne!(Crate::yin(), Crate::yang());
-        assert!(Crate::current().id() > 0); // just checking it exists
+        // check current crate exists and has no name
+        assert_eq!(Crate::current().implementation_name(), None);
     }
 
     #[test]

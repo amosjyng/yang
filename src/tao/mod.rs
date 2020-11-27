@@ -14,6 +14,7 @@ pub use auto_init::YIN_MAX_ID;
 use form::BuildInfo;
 pub use implement_extension::ImplementExtension;
 pub use implement_form::Implement;
+use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::ArchetypeTrait;
 pub use zamm_yin::tao::*;
 
@@ -35,5 +36,5 @@ pub fn initialize_kb() {
     let mut yang = Crate::new();
     yang.set_implementation_name(Crate::YANG_CRATE_NAME);
     let mut current = Crate::new();
-    current.set_implementation_name(Crate::CURRENT_CRATE_INTERNAL_NAME);
+    current.set_internal_name_str(Crate::CURRENT_CRATE_INTERNAL_NAME);
 }

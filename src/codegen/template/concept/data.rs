@@ -28,15 +28,9 @@ impl Default for DataFormatConfig {
 fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![
-            format!("{}::node_wrappers::BaseNodeTrait", cfg.tao_cfg.yin_crate),
-            format!(
-                "{}::graph::value_wrappers::StrongValue",
-                cfg.tao_cfg.yin_crate
-            ),
-            format!(
-                "{}::graph::value_wrappers::unwrap_value",
-                cfg.tao_cfg.yin_crate
-            ),
+            "zamm_yin::node_wrappers::BaseNodeTrait".to_owned(),
+            "zamm_yin::graph::value_wrappers::StrongValue".to_owned(),
+            "zamm_yin::graph::value_wrappers::unwrap_value".to_owned(),
             "std::rc::Rc".to_owned(),
         ],
         // we allow for the potential use of Rc<String> here right now because String is in fact a

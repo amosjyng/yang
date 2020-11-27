@@ -40,8 +40,6 @@ impl Default for InternalNameConfig {
 /// Templating config values for all concepts.
 #[derive(Clone)]
 pub struct TaoConfig {
-    /// Name to use for the yin crate.
-    pub yin_crate: String,
     /// Main file imports.
     pub imports: Option<String>,
     /// Class representing the concept itself.
@@ -75,7 +73,6 @@ pub struct TaoConfig {
 impl Default for TaoConfig {
     fn default() -> Self {
         Self {
-            yin_crate: "zamm_yin".to_owned(),
             imports: Some("zamm_yin::tao::YIN_MAX_ID".to_owned()),
             this: StructConfig::default(),
             internal_name: "dummy".to_owned(),
@@ -103,11 +100,11 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
         "std::fmt::Formatter".to_owned(),
         cfg.form.import.clone(),
         cfg.parent_import.to_owned(),
-        format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate),
-        format!("{}::tao::archetype::{}", cfg.yin_crate, cfg.archetype_name),
-        format!("{}::node_wrappers::debug_wrapper", cfg.yin_crate),
-        format!("{}::Wrapper", cfg.yin_crate),
-        format!("{}::node_wrappers::FinalNode", cfg.yin_crate),
+        "zamm_yin::tao::archetype::ArchetypeTrait".to_owned(),
+        format!("zamm_yin::tao::archetype::{}", cfg.archetype_name),
+        "zamm_yin::node_wrappers::debug_wrapper".to_owned(),
+        "zamm_yin::Wrapper".to_owned(),
+        "zamm_yin::node_wrappers::FinalNode".to_owned(),
     ];
     if let Some(import) = &cfg.imports {
         imports.push(import.clone());
@@ -186,9 +183,9 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AtomicFragment {
     let mut imports = vec![
         "crate::tao::initialize_kb".to_owned(),
         "std::rc::Rc".to_owned(),
-        format!("{}::node_wrappers::CommonNodeTrait", cfg.yin_crate),
-        format!("{}::tao::archetype::ArchetypeFormTrait", cfg.yin_crate),
-        format!("{}::tao::form::FormTrait", cfg.yin_crate),
+        "zamm_yin::node_wrappers::CommonNodeTrait".to_owned(),
+        "zamm_yin::tao::archetype::ArchetypeFormTrait".to_owned(),
+        "zamm_yin::tao::form::FormTrait".to_owned(),
     ];
     for attr_import in &cfg.all_attribute_imports {
         imports.push(attr_import.clone());
