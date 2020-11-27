@@ -60,7 +60,7 @@ impl ImplementationFragment {
 impl Default for ImplementationFragment {
     fn default() -> Self {
         let mut declaration = ItemDeclaration::default();
-        let content = Rc::new(RefCell::new(AppendedFragment::new_with_separator("\n")));
+        let content = Rc::new(RefCell::new(AppendedFragment::default()));
         declaration.set_body(content.clone());
         Self {
             trait_cfg: None,
@@ -185,12 +185,24 @@ mod tests {
                 }"}
             .to_string(),
         })));
+        f.append(Rc::new(RefCell::new(AtomicFragment {
+            imports: vec![],
+            atom: indoc! {"
+                fn foo_capability2(&mut self) {
+                    self.bar_value = 123;
+                }"}
+            .to_string(),
+        })));
 
         assert_eq!(
             f.body(),
             indoc! {"
                 impl Foo for Bar {
                     fn foo_capability(&mut self) {
+                        self.bar_value = 123;
+                    }
+
+                    fn foo_capability2(&mut self) {
                         self.bar_value = 123;
                     }
                 }"}
