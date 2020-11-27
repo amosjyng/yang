@@ -1,5 +1,4 @@
 use crate::tao::archetype::CodegenFlags;
-use colored::*;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::*;
 use zamm_yin::tao::form::FormTrait;
@@ -28,8 +27,7 @@ pub fn aa(archetype: Archetype) -> AttributeArchetype {
         // owner archetype set
         println!(
             "{}{:?} is not known to be an attribute.",
-            "Warning: ".yellow().bold(),
-            archetype
+            "Warning: ", archetype
         );
     }
     AttributeArchetype::from(archetype.id())
