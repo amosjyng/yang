@@ -112,7 +112,6 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
     if let Some(import) = &cfg.imports {
         imports.push(import.clone());
     }
-    imports.retain(|i| i != &cfg.this.import); // don't import references to self
 
     AtomicFragment {
         imports,
@@ -253,6 +252,7 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AtomicFragment {
 /// Returns a file fragment, which may be appended to further.
 pub fn tao_file_fragment(cfg: &TaoConfig) -> FileFragment {
     let mut file = FileFragment::default();
+    file.set_self_import(cfg.this.import.clone());
     file.append(Rc::new(RefCell::new(tao_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(tao_test_fragment(cfg))));
     file
