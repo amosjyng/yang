@@ -61,9 +61,9 @@ impl FileFragment {
             combined.append(Rc::new(RefCell::new(test_mod)));
         }
 
-        let mut final_imports = combined.imports();
+        let mut exluded_imports = vec![];
         if let Some(excluded_import) = &self.self_import {
-            final_imports.retain(|i| excluded_import != i);
+            exluded_imports.push(excluded_import.as_str());
         }
         let imports = imports_as_str(
             &*self
@@ -71,7 +71,8 @@ impl FileFragment {
                 .as_ref()
                 .map(|rc| rc.clone())
                 .unwrap_or(Rc::from("DUMMY-TEST-CRATE")),
-            final_imports,
+            combined.imports(),
+            &exluded_imports,
         );
 
         let body = combined.body();

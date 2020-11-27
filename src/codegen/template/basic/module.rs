@@ -183,6 +183,7 @@ impl CodeFragment for ModuleFragment {
                 .map(|rc| rc.clone())
                 .unwrap_or(Rc::from("DUMMY-TEST-CRATE"))),
             imports,
+            &vec![],
         );
         if !imports_str.is_empty() {
             imports_str += "\n\n";

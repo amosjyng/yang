@@ -89,9 +89,15 @@ fn replace_current_crate(current_crate: &str, import: String) -> String {
     }
 }
 
-/// Serialize imports into a string. `current_crate` is always required because we always want to
-/// know what it is in order to avoid
-pub fn imports_as_str(current_crate: &str, imports: Vec<String>) -> String {
+/// Serialize imports into a string.
+///
+/// `current_crate` is always required because we always want to know what it is in order to avoid.
+/// `existing_imports` filters out imports that are not needed.
+pub fn imports_as_str(
+    current_crate: &str,
+    imports: Vec<String>,
+    existing_imports: &[&str],
+) -> String {
     let final_imports = imports
         .into_iter()
         .map(|i| replace_current_crate(current_crate, i))
@@ -99,6 +105,7 @@ pub fn imports_as_str(current_crate: &str, imports: Vec<String>) -> String {
     let import_strs = final_imports
         .iter()
         .map(|s| s.as_str())
+        .filter(|s| !existing_imports.contains(s))
         .collect::<Vec<&str>>();
     imports_as_str_impl(&import_strs, false)
 }
@@ -284,10 +291,29 @@ mod tests {
                     "std::cell::RefCell".to_owned(),
                     "std::rc::Rc".to_owned(),
                     "std::cell::Cell".to_owned()
-                ]
+                ],
+                &[]
             ),
             indoc! {"
                 use std::cell::{Cell, RefCell};
+                use std::rc::Rc;"}
+        );
+    }
+
+    #[test]
+    fn test_imports_as_str_filtered() {
+        assert_eq!(
+            imports_as_str(
+                "my_crate",
+                vec![
+                    "std::cell::RefCell".to_owned(),
+                    "std::rc::Rc".to_owned(),
+                    "std::cell::Cell".to_owned()
+                ],
+                &["std::cell::Cell"]
+            ),
+            indoc! {"
+                use std::cell::RefCell;
                 use std::rc::Rc;"}
         );
     }
