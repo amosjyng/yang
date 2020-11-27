@@ -16,6 +16,9 @@ const GETTER_PREFIX: &str = "is_";
 pub struct FlagConfig {
     /// The public name to serve as a basis for the getter/setter function names.
     pub property_name: Rc<str>,
+    /// Whether or not the getters and setters should be marked public. False if this is to be
+    /// defined within a trait or an impl for a trait, true if defined within a pure impl.
+    pub public: bool,
     /// An explanation of what this property is. Will be prepended by different strings for the
     /// setter and getter documentation.
     pub doc: Rc<str>,
@@ -31,6 +34,7 @@ impl Default for FlagConfig {
     fn default() -> Self {
         Self {
             property_name: Rc::from(""),
+            public: false,
             doc: Rc::from(""),
             flag: StructConfig::default(),
             owner_type: StructConfig::default(),
@@ -42,6 +46,9 @@ impl Default for FlagConfig {
 /// Get the setter fragment for the flag.
 fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     let mut f = FunctionFragment::new(format!("{}{}", SETTER_PREFIX, cfg.property_name));
+    if cfg.public {
+        f.mark_as_public();
+    }
     f.document(format!("Mark this as {}", cfg.doc));
     f.set_self_reference(SelfReference::Mutable);
     f.add_import(cfg.flag.import.clone());
@@ -58,6 +65,9 @@ fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
 /// Get the getter fragment for the flag.
 fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     let mut f = FunctionFragment::new(format!("{}{}", GETTER_PREFIX, cfg.property_name));
+    if cfg.public {
+        f.mark_as_public();
+    }
     f.document(format!("Whether this is marked as {}", cfg.doc));
     f.set_self_reference(SelfReference::Immutable);
     f.set_return("bool".to_owned());
@@ -112,6 +122,7 @@ mod tests {
 
     fn test_config() -> FlagConfig {
         FlagConfig {
+            public: false,
             property_name: Rc::from("newly_defined"),
             doc: Rc::from("newly defined as part of the current build."),
             flag: StructConfig {

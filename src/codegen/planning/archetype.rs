@@ -191,6 +191,7 @@ fn flag_config(
     flag: &Archetype,
 ) -> FlagConfig {
     FlagConfig {
+        public: true,
         property_name: Rc::from(flag.internal_name_str().unwrap().to_snake_case()),
         doc: Rc::from("TODO: IMPLEMENT"),
         flag: concept_to_struct(flag, codegen_cfg.yin),
