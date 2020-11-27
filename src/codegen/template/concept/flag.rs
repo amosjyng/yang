@@ -8,7 +8,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Prefix for setter function name.
-const SETTER_PREFIX: &str = "mark_as_";
+const SETTER_PREFIX: &str = "mark_";
 /// Prefix for getter function name.
 const GETTER_PREFIX: &str = "is_";
 
