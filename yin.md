@@ -97,6 +97,7 @@ As part of this perspective, We should start tracking what has and hasn't gotten
 define!(newly_defined);
 newly_defined.add_parent(Flag::archetype());
 aa(newly_defined).set_owner_archetype(knowledge_graph_node);
+knowledge_graph_node.add_flag(newly_defined);
 ```
 
 Rust groups things by modules.
@@ -258,6 +259,10 @@ Flag::archetype().impl_mod("Relations involving only one form.");
 
 let mut attr_mod = Attribute::archetype().impl_mod("Relations between two forms.");
 attr_mod.has_extension("supports_membership::SupportsMembership");
+
+HasProperty::archetype().impl_mod(
+    "Meta-attributes around what attributes instances of an archetype have."
+);
 ```
 
 We should really save the build info, so that one day we will no longer need to redefine the documentation for these modules.
@@ -289,6 +294,7 @@ use zamm_yang::tao::Tao;
 use zamm_yang::tao::archetype::ArchetypeTrait;
 use zamm_yang::tao::archetype::ArchetypeFormTrait;
 use zamm_yang::tao::archetype::AttributeArchetypeFormTrait;
+use zamm_yang::tao::archetype::ArchetypeFormExtensionTrait;
 use zamm_yang::tao::archetype::CreateImplementation;
 use zamm_yang::tao::archetype::CodegenFlags;
 use zamm_yang::tao::form::Crate;
@@ -309,6 +315,7 @@ use zamm_yang::tao::form::data::Data;
 use zamm_yang::tao::archetype::Archetype;
 use zamm_yang::tao::relation::Relation;
 use zamm_yang::tao::relation::attribute::Attribute;
+use zamm_yang::tao::relation::attribute::has_property::HasProperty;
 use zamm_yang::tao::relation::flag::Flag;
 ```
 
