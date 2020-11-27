@@ -1,22 +1,27 @@
 use super::concept_to_struct;
+use super::imports::in_own_submodule;
 use crate::codegen::docstring::into_docstring;
+use crate::codegen::template::basic::ImplementationFragment;
 use crate::codegen::template::concept::attribute::{add_attr_fragments, AttributeFormatConfig};
 use crate::codegen::template::concept::data::{add_data_fragments, DataFormatConfig};
+use crate::codegen::template::concept::flag::{add_flag_to_impl, FlagConfig};
 use crate::codegen::template::concept::form::add_form_fragment;
 use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
 use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::DataExtension;
-use crate::tao::form::{Crate, CrateExtension};
+use crate::tao::form::{BuildInfo, BuildInfoExtension, Crate, CrateExtension};
 use crate::tao::{Implement, ImplementExtension};
-use heck::KebabCase;
+use heck::{KebabCase, SnakeCase};
 use itertools::Itertools;
 use semver::Version;
+use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{
-    Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype, AttributeArchetypeFormTrait,
+    Archetype, ArchetypeFormExtensionTrait, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype,
+    AttributeArchetypeFormTrait,
 };
 use zamm_yin::tao::form::data::Data;
 use zamm_yin::tao::form::{Form, FormTrait};
@@ -148,7 +153,7 @@ fn generic_config(
 }
 
 fn attribute_config(
-    base_cfg: TaoConfig,
+    base_cfg: &TaoConfig,
     target: &Archetype,
     codegen_cfg: &CodegenConfig,
 ) -> AttributeFormatConfig {
@@ -163,7 +168,7 @@ fn attribute_config(
     let value_form = concept_to_struct(&or_form_default(value_type_concept), codegen_cfg.yin);
 
     AttributeFormatConfig {
-        tao_cfg: base_cfg,
+        tao_cfg: base_cfg.clone(),
         owner_type,
         owner_form,
         value_type,
@@ -171,11 +176,27 @@ fn attribute_config(
     }
 }
 
-fn data_config(base_cfg: TaoConfig, target: &Archetype) -> DataFormatConfig {
+fn data_config(base_cfg: &TaoConfig, target: &Archetype) -> DataFormatConfig {
     DataFormatConfig {
-        tao_cfg: base_cfg,
+        tao_cfg: base_cfg.clone(),
         rust_primitive_name: target.rust_primitive().unwrap(),
         default_value: target.default_value().unwrap(),
+    }
+}
+
+fn flag_config(
+    base_cfg: &TaoConfig,
+    codegen_cfg: &CodegenConfig,
+    target: &Archetype,
+    flag: &Archetype,
+) -> FlagConfig {
+    FlagConfig {
+        public: true,
+        property_name: Rc::from(flag.internal_name_str().unwrap().to_snake_case()),
+        doc: BuildInfo::from(flag.id()).dual_documentation().unwrap(),
+        flag: concept_to_struct(flag, codegen_cfg.yin),
+        owner_type: concept_to_struct(target, codegen_cfg.yin),
+        yin_crate: Rc::from(base_cfg.yin_crate.as_str()),
     }
 }
 
@@ -197,9 +218,25 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
     }
 
     if activate_archetype(&target, &parent) {
-        add_attr_fragments(&attribute_config(base_cfg, &target, codegen_cfg), &mut file);
+        add_attr_fragments(
+            &attribute_config(&base_cfg, &target, codegen_cfg),
+            &mut file,
+        );
     } else if activate_data(&target) {
-        add_data_fragments(&data_config(base_cfg, &target), &mut file);
+        add_data_fragments(&data_config(&base_cfg, &target), &mut file);
+    }
+
+    if !in_own_submodule(&target) && !target.added_flags().is_empty() {
+        let mut implementation =
+            ImplementationFragment::new_struct_impl(concept_to_struct(&target, codegen_cfg.yin));
+        for flag in target.added_flags() {
+            add_flag_to_impl(
+                &flag_config(&base_cfg, codegen_cfg, &target, &flag),
+                &mut implementation,
+                &mut file,
+            );
+        }
+        file.append(Rc::new(RefCell::new(implementation)));
     }
 
     file.generate_code()
@@ -313,7 +350,7 @@ mod tests {
         let codegen_cfg = CodegenConfig::default();
 
         let attr_cfg = attribute_config(
-            generic_config(&implement, &target.as_archetype(), &parent, &codegen_cfg),
+            &generic_config(&implement, &target.as_archetype(), &parent, &codegen_cfg),
             &target.as_archetype(),
             &codegen_cfg,
         );

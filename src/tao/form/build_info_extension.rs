@@ -1,6 +1,7 @@
 use crate::tao::form::{BuildInfo, Crate, CrateExtension, Module};
 use crate::tao::relation::attribute::{
-    HasMember, ImplementationName, ImportPath, MostProminentMember, SupportsMembership,
+    DualPurposeDocumentation, HasMember, ImplementationName, ImportPath, MostProminentMember,
+    SupportsMembership,
 };
 use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::StrongValue;
@@ -100,6 +101,29 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
             .incoming_nodes(MostProminentMember::TYPE_ID)
             .first()
             .map(|b| Module::from(b.id()))
+    }
+
+    /// Set the dual-purpose documentation string for this implementation.
+    fn dual_document(&mut self, document: &str) {
+        let mut s = StringConcept::new();
+        s.set_value(document.to_owned());
+        self.essence_mut()
+            .add_outgoing(DualPurposeDocumentation::TYPE_ID, s.essence());
+    }
+
+    /// Get the dual-purpose documentation string for this implementation.
+    fn dual_documentation(&self) -> Option<Rc<str>> {
+        self.essence()
+            .inheritance_wrapper()
+            .base_wrapper()
+            .outgoing_nodes(DualPurposeDocumentation::TYPE_ID)
+            .first()
+            .map(|v| {
+                StringConcept::from(v.id())
+                    .value()
+                    .map(|rc| Rc::from(rc.as_str()))
+            })
+            .flatten()
     }
 }
 
@@ -203,6 +227,17 @@ mod tests {
         assert_eq!(
             BuildInfo::from(my_subtype.id()).representative_module(),
             Some(child_module)
+        );
+    }
+
+    #[test]
+    fn set_and_retrieve_dual_documentation() {
+        initialize_kb();
+        let mut new_form = BuildInfo::from(Tao::new().id());
+        new_form.dual_document("duels as being outdated.");
+        assert_eq!(
+            new_form.dual_documentation(),
+            Some(Rc::from("duels as being outdated."))
         );
     }
 }

@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 fn form_fragment(cfg: &TaoConfig) -> ImplementationFragment {
-    let mut implementation = ImplementationFragment::new(
+    let mut implementation = ImplementationFragment::new_trait_impl(
         StructConfig::new(format!("{}::tao::form::FormTrait", cfg.yin_crate)),
         cfg.this.clone(),
     );
