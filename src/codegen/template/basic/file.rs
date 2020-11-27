@@ -1,5 +1,5 @@
 use super::{AppendedFragment, AtomicFragment, CodeFragment, ModuleFragment};
-use crate::codegen::template::imports::{imports_as_str, replace_current_crate};
+use crate::codegen::template::imports::imports_as_str;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -52,6 +52,9 @@ impl FileFragment {
         combined.append(self.contents.clone());
         if !self.tests.is_empty() {
             let mut test_mod = ModuleFragment::new_test_module();
+            if let Some(current_crate) = &self.current_crate {
+                test_mod.set_current_crate(current_crate.clone());
+            }
             for test in &self.tests {
                 test_mod.append(test.clone());
             }
@@ -62,17 +65,13 @@ impl FileFragment {
         if let Some(excluded_import) = &self.self_import {
             final_imports.retain(|i| excluded_import != i);
         }
-        if let Some(current_crate_name) = &self.current_crate {
-            final_imports = final_imports
-                .into_iter()
-                .map(|i| replace_current_crate(&current_crate_name, i))
-                .collect::<Vec<String>>();
-        }
         let imports = imports_as_str(
-            &final_imports
-                .iter()
-                .map(|s| s.as_str())
-                .collect::<Vec<&str>>(),
+            &*self
+                .current_crate
+                .as_ref()
+                .map(|rc| rc.clone())
+                .unwrap_or(Rc::from("DUMMY-TEST-CRATE")),
+            final_imports,
         );
 
         let body = combined.body();
