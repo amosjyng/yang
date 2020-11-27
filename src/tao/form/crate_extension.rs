@@ -54,7 +54,7 @@ pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
     /// Name for the Yang crate.
     const YANG_CRATE_NAME: &'static str = "zamm_yang";
     /// Internal name for the current crate.
-    const CURRENT_CRATE_INTERNAL_NAME: &'static str = "this-crate";
+    const CURRENT_CRATE_INTERNAL_NAME: &'static str = "DUMMY-crate";
 
     /// Get the Yin crate as a concept.
     fn yin() -> Crate {
