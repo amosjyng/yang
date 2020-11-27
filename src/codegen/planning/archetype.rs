@@ -1,9 +1,10 @@
 use super::concept_to_struct;
 use super::imports::in_own_submodule;
 use crate::codegen::docstring::into_docstring;
+use crate::codegen::template::basic::ImplementationFragment;
 use crate::codegen::template::concept::attribute::{add_attr_fragments, AttributeFormatConfig};
 use crate::codegen::template::concept::data::{add_data_fragments, DataFormatConfig};
-use crate::codegen::template::concept::flag::{add_flag_to_file, FlagConfig};
+use crate::codegen::template::concept::flag::{add_flag_to_impl, FlagConfig};
 use crate::codegen::template::concept::form::add_form_fragment;
 use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
 use crate::codegen::{CodegenConfig, StructConfig};
@@ -14,6 +15,7 @@ use crate::tao::{Implement, ImplementExtension};
 use heck::{KebabCase, SnakeCase};
 use itertools::Itertools;
 use semver::Version;
+use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
@@ -223,13 +225,17 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
         add_data_fragments(&data_config(&base_cfg, &target), &mut file);
     }
 
-    if !in_own_submodule(&target) {
+    if !in_own_submodule(&target) && !target.added_flags().is_empty() {
+        let mut implementation =
+            ImplementationFragment::new_struct_impl(concept_to_struct(&target, codegen_cfg.yin));
         for flag in target.added_flags() {
-            add_flag_to_file(
+            add_flag_to_impl(
                 &flag_config(&base_cfg, codegen_cfg, &target, &flag),
+                &mut implementation,
                 &mut file,
             );
         }
+        file.append(Rc::new(RefCell::new(implementation)));
     }
 
     file.generate_code()

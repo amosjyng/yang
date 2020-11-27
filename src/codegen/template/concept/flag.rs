@@ -1,5 +1,6 @@
 use crate::codegen::template::basic::{
-    AtomicFragment, FileFragment, FunctionFragment, ItemDeclarationAPI, SelfReference,
+    AtomicFragment, FileFragment, FunctionFragment, ImplementationFragment, ItemDeclarationAPI,
+    SelfReference,
 };
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
@@ -46,6 +47,7 @@ fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.add_import(cfg.flag.import.clone());
     f.add_import(format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate));
     f.add_import(format!("{}::tao::form::FormTrait", cfg.yin_crate));
+    f.add_import(format!("{}::node_wrappers::BaseNodeTrait", cfg.yin_crate));
     f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
         "self.essence_mut().add_flag({}::TYPE_ID);",
         cfg.flag.name
@@ -62,6 +64,7 @@ fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.add_import(cfg.flag.import.clone());
     f.add_import(format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate));
     f.add_import(format!("{}::tao::form::FormTrait", cfg.yin_crate));
+    f.add_import(format!("{}::node_wrappers::BaseNodeTrait", cfg.yin_crate));
     f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
         "self.essence().has_flag({}::TYPE_ID)",
         cfg.flag.name
@@ -90,10 +93,14 @@ fn test_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f
 }
 
-/// Add these flags to a file.
-pub fn add_flag_to_file(cfg: &FlagConfig, file: &mut FileFragment) {
-    file.append(Rc::new(RefCell::new(getter_fragment(cfg))));
-    file.append(Rc::new(RefCell::new(setter_fragment(cfg))));
+/// Add these flags to an implementation and its corresponding test module.
+pub fn add_flag_to_impl(
+    cfg: &FlagConfig,
+    implementation: &mut ImplementationFragment,
+    file: &mut FileFragment,
+) {
+    implementation.append(Rc::new(RefCell::new(getter_fragment(cfg))));
+    implementation.append(Rc::new(RefCell::new(setter_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(test_fragment(cfg))));
 }
 
