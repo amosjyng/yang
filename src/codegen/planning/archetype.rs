@@ -10,7 +10,7 @@ use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConf
 use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::DataExtension;
-use crate::tao::form::{Crate, CrateExtension};
+use crate::tao::form::{BuildInfo, BuildInfoExtension, Crate, CrateExtension};
 use crate::tao::{Implement, ImplementExtension};
 use heck::{KebabCase, SnakeCase};
 use itertools::Itertools;
@@ -193,7 +193,7 @@ fn flag_config(
     FlagConfig {
         public: true,
         property_name: Rc::from(flag.internal_name_str().unwrap().to_snake_case()),
-        doc: Rc::from("TODO: IMPLEMENT"),
+        doc: BuildInfo::from(flag.id()).dual_documentation().unwrap(),
         flag: concept_to_struct(flag, codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
         yin_crate: Rc::from(base_cfg.yin_crate.as_str()),

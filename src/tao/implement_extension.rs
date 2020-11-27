@@ -1,3 +1,4 @@
+use crate::tao::form::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::{ConceptId, Documentation, Target};
 use crate::tao::Implement;
 use std::rc::Rc;
@@ -9,7 +10,7 @@ use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::Wrapper;
 
 /// Extension functions for Implement concept.
-pub trait ImplementExtension: FormTrait {
+pub trait ImplementExtension: FormTrait + CommonNodeTrait {
     /// Set another concept as an implementation target.
     fn set_target(&mut self, target: Form) {
         self.essence_mut()
@@ -68,6 +69,16 @@ pub trait ImplementExtension: FormTrait {
             })
             .flatten()
     }
+
+    /// Set the dual-purpose documentation string for this implementation.
+    fn dual_document(&mut self, document: &str) {
+        BuildInfo::from(self.target().unwrap().id()).dual_document(document);
+    }
+
+    /// Get the dual-purpose documentation string for this implementation.
+    fn dual_documentation(&self) -> Option<Rc<str>> {
+        BuildInfo::from(self.target().unwrap().id()).dual_documentation()
+    }
 }
 
 impl ImplementExtension for Implement {}
@@ -100,5 +111,31 @@ mod tests {
         let mut implement = Implement::new();
         implement.document("Some new thing.");
         assert_eq!(implement.documentation(), Some(Rc::from("Some new thing.")));
+    }
+
+    #[test]
+    fn set_and_retrieve_dual_documentation() {
+        initialize_kb();
+        let mut implement = Implement::new();
+        implement.set_target(implement.as_form());
+        implement.dual_document("duels as being outdated.");
+        assert_eq!(
+            implement.dual_documentation(),
+            Some(Rc::from("duels as being outdated."))
+        );
+    }
+
+    #[test]
+    fn test_documentation_and_dual_documentation_independent() {
+        initialize_kb();
+        let mut implement = Implement::new();
+        implement.set_target(implement.as_form());
+        implement.document("Some new thing.");
+        implement.dual_document("duels as being outdated.");
+        assert_eq!(implement.documentation(), Some(Rc::from("Some new thing.")));
+        assert_eq!(
+            implement.dual_documentation(),
+            Some(Rc::from("duels as being outdated."))
+        );
     }
 }
