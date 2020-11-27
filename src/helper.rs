@@ -1,4 +1,5 @@
 use crate::tao::archetype::CodegenFlags;
+use colored::*;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::*;
 use zamm_yin::tao::form::FormTrait;
@@ -25,7 +26,11 @@ pub fn aa(archetype: Archetype) -> AttributeArchetype {
     {
         // currently catches Relation, which is not an attribute but still deserves to have its
         // owner archetype set
-        println!("Warning: {:?} is not known to be an attribute.", archetype);
+        println!(
+            "{}{:?} is not known to be an attribute.",
+            "Warning: ".yellow().bold(),
+            archetype
+        );
     }
     AttributeArchetype::from(archetype.id())
 }
