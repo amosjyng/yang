@@ -186,9 +186,10 @@ target.implement_with_doc("The target of an implement command.");
 concept_id.implement_with_doc("The integer ID associated with a concept.");
 documentation.implement_with_doc("The documentation associated with an implementation.");
 
-newly_defined.implement_with_doc(
+let mut nd_impl = newly_defined.implement_with_doc(
     "Marks an archetype and all its descendants as having been newly defined as part of this particular build."
 );
+nd_impl.dual_document("having been newly defined as part of the current build.");
 
 module.implement_with_doc("Concept representing a Rust module.");
 
@@ -291,6 +292,7 @@ These are the generic imports for general Yang generation:
 use zamm_yang::define;
 use zamm_yang::tao::initialize_kb;
 use zamm_yang::tao::Tao;
+use zamm_yang::tao::ImplementExtension;
 use zamm_yang::tao::archetype::ArchetypeTrait;
 use zamm_yang::tao::archetype::ArchetypeFormTrait;
 use zamm_yang::tao::archetype::AttributeArchetypeFormTrait;
