@@ -31,6 +31,13 @@ define!(documentation);
 documentation.add_parent(Attribute::archetype().as_archetype());
 ```
 
+Getters and setters in particular have their own dual-purpose documentation strings:
+
+```rust
+define!(dual_purpose_documentation);
+dual_purpose_documentation.add_parent(Attribute::archetype().as_archetype());
+```
+
 Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
 
 ```rust
@@ -184,6 +191,9 @@ implement.implement_with_doc(
 target.implement_with_doc("The target of an implement command.");
 concept_id.implement_with_doc("The integer ID associated with a concept.");
 documentation.implement_with_doc("The documentation associated with an implementation.");
+dual_purpose_documentation.implement_with_doc(
+    "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string."
+);
 
 newly_defined.implement_with_doc(
     "Marks an archetype and all its descendants as having been newly defined as part of this particular build."

@@ -10,6 +10,7 @@ pub struct FileFragment {
     preamble: Option<AtomicFragment>,
     contents: Rc<RefCell<AppendedFragment>>,
     tests: Vec<Rc<RefCell<dyn CodeFragment>>>,
+    self_import: Option<String>,
 }
 
 impl FileFragment {
@@ -33,6 +34,12 @@ impl FileFragment {
         self.tests.push(test);
     }
 
+    /// If there's something defined within this file, set the import path here, and it will be
+    /// excluded from the file's final set of imports.
+    pub fn set_self_import(&mut self, import: String) {
+        self.self_import = Some(import);
+    }
+
     /// Get the code for this fragment.
     pub fn generate_code(&self) -> String {
         let mut combined = AppendedFragment::default();
@@ -45,9 +52,12 @@ impl FileFragment {
             combined.append(Rc::new(RefCell::new(test_mod)));
         }
 
+        let mut final_imports = combined.imports();
+        if let Some(excluded_import) = &self.self_import {
+            final_imports.retain(|i| excluded_import != i);
+        }
         let imports = imports_as_str(
-            &combined
-                .imports()
+            &final_imports
                 .iter()
                 .map(|s| s.as_str())
                 .collect::<Vec<&str>>(),
