@@ -1,5 +1,5 @@
 use super::{AppendedFragment, AtomicFragment, CodeFragment, ModuleFragment};
-use crate::codegen::template::imports::imports_as_str;
+use crate::codegen::template::imports::{imports_as_str, replace_current_crate};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -11,6 +11,7 @@ pub struct FileFragment {
     contents: Rc<RefCell<AppendedFragment>>,
     tests: Vec<Rc<RefCell<dyn CodeFragment>>>,
     self_import: Option<String>,
+    current_crate: Option<Rc<str>>,
 }
 
 impl FileFragment {
@@ -40,6 +41,11 @@ impl FileFragment {
         self.self_import = Some(import);
     }
 
+    /// Set the current crate for file imports.
+    pub fn set_current_crate(&mut self, current_crate: Rc<str>) {
+        self.current_crate = Some(current_crate);
+    }
+
     /// Get the code for this fragment.
     pub fn generate_code(&self) -> String {
         let mut combined = AppendedFragment::default();
@@ -55,6 +61,12 @@ impl FileFragment {
         let mut final_imports = combined.imports();
         if let Some(excluded_import) = &self.self_import {
             final_imports.retain(|i| excluded_import != i);
+        }
+        if let Some(current_crate_name) = &self.current_crate {
+            final_imports = final_imports
+                .into_iter()
+                .map(|i| replace_current_crate(&current_crate_name, i))
+                .collect::<Vec<String>>();
         }
         let imports = imports_as_str(
             &final_imports
@@ -84,6 +96,7 @@ impl FileFragment {
 mod tests {
     use super::super::AtomicFragment;
     use super::*;
+    use crate::tao::initialize_kb;
     use indoc::indoc;
 
     #[test]
@@ -93,12 +106,15 @@ mod tests {
 
     #[test]
     fn test_file_with_preamble() {
+        initialize_kb();
+
         let mut file = FileFragment::default();
+        file.set_current_crate(Rc::from("my_crate"));
         file.append(Rc::new(RefCell::new(AtomicFragment {
             imports: vec![
                 "std::OrTheOther".to_owned(),
-                "crate::Something".to_owned(),
-                "crate::Unused".to_owned(),
+                "my_crate::Something".to_owned(),
+                "my_crate::Unused".to_owned(),
             ],
             atom: indoc! {"
                 pub struct Big {

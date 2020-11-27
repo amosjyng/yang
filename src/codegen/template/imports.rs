@@ -80,6 +80,41 @@ fn imports_as_str_impl(imports: &[&str], public: bool) -> String {
     result.trim().to_owned()
 }
 
+/// If the "import" comes from the current crate, replace the current crate name with "crate".
+///
+/// # Examples
+///
+/// In this example, we are currently writing code for `my_crate` that needs an import for another
+/// resource within the same crate. As such, "my_crate::" gets replaced with "crate::".
+///
+/// ```rust
+/// use zamm_yang::codegen::template::imports::replace_current_crate;
+///
+/// let replaced_import = replace_current_crate(
+///     "my_crate",
+///     "my_crate::some::import".to_owned()
+/// );
+/// assert_eq!(replaced_import, "crate::some::import");
+/// ```
+///
+/// If it's import from an external crate, then the import will be returned as-is:
+///
+/// ```rust
+/// # use zamm_yang::codegen::template::imports::replace_current_crate;
+/// let replaced_import = replace_current_crate(
+///     "my_crate",
+///     "other_crate::some::import".to_owned()
+/// );
+/// assert_eq!(replaced_import, "other_crate::some::import");
+/// ```
+pub fn replace_current_crate(current_crate: &str, import: String) -> String {
+    if import.starts_with(current_crate) {
+        format!("crate::{}", &import[current_crate.len() + 2..import.len()])
+    } else {
+        import
+    }
+}
+
 /// Serialize imports into a string.
 pub fn imports_as_str(imports: &[&str]) -> String {
     imports_as_str_impl(imports, false)

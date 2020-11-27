@@ -239,6 +239,7 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
         file.append(Rc::new(RefCell::new(implementation)));
     }
 
+    file.set_current_crate(Crate::current().implementation_name().unwrap());
     file.generate_code()
 }
 
