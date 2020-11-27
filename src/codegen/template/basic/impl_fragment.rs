@@ -3,11 +3,11 @@ use crate::codegen::StructConfig;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-/// Fragment for a trait implementation.
+/// Fragment for a struct implementation. Optional whether this is implementing a trait or not.
 pub struct ImplementationFragment {
-    /// Config for the trait being implemented.
-    pub trait_cfg: StructConfig,
-    /// Config for the struct the trait is being implemented for.
+    /// Config for the trait being implemented, if any.
+    pub trait_cfg: Option<StructConfig>,
+    /// Config for the struct this implementation is a part of.
     pub struct_cfg: StructConfig,
     /// Whether this implementation is in the same file the trait is defined in.
     pub same_file_as_trait: bool,
@@ -20,10 +20,18 @@ pub struct ImplementationFragment {
 }
 
 impl ImplementationFragment {
-    /// Create a new trait implementation for the given trait and struct.
-    pub fn new(trait_cfg: StructConfig, struct_cfg: StructConfig) -> Self {
+    /// Create a new implementation for the given struct.
+    pub fn new_struct_impl(struct_cfg: StructConfig) -> Self {
         Self {
-            trait_cfg,
+            struct_cfg,
+            ..Self::default()
+        }
+    }
+
+    /// Create a new trait implementation for the given trait and struct.
+    pub fn new_trait_impl(trait_cfg: StructConfig, struct_cfg: StructConfig) -> Self {
+        Self {
+            trait_cfg: Some(trait_cfg),
             struct_cfg,
             ..Self::default()
         }
@@ -55,7 +63,7 @@ impl Default for ImplementationFragment {
         let content = Rc::new(RefCell::new(AppendedFragment::new_with_separator("\n")));
         declaration.set_body(content.clone());
         Self {
-            trait_cfg: StructConfig::default(),
+            trait_cfg: None,
             struct_cfg: StructConfig::default(),
             same_file_as_trait: false,
             same_file_as_struct: false,
@@ -99,18 +107,24 @@ impl CodeFragment for ImplementationFragment {
     fn body(&self) -> String {
         let mut declaration = self.declaration.clone();
         declaration.mark_for_full_implementation();
-        declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(format!(
-            "impl {trait_name} for {struct_name}",
-            trait_name = self.trait_cfg.name,
-            struct_name = self.struct_cfg.name
-        )))));
+        let definition = match &self.trait_cfg {
+            Some(trait_cfg) => format!(
+                "impl {trait_name} for {struct_name}",
+                trait_name = trait_cfg.name,
+                struct_name = self.struct_cfg.name
+            ),
+            None => format!("impl {struct_name}", struct_name = self.struct_cfg.name),
+        };
+        declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(definition))));
         declaration.body()
     }
 
     fn imports(&self) -> Vec<String> {
         let mut imports = self.content.borrow().imports();
         if !self.same_file_as_trait {
-            imports.push(self.trait_cfg.import.clone());
+            if let Some(trait_cfg) = &self.trait_cfg {
+                imports.push(trait_cfg.import.clone());
+            }
         }
         if !self.same_file_as_struct {
             imports.push(self.struct_cfg.import.clone());
@@ -127,7 +141,17 @@ mod tests {
 
     #[test]
     fn test_empty_impl() {
-        let f = ImplementationFragment::new(
+        let f = ImplementationFragment::new_struct_impl(StructConfig {
+            name: "Bar".to_owned(),
+            import: "crate::Bar".to_owned(),
+        });
+
+        assert_eq!(f.body(), "impl Bar {}");
+    }
+
+    #[test]
+    fn test_empty_trait_impl() {
+        let f = ImplementationFragment::new_trait_impl(
             StructConfig {
                 name: "Foo".to_owned(),
                 import: "crate::Foo".to_owned(),
@@ -143,7 +167,7 @@ mod tests {
 
     #[test]
     fn test_impl_content() {
-        let mut f = ImplementationFragment::new(
+        let mut f = ImplementationFragment::new_trait_impl(
             StructConfig {
                 name: "Foo".to_owned(),
                 import: "crate::Foo".to_owned(),
@@ -175,7 +199,7 @@ mod tests {
 
     #[test]
     fn test_trait_imports_separate_file() {
-        let mut f = ImplementationFragment::new(
+        let mut f = ImplementationFragment::new_trait_impl(
             StructConfig {
                 name: "Foo".to_owned(),
                 import: "crate::Foo".to_owned(),
@@ -199,7 +223,7 @@ mod tests {
 
     #[test]
     fn test_trait_imports_same_file() {
-        let mut f = ImplementationFragment::new(
+        let mut f = ImplementationFragment::new_trait_impl(
             StructConfig {
                 name: "Foo".to_owned(),
                 import: "crate::Foo".to_owned(),
