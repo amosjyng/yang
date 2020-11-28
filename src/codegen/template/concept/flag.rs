@@ -159,7 +159,7 @@ mod tests {
     #[test]
     fn test_setter_fragment_body() {
         assert_eq!(
-            setter_fragment(&test_config()).body(),
+            setter_fragment(&test_config()).body(80),
             indoc! {"
                 /// Mark this as newly defined as part of the current build.
                 fn mark_newly_defined(&mut self) {
@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn test_getter_fragment_body() {
         assert_eq!(
-            getter_fragment(&test_config()).body(),
+            getter_fragment(&test_config()).body(80),
             indoc! {"
                 /// Whether this is marked as newly defined as part of the current build.
                 fn is_newly_defined(&self) -> bool {
@@ -183,7 +183,7 @@ mod tests {
     #[test]
     fn test_test_fragment_body() {
         assert_eq!(
-            test_fragment(&test_config()).body(),
+            test_fragment(&test_config()).body(80),
             indoc! {"
                 #[test]
                 fn test_mark_and_check_newly_defined() {
@@ -200,7 +200,7 @@ mod tests {
     #[test]
     fn test_test_inheritance_fragment_body() {
         assert_eq!(
-            test_inheritance_fragment(&test_config()).body(),
+            test_inheritance_fragment(&test_config()).body(80),
             indoc! {"
                 #[test]
                 fn test_newly_defined_inheritance() {

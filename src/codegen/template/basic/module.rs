@@ -4,6 +4,7 @@ use super::{
 };
 use crate::codegen::docstring::into_parent_docstring;
 use crate::codegen::template::imports::{imports_as_str, re_exports_as_str};
+use crate::codegen::CODE_WIDTH;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::rc::Rc;
@@ -171,7 +172,7 @@ impl PartialEq for ModuleFragment {
 impl Eq for ModuleFragment {}
 
 impl CodeFragment for ModuleFragment {
-    fn body(&self) -> String {
+    fn body(&self, line_width: usize) -> String {
         let mut imports = self.content.borrow().imports();
         if self.test {
             imports.push("super::*".to_owned());
@@ -218,7 +219,7 @@ impl CodeFragment for ModuleFragment {
         if self.uses_entire_file {
             let mut f = FileFragment::new();
             if let Some(doc) = &self.declaration.doc {
-                f.set_preamble(AtomicFragment::new(into_parent_docstring(&doc, 0)));
+                f.set_preamble(AtomicFragment::new(into_parent_docstring(&doc, CODE_WIDTH)));
             }
             f.append(internals_rc);
             f.generate_code()
@@ -234,7 +235,7 @@ impl CodeFragment for ModuleFragment {
                 // override with the imports
                 declaration.set_body(internals_rc);
             }
-            declaration.body()
+            declaration.body(line_width) // declaration will take care of indent size
         }
     }
 
@@ -263,7 +264,7 @@ mod tests {
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
         assert_eq!(
-            test_mod.body(),
+            test_mod.body(80),
             indoc! {r#"
                 mod my_mod {
                     fn a() {
@@ -288,7 +289,7 @@ mod tests {
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
         assert_eq!(
-            test_mod.body(),
+            test_mod.body(80),
             indoc! {r#"
                 /// My amazing module.
                 mod my_mod {
@@ -314,7 +315,7 @@ mod tests {
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
         assert_eq!(
-            test_mod.body(),
+            test_mod.body(80),
             indoc! {r#"
                 pub mod my_mod {
                     fn a() {
@@ -330,7 +331,7 @@ mod tests {
         test_mod.mark_as_declare_only();
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
-        assert_eq!(test_mod.body(), "mod my_mod;".to_owned());
+        assert_eq!(test_mod.body(80), "mod my_mod;".to_owned());
     }
 
     #[test]
@@ -340,7 +341,7 @@ mod tests {
         test_mod.mark_as_public();
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
-        assert_eq!(test_mod.body(), "pub mod my_mod;".to_owned());
+        assert_eq!(test_mod.body(80), "pub mod my_mod;".to_owned());
     }
 
     #[test]
@@ -352,7 +353,7 @@ mod tests {
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
         assert_eq!(
-            test_mod.body(),
+            test_mod.body(80),
             indoc! {"
                 mod my_dom {
                     /// Subbed.
@@ -371,7 +372,7 @@ mod tests {
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
         assert_eq!(
-            test_mod.body(),
+            test_mod.body(80),
             indoc! {"
                 mod my_dom {
                     mod my_sub {}
@@ -395,7 +396,7 @@ mod tests {
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
         assert_eq!(
-            test_mod.body(),
+            test_mod.body(80),
             indoc! {"
                 mod my_dom {
                     pub mod sub_a;
@@ -417,7 +418,7 @@ mod tests {
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
         assert_eq!(
-            test_mod.body(),
+            test_mod.body(80),
             indoc! {"
                 mod my_dom {
                     mod my_sub;
@@ -447,7 +448,7 @@ mod tests {
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
         assert_eq!(
-            test_mod.body(),
+            test_mod.body(80),
             indoc! {r#"
                 //! This produces great things.
                 
@@ -480,7 +481,7 @@ mod tests {
 
         assert_eq!(test_mod.imports(), Vec::<String>::new());
         assert_eq!(
-            test_mod.body(),
+            test_mod.body(80),
             indoc! {"
                 #[cfg(test)]
                 mod tests {

@@ -81,7 +81,7 @@ impl ItemDeclarationAPI for TraitFragment {
 }
 
 impl CodeFragment for TraitFragment {
-    fn body(&self) -> String {
+    fn body(&self, line_width: usize) -> String {
         let required_traits = self.required_traits.iter().map(|r| &r.name).format(" + ");
         let requirements = if self.required_traits.is_empty() {
             String::default()
@@ -95,7 +95,7 @@ impl CodeFragment for TraitFragment {
             name = self.name,
             requirements = requirements
         )))));
-        declaration.body()
+        declaration.body(line_width) // declaration will take care of indent size
     }
 
     fn imports(&self) -> Vec<String> {
@@ -120,7 +120,7 @@ mod tests {
         let f = TraitFragment::new("Foo".to_owned());
 
         assert_eq!(f.imports(), Vec::<String>::new());
-        assert_eq!(f.body(), "trait Foo {}");
+        assert_eq!(f.body(80), "trait Foo {}");
     }
 
     #[test]
@@ -130,7 +130,7 @@ mod tests {
 
         assert_eq!(f.imports(), Vec::<String>::new());
         assert_eq!(
-            f.body(),
+            f.body(80),
             indoc! {"
                 /// This is a trait.
                 trait Foo {}"}
@@ -143,7 +143,7 @@ mod tests {
         f.mark_as_public();
 
         assert_eq!(f.imports(), Vec::<String>::new());
-        assert_eq!(f.body(), "pub trait Foo {}");
+        assert_eq!(f.body(80), "pub trait Foo {}");
     }
 
     #[test]
@@ -168,7 +168,7 @@ mod tests {
         })));
 
         assert_eq!(
-            f.body(),
+            f.body(80),
             indoc! {"
                 trait Foo: Bar + Baz {
                     fn do_something(&mut self) {

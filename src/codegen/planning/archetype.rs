@@ -7,6 +7,7 @@ use crate::codegen::template::concept::data::{add_data_fragments, DataFormatConf
 use crate::codegen::template::concept::flag::{add_flag_to_impl, FlagConfig};
 use crate::codegen::template::concept::form::add_form_fragment;
 use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
+use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::DataExtension;
@@ -72,7 +73,7 @@ fn generic_config(
     };
 
     let doc = match &request.documentation() {
-        Some(d) => format!("\n{}", into_docstring(&d, 0)),
+        Some(d) => format!("\n{}", into_docstring(&d, CODE_WIDTH)),
         None => String::new(),
     };
 
