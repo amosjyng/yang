@@ -1,5 +1,6 @@
 use super::tao::TaoConfig;
-use crate::codegen::template::basic::{AtomicFragment, FileFragment};
+use super::util::{add_assert, new_kb_test};
+use crate::codegen::template::basic::{AppendedFragment, AtomicFragment, FileFragment};
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -44,7 +45,7 @@ fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
 }
 
 /// Get the attribute test fragment.
-fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
+fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AppendedFragment {
     let mut imports = vec![
         "zamm_yin::tao::archetype::ArchetypeFormTrait".to_owned(),
         "zamm_yin::tao::archetype::AttributeArchetypeFormTrait".to_owned(),
@@ -60,22 +61,31 @@ fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
         imports.push(cfg.value_type.import.clone());
     }
 
-    AtomicFragment {
+    let mut test_frag = AppendedFragment::default();
+    let name = &cfg.tao_cfg.this.name;
+    let check_attribute_constraints = new_kb_test(&mut test_frag, "check_attribute_constraints");
+    add_assert(
+        &check_attribute_constraints,
+        format!("{}::archetype().owner_archetype()", name),
+        format!(
+            "{owner_type}::archetype(){owner_into_archetype}",
+            owner_type = cfg.owner_type.name,
+            owner_into_archetype = cfg.owner_into_archetype,
+        ),
+    );
+    add_assert(
+        &check_attribute_constraints,
+        format!("{}::archetype().value_archetype()", name),
+        format!(
+            "{value_type}::archetype(){value_into_archetype}",
+            value_type = cfg.value_type.name,
+            value_into_archetype = cfg.value_into_archetype,
+        ),
+    );
+
+    test_frag.append(Rc::new(RefCell::new(AtomicFragment {
         imports,
         atom: formatdoc! {r#"
-            #[test]
-            fn check_attribute_constraints() {{
-                initialize_kb();
-                assert_eq!(
-                    {name}::archetype().owner_archetype(),
-                    {owner_type}::archetype(){owner_into_archetype}
-                );
-                assert_eq!(
-                    {name}::archetype().value_archetype(),
-                    {value_type}::archetype(){value_into_archetype}
-                );
-            }}
-
             #[test]
             fn get_owner() {{
                 initialize_kb();
@@ -98,10 +108,9 @@ fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
             name = cfg.tao_cfg.this.name,
             owner_type = cfg.owner_type.name,
             value_type = cfg.value_type.name,
-            owner_into_archetype = cfg.owner_into_archetype,
-            value_into_archetype = cfg.value_into_archetype,
         },
-    }
+    })));
+    test_frag
 }
 
 /// Add these flags to a file.
