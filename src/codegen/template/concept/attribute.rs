@@ -18,8 +18,10 @@ pub struct AttributeFormatConfig {
     pub value_type: StructConfig,
     /// Attribute's value form.
     pub value_form: StructConfig,
-    /// Function name to use for converting `Archetype` subtypes into `Archetype`.
-    pub into_archetype: String,
+    /// Code to use for converting the owner archetype type into `Archetype`.
+    pub owner_into_archetype: String,
+    /// Code to use for converting the value archetype type into `Archetype`.
+    pub value_into_archetype: String,
 }
 
 /// Get the attribute body fragment.
@@ -66,11 +68,11 @@ fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
                 initialize_kb();
                 assert_eq!(
                     {name}::archetype().owner_archetype(),
-                    {owner_type}::archetype().{into_archetype}()
+                    {owner_type}::archetype(){owner_into_archetype}
                 );
                 assert_eq!(
                     {name}::archetype().value_archetype(),
-                    {value_type}::archetype().{into_archetype}()
+                    {value_type}::archetype(){value_into_archetype}
                 );
             }}
 
@@ -96,7 +98,8 @@ fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
             name = cfg.tao_cfg.this.name,
             owner_type = cfg.owner_type.name,
             value_type = cfg.value_type.name,
-            into_archetype = cfg.into_archetype,
+            owner_into_archetype = cfg.owner_into_archetype,
+            value_into_archetype = cfg.value_into_archetype,
         },
     }
 }
@@ -141,7 +144,8 @@ mod tests {
                     name: "MyValue".to_owned(),
                     import: "zamm_yin::tao::MyValue".to_owned(),
                 },
-                into_archetype: "as_archetype".to_owned(),
+                owner_into_archetype: ".as_archetype()".to_owned(),
+                value_into_archetype: ".as_archetype()".to_owned(),
             },
             &mut f,
         );
