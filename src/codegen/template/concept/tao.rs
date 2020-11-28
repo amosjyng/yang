@@ -264,16 +264,29 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
             name
         )))));
 
+    let check_type_attributes = new_kb_test(&mut test_frag, "check_type_attributes");
+    add_assert(
+        &check_type_attributes,
+        format!(
+            "{name}::archetype().{added_attributes_f}()",
+            name = name,
+            added_attributes_f = cfg.internal_name_cfg.added_attributes
+        ),
+        cfg.introduced_attributes.clone(),
+    );
+    add_assert(
+        &check_type_attributes,
+        format!(
+            "{name}::archetype().{all_attributes_f}()",
+            name = name,
+            all_attributes_f = cfg.internal_name_cfg.all_attributes
+        ),
+        cfg.all_attributes.clone(),
+    );
+
     test_frag.append(Rc::new(RefCell::new(AtomicFragment {
         imports,
         atom: formatdoc! {r#"
-            #[test]
-            fn check_type_attributes() {{
-                initialize_kb();
-                assert_eq!({name}::archetype().{added_attributes_f}(), {introduced_attributes});
-                assert_eq!({name}::archetype().{all_attributes_f}(), {all_attributes});
-            }}
-
             #[test]
             fn from_node_id() {{
                 initialize_kb();
@@ -289,10 +302,6 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
                 assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
             }}"#,
             name = cfg.this.name,
-            added_attributes_f = cfg.internal_name_cfg.added_attributes,
-            all_attributes_f = cfg.internal_name_cfg.all_attributes,
-            introduced_attributes = cfg.introduced_attributes,
-            all_attributes = cfg.all_attributes,
         },
     })));
     test_frag
