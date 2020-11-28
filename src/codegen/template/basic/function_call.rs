@@ -10,6 +10,9 @@ pub struct FunctionCallFragment {
     pub call: StructConfig,
     /// Arguments for function call. Arguments can be statements themselves.
     pub arguments: Vec<Rc<RefCell<dyn CodeFragment>>>,
+    /// Technically a macro call is different from a function call, but they're syntactically
+    /// similar enough that we're only differentiating them with a single bool.
+    pub is_macro: bool,
 }
 
 impl FunctionCallFragment {
@@ -25,14 +28,25 @@ impl FunctionCallFragment {
     pub fn add_argument(&mut self, argument: Rc<RefCell<dyn CodeFragment>>) {
         self.arguments.push(argument);
     }
+
+    /// Mark this as a macro call instead of a function call.
+    pub fn mark_macro(&mut self) {
+        self.is_macro = true;
+    }
 }
 
 impl CodeFragment for FunctionCallFragment {
     fn body(&self, line_width: usize) -> String {
-        let mut nested =
-            NestedFragment::new(AtomicFragment::new(format!("{}(", self.call.name)), ");");
+        let preamble = if self.is_macro {
+            format!("{}!(", self.call.name)
+        } else {
+            format!("{}(", self.call.name)
+        };
+        let mut nested = NestedFragment::new(AtomicFragment::new(preamble), ");");
         nested.set_separator(", ");
-        nested.set_nesting_postfix(",");
+        if !self.is_macro {
+            nested.set_nesting_postfix(",");
+        }
         for arg in &self.arguments {
             nested.append(arg.clone());
         }
@@ -78,6 +92,22 @@ mod tests {
             foo(
                 bar,
                 baz,
+            );"}
+        );
+    }
+
+    #[test]
+    fn test_call_macro_multiline() {
+        let mut f = FunctionCallFragment::new(StructConfig::new("assert_eq".to_owned()));
+        f.mark_macro();
+        f.add_argument(Rc::new(RefCell::new(AtomicFragment::new("bar".to_owned()))));
+        f.add_argument(Rc::new(RefCell::new(AtomicFragment::new("baz".to_owned()))));
+        assert_eq!(
+            f.body(8),
+            indoc! {"
+            assert_eq!(
+                bar,
+                baz
             );"}
         );
     }
