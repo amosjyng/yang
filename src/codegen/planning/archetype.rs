@@ -15,7 +15,6 @@ use crate::tao::form::{BuildInfo, BuildInfoExtension, Crate, CrateExtension};
 use crate::tao::{Implement, ImplementExtension};
 use heck::{KebabCase, SnakeCase};
 use itertools::Itertools;
-use semver::Version;
 use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::rc::Rc;
@@ -61,15 +60,10 @@ fn generic_config(
         this.clone()
     };
 
-    let internal_name_cfg = match Crate::yin().version() {
-        None => InternalNameConfig::DEFAULT,
-        Some(yin_version) => {
-            if Version::parse(&*yin_version).unwrap() >= Version::from((0, 1, 1)) {
-                InternalNameConfig::YIN_AT_LEAST_0_1_1
-            } else {
-                InternalNameConfig::DEFAULT
-            }
-        }
+    let internal_name_cfg = if Crate::yin().version_at_least(0, 1, 1) {
+        InternalNameConfig::YIN_AT_LEAST_0_1_1
+    } else {
+        InternalNameConfig::DEFAULT
     };
 
     let doc = match &request.documentation() {
@@ -165,12 +159,19 @@ fn attribute_config(
     let owner_form = concept_to_struct(&or_form_default(owner_type_concept), codegen_cfg.yin);
     let value_form = concept_to_struct(&or_form_default(value_type_concept), codegen_cfg.yin);
 
+    let into_archetype = if Crate::yin().version_at_least(0, 1, 4) {
+        "into".to_owned()
+    } else {
+        "as_archetype".to_owned()
+    };
+
     AttributeFormatConfig {
         tao_cfg: base_cfg.clone(),
         owner_type,
         owner_form,
         value_type,
         value_form,
+        into_archetype,
     }
 }
 

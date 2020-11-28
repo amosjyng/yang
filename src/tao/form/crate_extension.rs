@@ -49,6 +49,17 @@ pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
             .map(|f| Rc::from(StringConcept::from(*f).value().unwrap().as_str()))
     }
 
+    /// Checks if the current crate version is at least the specified version.
+    fn version_at_least(&self, major: u64, minor: u64, patch: u64) -> bool {
+        match self.version() {
+            None => false,
+            Some(actual_version) => {
+                semver::Version::parse(&*actual_version).unwrap()
+                    >= semver::Version::from((major, minor, patch))
+            }
+        }
+    }
+
     /// Name for the Yin crate.
     const YIN_CRATE_NAME: &'static str = "zamm_yin";
     /// Name for the Yang crate.
@@ -117,5 +128,16 @@ mod tests {
         let mut c = Crate::new();
         c.set_version("0.1.0");
         assert_eq!(c.version(), Some(Rc::from("0.1.0")));
+    }
+
+    #[test]
+    fn test_version_at_least() {
+        initialize_kb();
+        let mut c = Crate::new();
+        c.set_version("0.1.3");
+        assert!(c.version_at_least(0, 1, 0));
+        assert!(c.version_at_least(0, 1, 3));
+        assert!(!c.version_at_least(0, 1, 4));
+        assert!(!c.version_at_least(1, 0, 0));
     }
 }
