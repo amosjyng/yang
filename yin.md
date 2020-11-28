@@ -14,35 +14,35 @@ Implementations are lower-level concepts that *target* specific higher-level con
 
 ```rust
 define!(target);
-target.add_parent(Attribute::archetype().as_archetype());
+target.add_parent(Attribute::archetype().into());
 ```
 
 We need some way of efficiently distinguishing Yin concepts from each other. We can't just compare the memory addresses of a Yin struct, since different ephemeral structs may in fact be referring to the same concept. An easy way to do this is by assigning a different integer ID to each one, so that each Yin concept effectively becomes a wrapper around an integer, and we are just defining the relations between different integers:
 
 ```rust
 define!(concept_id);
-concept_id.add_parent(Attribute::archetype().as_archetype());
+concept_id.add_parent(Attribute::archetype().into());
 ```
 
 When implementing anything in Rust, we should consider documenting it for the user's sake:
 
 ```rust
 define!(documentation);
-documentation.add_parent(Attribute::archetype().as_archetype());
+documentation.add_parent(Attribute::archetype().into());
 ```
 
 Getters and setters in particular have their own dual-purpose documentation strings:
 
 ```rust
 define!(dual_purpose_documentation);
-dual_purpose_documentation.add_parent(Attribute::archetype().as_archetype());
+dual_purpose_documentation.add_parent(Attribute::archetype().into());
 ```
 
 Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
 
 ```rust
 define!(rust_primitive);
-rust_primitive.add_parent(Attribute::archetype().as_archetype());
+rust_primitive.add_parent(Attribute::archetype().into());
 ```
 
 This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
@@ -113,21 +113,21 @@ Things that are grouped inside of a module will be considered a member of the mo
 
 ```rust
 define!(has_member);
-has_member.add_parent(Attribute::archetype().as_archetype());
+has_member.add_parent(Attribute::archetype().into());
 ```
 
 Rust modules sometimes re-export things so that it looks like it's coming from that module.
 
 ```rust
 define!(re_exports);
-re_exports.add_parent(Attribute::archetype().as_archetype());
+re_exports.add_parent(Attribute::archetype().into());
 ```
 
 It seems to make sense to group a concept and its descendants inside the same module. For such modules, we'll mark the concept as the most prominent member of the module.
 
 ```rust
 define!(most_prominent_member);
-most_prominent_member.add_parent(Attribute::archetype().as_archetype());
+most_prominent_member.add_parent(Attribute::archetype().into());
 ```
 
 During implementation, we should be able to force a new attribute to live inside its own module. This override should take place even if the concept doesn't have any child archetypes yet, so that any concepts in downstream packages that depend on it will know where to look:
@@ -141,7 +141,7 @@ Once built, structs have a certain import path:
 
 ```rust
 define!(import_path);
-import_path.add_parent(Attribute::archetype().as_archetype());
+import_path.add_parent(Attribute::archetype().into());
 ```
 
 ```rust
@@ -163,14 +163,14 @@ Crates are versioned:
 
 ```rust
 define!(version);
-version.add_parent(Attribute::archetype().as_archetype());
+version.add_parent(Attribute::archetype().into());
 ```
 
 Concepts and crates alike might also have their own implementation name:
 
 ```rust
 define!(implementation_name);
-implementation_name.add_parent(Attribute::archetype().as_archetype());
+implementation_name.add_parent(Attribute::archetype().into());
 ```
 
 It is only natural for the human mind to use the name of the crate as a metonymy for the crate itself, just as humans also tend to use a filename or a file icon as a metonymy for the inode that points to the actual blocks of data on disk. How often do we stop to remind ourselves that the filename is only a symbolic handle for the actual data, or that when we're dragging a file icon from one folder to another, we're not dragging the data but only the visual representation of the data? We don't do so very often, because such details usually don't matter. It does matter here, however, so we will keep them separate and distinct.
@@ -329,13 +329,4 @@ use zamm_yang::tao::relation::Relation;
 use zamm_yang::tao::relation::attribute::Attribute;
 use zamm_yang::tao::relation::attribute::has_property::HasProperty;
 use zamm_yang::tao::relation::flag::Flag;
-```
-
-### Backwards compatibility
-
-There is some data in the latest Yin that won't be generated by the current Yang, because the current Yang relies on the previous Yin.
-
-```rust
-use zamm_yang::tao::relation::attribute::Owner;
-Relation::archetype().add_attribute_type(Owner::archetype());
 ```
