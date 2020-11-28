@@ -1,5 +1,5 @@
 use super::{CodeFragment, RUST_INDENTATION};
-use crate::codegen::add_indent;
+use crate::codegen::{add_indent, INDENT_SIZE};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -30,13 +30,13 @@ impl NestedFragment {
 }
 
 impl CodeFragment for NestedFragment {
-    fn body(&self) -> String {
+    fn body(&self, line_width: usize) -> String {
         let trimmed_preamble = self.preamble.trim().to_owned();
         let trimmed_postamble = self.postamble.trim();
         let trimmed_body = self
             .nesting
             .as_ref()
-            .map(|n| n.borrow().body().trim().to_owned())
+            .map(|n| n.borrow().body(line_width - INDENT_SIZE).trim().to_owned())
             .unwrap_or_default();
         if trimmed_body.is_empty() {
             trimmed_preamble + trimmed_postamble
@@ -93,7 +93,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            nested.body(),
+            nested.body(80),
             indoc! {"
                 fn new_rust_struct() -> RustStruct {
                     let mut f = ForeignStruct {};
@@ -116,7 +116,7 @@ mod tests {
             nested.imports(),
             vec!["std::official::RustStruct".to_owned(),]
         );
-        assert_eq!(nested.body(), "RustStruct {}");
+        assert_eq!(nested.body(80), "RustStruct {}");
     }
 
     #[test]
@@ -131,6 +131,6 @@ mod tests {
             nested.imports(),
             vec!["std::official::RustStruct".to_owned(),]
         );
-        assert_eq!(nested.body(), "RustStruct {}");
+        assert_eq!(nested.body(80), "RustStruct {}");
     }
 }

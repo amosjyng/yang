@@ -15,7 +15,8 @@ pub fn in_own_submodule(target: &Archetype) -> bool {
     target.force_own_module()
         || target.root_node_logic_activated()
         // todo: this is a hack to check if the children are archetypes or not
-        || target.child_archetypes().iter().any(|c| c.internal_name_str().is_some())
+        || target.child_archetypes().iter().any(|c|
+            c.internal_name_str().is_some() && !c.internal_name_str().unwrap().contains("DUMMY"))
 }
 
 /// The import path for concepts, starting from Tao and leading to the given archetype.

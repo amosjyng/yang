@@ -26,8 +26,6 @@ pub struct FlagConfig {
     pub flag: StructConfig,
     /// Concept representing the owner of the flag.
     pub owner_type: StructConfig,
-    /// String to use for the Yin crate.
-    pub yin_crate: Rc<str>,
 }
 
 impl Default for FlagConfig {
@@ -38,7 +36,6 @@ impl Default for FlagConfig {
             doc: Rc::from(""),
             flag: StructConfig::default(),
             owner_type: StructConfig::default(),
-            yin_crate: Rc::from("zamm_yin"),
         }
     }
 }
@@ -52,9 +49,9 @@ fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.document(format!("Mark this as {}", cfg.doc));
     f.set_self_reference(SelfReference::Mutable);
     f.add_import(cfg.flag.import.clone());
-    f.add_import(format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate));
-    f.add_import(format!("{}::tao::form::FormTrait", cfg.yin_crate));
-    f.add_import(format!("{}::node_wrappers::BaseNodeTrait", cfg.yin_crate));
+    f.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
+    f.add_import("zamm_yin::tao::form::FormTrait".to_owned());
+    f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
     f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
         "self.essence_mut().add_flag({}::TYPE_ID);",
         cfg.flag.name
@@ -72,9 +69,9 @@ fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.set_self_reference(SelfReference::Immutable);
     f.set_return("bool".to_owned());
     f.add_import(cfg.flag.import.clone());
-    f.add_import(format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate));
-    f.add_import(format!("{}::tao::form::FormTrait", cfg.yin_crate));
-    f.add_import(format!("{}::node_wrappers::BaseNodeTrait", cfg.yin_crate));
+    f.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
+    f.add_import("zamm_yin::tao::form::FormTrait".to_owned());
+    f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
     f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
         "self.essence().has_flag({}::TYPE_ID)",
         cfg.flag.name
@@ -156,14 +153,13 @@ mod tests {
                 name: "Tao".to_owned(),
                 import: "zamm_yin::tao::Tao".to_owned(),
             },
-            yin_crate: Rc::from("zamm_yin"),
         }
     }
 
     #[test]
     fn test_setter_fragment_body() {
         assert_eq!(
-            setter_fragment(&test_config()).body(),
+            setter_fragment(&test_config()).body(80),
             indoc! {"
                 /// Mark this as newly defined as part of the current build.
                 fn mark_newly_defined(&mut self) {
@@ -175,7 +171,7 @@ mod tests {
     #[test]
     fn test_getter_fragment_body() {
         assert_eq!(
-            getter_fragment(&test_config()).body(),
+            getter_fragment(&test_config()).body(80),
             indoc! {"
                 /// Whether this is marked as newly defined as part of the current build.
                 fn is_newly_defined(&self) -> bool {
@@ -187,7 +183,7 @@ mod tests {
     #[test]
     fn test_test_fragment_body() {
         assert_eq!(
-            test_fragment(&test_config()).body(),
+            test_fragment(&test_config()).body(80),
             indoc! {"
                 #[test]
                 fn test_mark_and_check_newly_defined() {
@@ -204,7 +200,7 @@ mod tests {
     #[test]
     fn test_test_inheritance_fragment_body() {
         assert_eq!(
-            test_inheritance_fragment(&test_config()).body(),
+            test_inheritance_fragment(&test_config()).body(80),
             indoc! {"
                 #[test]
                 fn test_newly_defined_inheritance() {

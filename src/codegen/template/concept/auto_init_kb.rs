@@ -2,7 +2,8 @@ use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::{
     AtomicFragment, FileFragment, FunctionFragment, ItemDeclarationAPI,
 };
-use crate::codegen::StructConfig;
+use crate::codegen::{StructConfig, CODE_WIDTH};
+use crate::tao::form::{Crate, CrateExtension};
 use indoc::formatdoc;
 use itertools::Itertools;
 use std::cell::RefCell;
@@ -11,8 +12,6 @@ use std::rc::Rc;
 /// Configuration values for KB initialization template.
 #[derive(Default)]
 pub struct KBInitConfig {
-    /// Crate name to use for Yin.
-    pub yin_crate: String,
     /// The list of concepts to be initialized.
     pub concepts_to_initialize: Vec<StructConfig>,
 }
@@ -26,14 +25,11 @@ fn init_types_fragment(cfg: &KBInitConfig) -> FunctionFragment {
     init_fn.mark_as_public();
     init_fn.document("Adds all concepts to knowledge graph.".to_owned());
 
-    init_fn.add_import(format!("{}::graph::InjectionGraph", cfg.yin_crate));
-    init_fn.add_import(format!("{}::graph::Graph", cfg.yin_crate));
-    init_fn.add_import(format!("{}::initialize_type", cfg.yin_crate));
-    init_fn.add_import(format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate));
-    init_fn.add_import(format!(
-        "{}::tao::relation::attribute::Inherits",
-        cfg.yin_crate
-    ));
+    init_fn.add_import("zamm_yin::graph::InjectionGraph".to_owned());
+    init_fn.add_import("zamm_yin::graph::Graph".to_owned());
+    init_fn.add_import("zamm_yin::initialize_type".to_owned());
+    init_fn.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
+    init_fn.add_import("zamm_yin::tao::relation::attribute::Inherits".to_owned());
     for concept in &cfg.concepts_to_initialize {
         init_fn.add_import(concept.import.clone());
     }
@@ -61,7 +57,7 @@ fn init_types_fragment(cfg: &KBInitConfig) -> FunctionFragment {
 
 /// Defines the number of concepts generated.
 fn max_id_fragment(cfg: &KBInitConfig) -> AtomicFragment {
-    let max_id_doc = into_docstring("The maximum concept ID inside the types distributed by Yin itself. App-specific type concepts should continue their numbering on top of this.", 0);
+    let max_id_doc = into_docstring("The maximum concept ID inside the types distributed by Yin itself. App-specific type concepts should continue their numbering on top of this.", CODE_WIDTH);
     AtomicFragment::new(formatdoc! {"
         {doc}
         pub const YIN_MAX_ID: usize = {concepts_size};
@@ -75,6 +71,7 @@ pub fn code_init(cfg: &KBInitConfig) -> String {
     let mut file = FileFragment::default();
     file.append(Rc::new(RefCell::new(max_id_fragment(cfg)))); // always define, even if unused
     file.append(Rc::new(RefCell::new(init_types_fragment(cfg))));
+    file.set_current_crate(Crate::current().implementation_name().unwrap());
     file.generate_code()
 }
 
@@ -82,19 +79,19 @@ pub fn code_init(cfg: &KBInitConfig) -> String {
 mod tests {
     use super::*;
     use crate::codegen::template::basic::CodeFragment;
+    use crate::tao::initialize_kb;
     use indoc::indoc;
 
     #[test]
     fn test_init_one_concept() {
         assert_eq!(
             init_types_fragment(&KBInitConfig {
-                yin_crate: "crate".to_owned(),
                 concepts_to_initialize: vec![StructConfig {
                     name: "Me".to_owned(),
                     import: "crate::people::Me".to_owned(),
                 }]
             })
-            .body(),
+            .body(80),
             indoc! {"
             /// Adds all concepts to knowledge graph.
             pub fn initialize_types() {
@@ -114,7 +111,6 @@ mod tests {
     fn test_init_multiple_concepts() {
         assert_eq!(
             init_types_fragment(&KBInitConfig {
-                yin_crate: "zamm_yin".to_owned(),
                 concepts_to_initialize: vec![
                     StructConfig {
                         name: "Me".to_owned(),
@@ -130,7 +126,7 @@ mod tests {
                     }
                 ]
             })
-            .body(),
+            .body(80),
             indoc! {"
             /// Adds all concepts to knowledge graph.
             pub fn initialize_types() {
@@ -150,8 +146,9 @@ mod tests {
 
     #[test]
     fn test_init_file() {
+        initialize_kb();
+        Crate::current().set_implementation_name("zamm_yin");
         let code = code_init(&KBInitConfig {
-            yin_crate: "zamm_yin".to_owned(),
             concepts_to_initialize: vec![
                 StructConfig {
                     name: "Me".to_owned(),
@@ -168,5 +165,6 @@ mod tests {
             ],
         });
         assert!(code.contains("YIN_MAX_ID: usize = 2"));
+        assert!(!code.contains("zamm_yin"));
     }
 }

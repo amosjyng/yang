@@ -7,6 +7,7 @@ use crate::codegen::template::concept::data::{add_data_fragments, DataFormatConf
 use crate::codegen::template::concept::flag::{add_flag_to_impl, FlagConfig};
 use crate::codegen::template::concept::form::add_form_fragment;
 use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
+use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::DataExtension;
@@ -14,7 +15,6 @@ use crate::tao::form::{BuildInfo, BuildInfoExtension, Crate, CrateExtension};
 use crate::tao::{Implement, ImplementExtension};
 use heck::{KebabCase, SnakeCase};
 use itertools::Itertools;
-use semver::Version;
 use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::rc::Rc;
@@ -60,19 +60,16 @@ fn generic_config(
         this.clone()
     };
 
-    let internal_name_cfg = match Crate::yin().version() {
-        None => InternalNameConfig::DEFAULT,
-        Some(yin_version) => {
-            if Version::parse(&*yin_version).unwrap() >= Version::from((0, 1, 1)) {
-                InternalNameConfig::YIN_AT_LEAST_0_1_1
-            } else {
-                InternalNameConfig::DEFAULT
-            }
-        }
+    let internal_name_cfg = if Crate::yin().version_at_least(0, 1, 4) {
+        InternalNameConfig::YIN_AT_LEAST_0_1_4
+    } else if Crate::yin().version_at_least(0, 1, 1) {
+        InternalNameConfig::YIN_AT_LEAST_0_1_1
+    } else {
+        InternalNameConfig::DEFAULT
     };
 
     let doc = match &request.documentation() {
-        Some(d) => format!("\n{}", into_docstring(&d, 0)),
+        Some(d) => format!("\n{}", into_docstring(&d, CODE_WIDTH)),
         None => String::new(),
     };
 
@@ -83,8 +80,6 @@ fn generic_config(
     } else {
         format!("YIN_MAX_ID + {}", initial_id)
     };
-
-    let yin_crate = if codegen_cfg.yin { "crate" } else { "zamm_yin" };
 
     let imports = if codegen_cfg.yin {
         None
@@ -134,7 +129,6 @@ fn generic_config(
     };
 
     TaoConfig {
-        yin_crate: yin_crate.to_owned(),
         imports,
         this,
         internal_name,
@@ -167,12 +161,19 @@ fn attribute_config(
     let owner_form = concept_to_struct(&or_form_default(owner_type_concept), codegen_cfg.yin);
     let value_form = concept_to_struct(&or_form_default(value_type_concept), codegen_cfg.yin);
 
+    let into_archetype = if Crate::yin().version_at_least(0, 1, 4) {
+        "into".to_owned()
+    } else {
+        "as_archetype".to_owned()
+    };
+
     AttributeFormatConfig {
         tao_cfg: base_cfg.clone(),
         owner_type,
         owner_form,
         value_type,
         value_form,
+        into_archetype,
     }
 }
 
@@ -184,19 +185,13 @@ fn data_config(base_cfg: &TaoConfig, target: &Archetype) -> DataFormatConfig {
     }
 }
 
-fn flag_config(
-    base_cfg: &TaoConfig,
-    codegen_cfg: &CodegenConfig,
-    target: &Archetype,
-    flag: &Archetype,
-) -> FlagConfig {
+fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype) -> FlagConfig {
     FlagConfig {
         public: true,
         property_name: Rc::from(flag.internal_name_str().unwrap().to_snake_case()),
         doc: BuildInfo::from(flag.id()).dual_documentation().unwrap(),
         flag: concept_to_struct(flag, codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
-        yin_crate: Rc::from(base_cfg.yin_crate.as_str()),
     }
 }
 
@@ -231,7 +226,7 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
             ImplementationFragment::new_struct_impl(concept_to_struct(&target, codegen_cfg.yin));
         for flag in target.added_flags() {
             add_flag_to_impl(
-                &flag_config(&base_cfg, codegen_cfg, &target, &flag),
+                &flag_config(codegen_cfg, &target, &flag),
                 &mut implementation,
                 &mut file,
             );
@@ -239,6 +234,7 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
         file.append(Rc::new(RefCell::new(implementation)));
     }
 
+    file.set_current_crate(Crate::current().implementation_name().unwrap());
     file.generate_code()
 }
 
@@ -383,6 +379,7 @@ mod tests {
     #[test]
     fn integration_test_root_node_generation() {
         initialize_kb();
+        Crate::current().set_implementation_name("moo");
         let mut my_root = Tao::archetype().individuate_as_archetype();
         my_root.activate_root_node_logic();
         my_root.set_internal_name_str("my-root");
