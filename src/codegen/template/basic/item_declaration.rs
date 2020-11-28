@@ -105,9 +105,9 @@ impl ItemDeclarationAPI for ItemDeclaration {
 }
 
 impl CodeFragment for ItemDeclaration {
-    fn body(&self) -> String {
+    fn body(&self, line_width: usize) -> String {
         let doc = match &self.doc {
-            Some(d) => into_docstring(&d, 80) + "\n", // todo: codewidth decrease
+            Some(d) => into_docstring(&d, line_width) + "\n",
             None => String::new(),
         };
         let public = if self.public { "pub " } else { "" };
@@ -125,7 +125,7 @@ impl CodeFragment for ItemDeclaration {
             doc = doc,
             attrs = attrs,
             public = public,
-            definition = self.definition.borrow().body(),
+            definition = self.definition.borrow().body(line_width),
         )
         .trim()
         .to_owned();
@@ -136,7 +136,7 @@ impl CodeFragment for ItemDeclaration {
                 nesting: Some(actual_implementation.clone()),
                 postamble: "}".to_owned(),
             }
-            .body(),
+            .body(line_width), // nested fragment will take care of indent size
             None => format!("{};", preamble),
         }
     }
@@ -162,7 +162,7 @@ mod tests {
         let i = simple_declaration();
 
         assert_eq!(i.imports(), Vec::<String>::new());
-        assert_eq!(i.body(), "fn foo() -> bool;");
+        assert_eq!(i.body(80), "fn foo() -> bool;");
     }
 
     #[test]
@@ -171,7 +171,7 @@ mod tests {
         i.mark_as_public();
 
         assert_eq!(i.imports(), Vec::<String>::new());
-        assert_eq!(i.body(), "pub fn foo() -> bool;");
+        assert_eq!(i.body(80), "pub fn foo() -> bool;");
     }
 
     #[test]
@@ -181,9 +181,24 @@ mod tests {
 
         assert_eq!(i.imports(), Vec::<String>::new());
         assert_eq!(
-            i.body(),
+            i.body(80),
             indoc! {"
             /// Some bloody documentation for ya.
+            fn foo() -> bool;"}
+        );
+    }
+
+    #[test]
+    fn test_documentation_line_width() {
+        let mut i = simple_declaration();
+        i.document("Some bloody documentation for ya.".to_owned());
+
+        assert_eq!(i.imports(), Vec::<String>::new());
+        assert_eq!(
+            i.body(30),
+            indoc! {"
+            /// Some bloody documentation
+            /// for ya.
             fn foo() -> bool;"}
         );
     }
@@ -195,7 +210,7 @@ mod tests {
 
         assert_eq!(i.imports(), Vec::<String>::new());
         assert_eq!(
-            i.body(),
+            i.body(80),
             indoc! {"
             #[allow(deprecated)]
             fn foo() -> bool;"}
@@ -208,7 +223,7 @@ mod tests {
         i.mark_for_full_implementation();
 
         assert_eq!(i.imports(), Vec::<String>::new());
-        assert_eq!(i.body(), "fn foo() -> bool {}");
+        assert_eq!(i.body(80), "fn foo() -> bool {}");
     }
 
     #[test]
@@ -220,7 +235,7 @@ mod tests {
 
         assert_eq!(i.imports(), Vec::<String>::new());
         assert_eq!(
-            i.body(),
+            i.body(80),
             indoc! {"
             fn foo() -> bool {
                 !bar()
@@ -237,7 +252,7 @@ mod tests {
 
         assert_eq!(i.imports(), Vec::<String>::new());
         assert_eq!(
-            i.body(),
+            i.body(80),
             indoc! {"
             /// Some bloody documentation for ya.
             #[allow(deprecated)]

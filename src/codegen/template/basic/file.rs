@@ -1,5 +1,6 @@
 use super::{AppendedFragment, AtomicFragment, CodeFragment, ModuleFragment};
 use crate::codegen::template::imports::imports_as_str;
+use crate::codegen::CODE_WIDTH;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -75,11 +76,11 @@ impl FileFragment {
             &exluded_imports,
         );
 
-        let body = combined.body();
+        let body = combined.body(CODE_WIDTH);
 
         let mut final_file = String::new();
         if let Some(preamble) = &self.preamble {
-            final_file += &format!("{}\n\n", preamble.body());
+            final_file += &format!("{}\n\n", preamble.body(CODE_WIDTH));
         }
         if !imports.is_empty() {
             final_file += &format!("{}\n\n", imports);

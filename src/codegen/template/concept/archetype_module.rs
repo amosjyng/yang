@@ -1,4 +1,5 @@
 use crate::codegen::template::basic::{CodeFragment, ItemDeclarationAPI, ModuleFragment};
+use crate::codegen::CODE_WIDTH;
 use heck::{CamelCase, SnakeCase};
 use std::rc::Rc;
 
@@ -54,7 +55,7 @@ pub fn archetype_module_fragment(cfg: &ArchetypeModuleConfig) -> ModuleFragment 
 
 /// Actually generate the code for the module.
 pub fn code_archetype_module(cfg: &ArchetypeModuleConfig) -> String {
-    archetype_module_fragment(cfg).body()
+    archetype_module_fragment(cfg).body(CODE_WIDTH)
 }
 
 #[cfg(test)]
@@ -79,7 +80,7 @@ mod tests {
         });
 
         assert_eq!(
-            frag.body(),
+            frag.body(80),
             indoc! {"
                 //! Primary is the ancestor of all other forms in this module.
                 

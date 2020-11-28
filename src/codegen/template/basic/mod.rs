@@ -30,6 +30,6 @@ const RUST_INDENTATION: usize = 4;
 pub trait CodeFragment {
     /// Retrieve all imports used by this fragment.
     fn imports(&self) -> Vec<String>;
-    /// Retrieve main body of code in this fragment.
-    fn body(&self) -> String;
+    /// Retrieve main body of code in this fragment, restricted to the given line width.
+    fn body(&self, line_width: usize) -> String;
 }

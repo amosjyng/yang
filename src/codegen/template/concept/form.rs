@@ -33,7 +33,7 @@ mod tests {
                 },
                 ..TaoConfig::default()
             })
-            .body(),
+            .body(80),
             "impl FormTrait for MyConcept {}"
         );
     }

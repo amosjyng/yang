@@ -40,10 +40,10 @@ impl Default for AppendedFragment {
 }
 
 impl CodeFragment for AppendedFragment {
-    fn body(&self) -> String {
+    fn body(&self, line_width: usize) -> String {
         (&self.appendages)
             .iter()
-            .map(|cf| cf.borrow().body())
+            .map(|cf| cf.borrow().body(line_width))
             .filter(|b| !b.is_empty())
             .format(&self.block_separator)
             .to_string()
@@ -68,7 +68,7 @@ mod tests {
     fn test_append_empty() {
         let appended = AppendedFragment::default();
         assert_eq!(appended.imports(), Vec::<String>::default());
-        assert_eq!(appended.body(), "");
+        assert_eq!(appended.body(80), "");
     }
 
     #[test]
@@ -76,7 +76,7 @@ mod tests {
         let mut appended = AppendedFragment::default();
         appended.append(Rc::new(RefCell::new(AtomicFragment::new("one".to_owned()))));
         assert_eq!(appended.imports(), Vec::<String>::default());
-        assert_eq!(appended.body(), "one");
+        assert_eq!(appended.body(80), "one");
     }
 
     #[test]
@@ -87,7 +87,7 @@ mod tests {
             AtomicFragment::new(String::default()),
         )));
         assert_eq!(appended.imports(), Vec::<String>::default());
-        assert_eq!(appended.body(), "one");
+        assert_eq!(appended.body(80), "one");
     }
 
     #[test]
@@ -111,7 +111,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            appended.body(),
+            appended.body(80),
             indoc! {"
                 let mut f = ForeignStruct {};
                 f.foo_bar()

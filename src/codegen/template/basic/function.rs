@@ -141,7 +141,7 @@ impl ItemDeclarationAPI for FunctionFragment {
 }
 
 impl CodeFragment for FunctionFragment {
-    fn body(&self) -> String {
+    fn body(&self, line_width: usize) -> String {
         let mut args = self
             .args
             .iter()
@@ -164,7 +164,7 @@ impl CodeFragment for FunctionFragment {
             args = args_str,
             return_type = return_type
         )))));
-        declaration.body()
+        declaration.body(line_width) // declaration itself will account for indent size
     }
 
     fn imports(&self) -> Vec<String> {
@@ -185,7 +185,7 @@ mod tests {
         let f = FunctionFragment::new("foo".to_owned());
 
         assert_eq!(f.imports(), Vec::<String>::new());
-        assert_eq!(f.body(), "fn foo() {}");
+        assert_eq!(f.body(80), "fn foo() {}");
     }
 
     #[test]
@@ -194,7 +194,7 @@ mod tests {
         f.mark_as_declare_only();
 
         assert_eq!(f.imports(), Vec::<String>::new());
-        assert_eq!(f.body(), "fn foo();");
+        assert_eq!(f.body(80), "fn foo();");
     }
 
     #[test]
@@ -204,7 +204,7 @@ mod tests {
 
         assert_eq!(f.imports(), Vec::<String>::new());
         assert_eq!(
-            f.body(),
+            f.body(80),
             indoc! {"
                 /// This is a function.
                 fn foo() {}"}
@@ -217,7 +217,7 @@ mod tests {
         f.mark_as_public();
 
         assert_eq!(f.imports(), Vec::<String>::new());
-        assert_eq!(f.body(), "pub fn foo() {}");
+        assert_eq!(f.body(80), "pub fn foo() {}");
     }
 
     #[test]
@@ -227,7 +227,7 @@ mod tests {
 
         assert_eq!(f.imports(), Vec::<String>::new());
         assert_eq!(
-            f.body(),
+            f.body(80),
             indoc! {"
                 #[test]
                 fn foo() {}"}
@@ -241,7 +241,7 @@ mod tests {
         f.set_return("()".to_owned());
 
         assert_eq!(f.imports(), Vec::<String>::new());
-        assert_eq!(f.body(), "pub fn foo() -> () {}");
+        assert_eq!(f.body(80), "pub fn foo() -> () {}");
     }
 
     #[test]
@@ -255,7 +255,7 @@ mod tests {
 
         assert_eq!(f.imports(), Vec::<String>::new());
         assert_eq!(
-            f.body(),
+            f.body(80),
             indoc! {"
                 fn foo() -> i64 {
                     4
@@ -276,7 +276,7 @@ mod tests {
 
         assert_eq!(f.imports(), Vec::<String>::new());
         assert_eq!(
-            f.body(),
+            f.body(80),
             indoc! {"
                 fn foo(x: i64, y: u64) -> i64 {
                     x + y
@@ -294,7 +294,7 @@ mod tests {
 
         assert_eq!(f.imports(), Vec::<String>::new());
         assert_eq!(
-            f.body(),
+            f.body(80),
             indoc! {"
                 fn check(&self) {
                     assert(self.value > 0);
@@ -313,7 +313,7 @@ mod tests {
 
         assert_eq!(f.imports(), Vec::<String>::new());
         assert_eq!(
-            f.body(),
+            f.body(80),
             indoc! {"
                 fn replace(&mut self, new_value: i64) {
                     self.value = new_value;
@@ -337,7 +337,7 @@ mod tests {
 
         assert_eq!(f.imports(), vec!["crate::MyNum", "crate::operators::plus"]);
         assert_eq!(
-            f.body(),
+            f.body(80),
             indoc! {"
                 /// This function adds two custom numbers together.
                 pub fn foo(x: MyNum, y: MyNum) -> MyNum {

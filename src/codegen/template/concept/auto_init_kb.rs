@@ -91,7 +91,7 @@ mod tests {
                     import: "crate::people::Me".to_owned(),
                 }]
             })
-            .body(),
+            .body(80),
             indoc! {"
             /// Adds all concepts to knowledge graph.
             pub fn initialize_types() {
@@ -126,7 +126,7 @@ mod tests {
                     }
                 ]
             })
-            .body(),
+            .body(80),
             indoc! {"
             /// Adds all concepts to knowledge graph.
             pub fn initialize_types() {

@@ -104,7 +104,7 @@ impl ItemDeclarationAPI for ImplementationFragment {
 }
 
 impl CodeFragment for ImplementationFragment {
-    fn body(&self) -> String {
+    fn body(&self, line_width: usize) -> String {
         let mut declaration = self.declaration.clone();
         declaration.mark_for_full_implementation();
         let definition = match &self.trait_cfg {
@@ -116,7 +116,7 @@ impl CodeFragment for ImplementationFragment {
             None => format!("impl {struct_name}", struct_name = self.struct_cfg.name),
         };
         declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(definition))));
-        declaration.body()
+        declaration.body(line_width) // declaration itself will account for indent size
     }
 
     fn imports(&self) -> Vec<String> {
@@ -146,7 +146,7 @@ mod tests {
             import: "crate::Bar".to_owned(),
         });
 
-        assert_eq!(f.body(), "impl Bar {}");
+        assert_eq!(f.body(80), "impl Bar {}");
     }
 
     #[test]
@@ -162,7 +162,7 @@ mod tests {
             },
         );
 
-        assert_eq!(f.body(), "impl Foo for Bar {}");
+        assert_eq!(f.body(80), "impl Foo for Bar {}");
     }
 
     #[test]
@@ -195,7 +195,7 @@ mod tests {
         })));
 
         assert_eq!(
-            f.body(),
+            f.body(80),
             indoc! {"
                 impl Foo for Bar {
                     fn foo_capability(&mut self) {
