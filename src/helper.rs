@@ -25,10 +25,7 @@ pub fn aa(archetype: Archetype) -> AttributeArchetype {
     {
         // currently catches Relation, which is not an attribute but still deserves to have its
         // owner archetype set
-        println!(
-            "{}{:?} is not known to be an attribute.",
-            "Warning: ", archetype
-        );
+        println!("Warning: {:?} is not known to be an attribute.", archetype);
     }
     AttributeArchetype::from(archetype.id())
 }

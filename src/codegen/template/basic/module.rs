@@ -177,13 +177,13 @@ impl CodeFragment for ModuleFragment {
             imports.push("super::*".to_owned());
         }
         let mut imports_str = imports_as_str(
-            &*(&self
+            &self
                 .current_crate
                 .as_ref()
-                .map(|rc| rc.clone())
-                .unwrap_or(Rc::from("DUMMY-TEST-CRATE"))),
+                .cloned()
+                .unwrap_or_else(|| Rc::from("DUMMY-TEST-CRATE")),
             imports,
-            &vec![],
+            &[],
         );
         if !imports_str.is_empty() {
             imports_str += "\n\n";

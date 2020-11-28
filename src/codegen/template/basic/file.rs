@@ -69,8 +69,8 @@ impl FileFragment {
             &*self
                 .current_crate
                 .as_ref()
-                .map(|rc| rc.clone())
-                .unwrap_or(Rc::from("DUMMY-TEST-CRATE")),
+                .cloned()
+                .unwrap_or_else(|| Rc::from("DUMMY-TEST-CRATE")),
             combined.imports(),
             &exluded_imports,
         );
