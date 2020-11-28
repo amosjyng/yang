@@ -10,14 +10,14 @@ macro_rules! define {
     ($name:ident) => {
         let mut $name = Tao::archetype().individuate_as_archetype();
         $name.set_internal_name_str(stringify!($name));
-        $name.mark_newly_defined();
+        zamm_yang::tao::perspective::KnowledgeGraphNode::from($name.id()).mark_newly_defined();
     };
 }
 
 /// Convenience function to convert an `Archetype` to an `AttributeArchetype`.
 pub fn aa(archetype: Archetype) -> AttributeArchetype {
     if !(archetype.attribute_logic_activated()
-        || archetype.has_parent(Attribute::archetype().as_archetype())
+        || archetype.has_parent(Attribute::archetype().into())
         || archetype
             .parents()
             .iter()

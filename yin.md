@@ -66,12 +66,7 @@ define!(uses_data_logic);
 uses_data_logic.add_parent(Flag::archetype());
 ```
 
-Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore. We should make a note of the properties that are nonhereditary:
-
-```rust
-define!(nonhereditary);
-nonhereditary.add_parent(Flag::archetype());
-```
+Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
 
 ### Perspective
 
@@ -104,6 +99,7 @@ As part of this perspective, We should start tracking what has and hasn't gotten
 define!(newly_defined);
 newly_defined.add_parent(Flag::archetype());
 aa(newly_defined).set_owner_archetype(knowledge_graph_node);
+knowledge_graph_node.add_flag(newly_defined);
 ```
 
 Rust groups things by modules.
@@ -195,9 +191,10 @@ dual_purpose_documentation.implement_with_doc(
     "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string."
 );
 
-newly_defined.implement_with_doc(
+let mut nd_impl = newly_defined.implement_with_doc(
     "Marks an archetype and all its descendants as having been newly defined as part of this particular build."
 );
+nd_impl.dual_document("having been newly defined as part of the current build.");
 
 module.implement_with_doc("Concept representing a Rust module.");
 
@@ -230,7 +227,6 @@ uses_data_logic.implement_with_doc(
 uses_root_node_logic.implement_with_doc(
     "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this."
 );
-nonhereditary.implement_with_doc("Marks a property as not behing inherited.");
 import_path.implement_with_doc("Describes the import path of a defined struct.");
 build_info.implement_with_doc("Represents build information about a generated concept.");
 
@@ -268,6 +264,10 @@ Flag::archetype().impl_mod("Relations involving only one form.");
 
 let mut attr_mod = Attribute::archetype().impl_mod("Relations between two forms.");
 attr_mod.has_extension("supports_membership::SupportsMembership");
+
+HasProperty::archetype().impl_mod(
+    "Meta-attributes around what attributes instances of an archetype have."
+);
 ```
 
 We should really save the build info, so that one day we will no longer need to redefine the documentation for these modules.
@@ -279,13 +279,19 @@ We should really save the build info, so that one day we will no longer need to 
 This is the version of Yang used to make this build happen:
 
 ```toml
-zamm_yang = "0.1.5"
+zamm_yang = "0.1.6"
 ```
 
 Yang does his best to be backwards-compatible, so we should let old Yang know that this is new Yang speaking:
 
 ```rust
-Crate::yin().set_version("0.1.1");
+Crate::yin().set_version("0.1.4");
+```
+
+We should also let him know what our current crate name is. There is as of yet no way to let him know that this is the same crate as the `Crate::yang()` in the knowledge base, or that this crate is a newer version of himself. Unfortunately, there is no self-awareness yet, only instinct.
+
+```rust
+Crate::current().set_implementation_name("zamm_yang");
 ```
 
 ### Imports
@@ -296,9 +302,11 @@ These are the generic imports for general Yang generation:
 use zamm_yang::define;
 use zamm_yang::tao::initialize_kb;
 use zamm_yang::tao::Tao;
+use zamm_yang::tao::ImplementExtension;
 use zamm_yang::tao::archetype::ArchetypeTrait;
 use zamm_yang::tao::archetype::ArchetypeFormTrait;
 use zamm_yang::tao::archetype::AttributeArchetypeFormTrait;
+use zamm_yang::tao::archetype::ArchetypeFormExtensionTrait;
 use zamm_yang::tao::archetype::CreateImplementation;
 use zamm_yang::tao::archetype::CodegenFlags;
 use zamm_yang::tao::form::Crate;
@@ -319,6 +327,7 @@ use zamm_yang::tao::form::data::Data;
 use zamm_yang::tao::archetype::Archetype;
 use zamm_yang::tao::relation::Relation;
 use zamm_yang::tao::relation::attribute::Attribute;
+use zamm_yang::tao::relation::attribute::has_property::HasProperty;
 use zamm_yang::tao::relation::flag::Flag;
 ```
 

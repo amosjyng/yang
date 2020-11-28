@@ -36,13 +36,13 @@ fn or_form_default(archetype: Archetype) -> Archetype {
 }
 
 fn activate_archetype(target: &Archetype) -> bool {
-    target == &Attribute::archetype().as_archetype()
-        || target.has_ancestor(Attribute::archetype().as_archetype())
+    target == &Attribute::archetype().into()
+        || target.has_ancestor(Attribute::archetype().into())
         || target.attribute_logic_activated()
 }
 
 fn activate_data(target: &Archetype) -> bool {
-    target.has_ancestor(Data::archetype().as_archetype()) || target.data_logic_activated()
+    target.has_ancestor(Data::archetype()) || target.data_logic_activated()
 }
 
 fn generic_config(
@@ -90,14 +90,14 @@ fn generic_config(
     let parent_struct = concept_to_struct(parent, codegen_cfg.yin);
 
     let all_attribute_structs: Vec<StructConfig> = target
-        .attribute_archetypes()
-        .iter()
-        .map(|a| concept_to_struct(&a.as_archetype(), codegen_cfg.yin))
+        .attributes()
+        .into_iter()
+        .map(|a| concept_to_struct(&a.into(), codegen_cfg.yin))
         .collect();
     let introduced_attribute_structs: Vec<StructConfig> = target
-        .introduced_attribute_archetypes()
-        .iter()
-        .map(|a| concept_to_struct(&a.as_archetype(), codegen_cfg.yin))
+        .added_attributes()
+        .into_iter()
+        .map(|a| concept_to_struct(&a.into(), codegen_cfg.yin))
         .collect();
     let all_attributes = format!(
         "vec![{}]",
@@ -253,6 +253,7 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
 mod tests {
     use super::*;
     use crate::tao::initialize_kb;
+    use crate::tao::perspective::KnowledgeGraphNode;
     use indoc::indoc;
     use zamm_yin::tao::Tao;
 
@@ -261,12 +262,12 @@ mod tests {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name_str("MyAttrType");
-        target.mark_newly_defined();
+        KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(target.as_form());
         let cfg = generic_config(
             &implement,
-            &target.as_archetype(),
+            &target,
             &primary_parent(&target),
             &CodegenConfig::default(),
         );
@@ -283,12 +284,12 @@ mod tests {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name_str("MyDataType");
-        target.mark_newly_defined();
+        KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(target.as_form());
         let cfg = generic_config(
             &implement,
-            &target.as_archetype(),
+            &target,
             &primary_parent(&target),
             &CodegenConfig {
                 yin: true,
@@ -304,13 +305,13 @@ mod tests {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name_str("MyAttrType");
-        target.mark_newly_defined();
+        KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(target.as_form());
         implement.document("One.\n\nTwo.");
         let cfg = generic_config(
             &implement,
-            &target.as_archetype(),
+            &target,
             &primary_parent(&target),
             &CodegenConfig::default(),
         );
@@ -331,7 +332,7 @@ mod tests {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name_str("MyRoot");
-        target.mark_newly_defined();
+        KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         target.activate_root_node_logic();
 
         assert!(target.root_node_logic_activated());
@@ -344,7 +345,7 @@ mod tests {
         initialize_kb();
         let mut target = AttributeArchetype::from(Tao::archetype().individuate_as_archetype().id());
         target.set_internal_name_str("MyAttrType");
-        target.mark_newly_defined();
+        KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         target.activate_attribute_logic();
         // todo: reset after set_owner_archetype and set_value_archetype moved to
         // BackwardsCompatibility
@@ -352,18 +353,18 @@ mod tests {
         AttributeArchetypeFormTrait::set_value_archetype(&mut target, Form::archetype());
         let mut implement = Implement::new();
         implement.set_target(target.as_form());
-        let parent = primary_parent(&target.as_archetype());
+        let parent = primary_parent(&target.into());
         let codegen_cfg = CodegenConfig::default();
 
         let attr_cfg = attribute_config(
-            &generic_config(&implement, &target.as_archetype(), &parent, &codegen_cfg),
-            &target.as_archetype(),
+            &generic_config(&implement, &target.into(), &parent, &codegen_cfg),
+            &target.into(),
             &codegen_cfg,
         );
 
         assert!(!target.root_node_logic_activated());
-        assert!(activate_archetype(&target.as_archetype()));
-        assert!(!activate_data(&target.as_archetype()));
+        assert!(activate_archetype(&target.into()));
+        assert!(!activate_data(&target.into()));
 
         assert_eq!(attr_cfg.owner_type.name, "Tao".to_owned());
         assert_eq!(attr_cfg.value_type.name, "Form".to_owned());
@@ -378,7 +379,7 @@ mod tests {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name_str("MyDataType");
-        target.mark_newly_defined();
+        KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         target.activate_data_logic();
 
         assert!(!target.root_node_logic_activated());

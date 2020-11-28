@@ -1,6 +1,5 @@
 use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::define;
-use zamm_yang::tao::archetype::CodegenFlags;
 use zamm_yang::tao::archetype::CreateImplementation;
 use zamm_yang::tao::callbacks::handle_all_implementations;
 use zamm_yang::tao::form::BuildInfoExtension;
@@ -20,7 +19,7 @@ fn main() {
         .set_import_path("zamm_yin::tao::relation::attribute::Attribute");
 
     define!(target);
-    target.add_parent(Attribute::archetype().as_archetype());
+    target.add_parent(Attribute::archetype().into());
     target.set_internal_name_str("Target");
     target.implement_with_doc("The target of an implement command.");
 

@@ -1,6 +1,7 @@
 use crate::codegen::StructConfig;
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::{BuildInfo, BuildInfoExtension};
+use crate::tao::perspective::KnowledgeGraphNode;
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
 use std::rc::Rc;
@@ -89,7 +90,7 @@ pub fn module_file_path(target: &Archetype) -> String {
 ///
 /// `yin_override` needed for now because Yin is not yet fully described by its own yin.md.
 /// todo: remove once Yin supports that
-pub fn import_path(target: &Archetype, yin_override: bool) -> String {
+pub fn import_path(target: &KnowledgeGraphNode, yin_override: bool) -> String {
     let build_info = BuildInfo::from(target.id());
     match build_info.import_path() {
         Some(existing_path) => (*existing_path).to_owned(),
@@ -105,7 +106,7 @@ pub fn import_path(target: &Archetype, yin_override: bool) -> String {
             format!(
                 "{}::{}::{}",
                 yin_crate,
-                ancestor_path(&target, "::"),
+                ancestor_path(&Archetype::from(target.id()), "::"),
                 struct_name
             )
         }
@@ -120,7 +121,7 @@ pub fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig
         .unwrap_or_else(|| Rc::from(target.internal_name_str().unwrap().to_camel_case().as_str()));
     StructConfig {
         name: (*name).to_owned(),
-        import: import_path(target, yin_override),
+        import: import_path(&KnowledgeGraphNode::from(target.id()), yin_override),
     }
 }
 
@@ -184,7 +185,7 @@ mod tests {
     fn folder_path_attributes() {
         initialize_kb();
         assert_eq!(
-            archetype_file_path(&Attribute::archetype().as_archetype()),
+            archetype_file_path(&Attribute::archetype().into()),
             "src/tao/relation/attribute/attribute_form.rs"
         );
     }
@@ -193,7 +194,7 @@ mod tests {
     fn folder_path_nested() {
         initialize_kb();
         assert_eq!(
-            archetype_file_path(&Owner::archetype().as_archetype()),
+            archetype_file_path(&Owner::archetype().into()),
             "src/tao/relation/attribute/owner_form.rs"
         );
     }
@@ -204,7 +205,7 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            archetype_file_path(&owner.as_archetype()),
+            archetype_file_path(&owner.into()),
             "src/tao/relation/attribute/owner/owner_form.rs"
         );
     }
@@ -217,7 +218,7 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            archetype_file_path(&owner.as_archetype()),
+            archetype_file_path(&owner.into()),
             "src/tao/newfangled/module/attribute/owner/owner_form.rs"
         );
     }
@@ -232,7 +233,7 @@ mod tests {
     fn module_path_attributes() {
         initialize_kb();
         assert_eq!(
-            module_file_path(&Attribute::archetype().as_archetype()),
+            module_file_path(&Attribute::archetype().into()),
             "src/tao/relation/attribute/mod.rs"
         );
     }
@@ -243,7 +244,7 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            module_file_path(&owner.as_archetype()),
+            module_file_path(&owner.into()),
             "src/tao/relation/attribute/owner/mod.rs"
         );
     }
@@ -251,14 +252,17 @@ mod tests {
     #[test]
     fn import_path_tao() {
         initialize_kb();
-        assert_eq!(import_path(&Tao::archetype(), false), "zamm_yin::tao::Tao");
+        assert_eq!(
+            import_path(&KnowledgeGraphNode::from(Tao::TYPE_ID), false),
+            "zamm_yin::tao::Tao"
+        );
     }
 
     #[test]
     fn import_path_attributes() {
         initialize_kb();
         assert_eq!(
-            import_path(&Attribute::archetype().as_archetype(), false),
+            import_path(&KnowledgeGraphNode::from(Attribute::TYPE_ID), false),
             "zamm_yin::tao::relation::attribute::Attribute"
         );
     }
@@ -267,7 +271,7 @@ mod tests {
     fn import_path_nested() {
         initialize_kb();
         assert_eq!(
-            import_path(&Owner::archetype().as_archetype(), false),
+            import_path(&KnowledgeGraphNode::from(Owner::TYPE_ID), false),
             "zamm_yin::tao::relation::attribute::Owner"
         );
     }
@@ -277,7 +281,7 @@ mod tests {
         initialize_kb();
         Owner::archetype().mark_own_module();
         assert_eq!(
-            import_path(&Owner::archetype().as_archetype(), false),
+            import_path(&KnowledgeGraphNode::from(Owner::TYPE_ID), false),
             "zamm_yin::tao::relation::attribute::owner::Owner"
         );
     }
@@ -285,10 +289,10 @@ mod tests {
     #[test]
     fn import_path_newly_defined() {
         initialize_kb();
-        let mut owner = Owner::archetype();
+        let mut owner = KnowledgeGraphNode::from(Owner::TYPE_ID);
         owner.mark_newly_defined();
         assert_eq!(
-            import_path(&owner.as_archetype(), false),
+            import_path(&owner, false),
             "crate::tao::relation::attribute::Owner"
         );
     }
@@ -298,11 +302,11 @@ mod tests {
         initialize_kb();
         BuildInfo::from(Attribute::TYPE_ID)
             .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
-        let mut owner = Owner::archetype();
-        owner.mark_own_module();
+        let mut owner = KnowledgeGraphNode::from(Owner::TYPE_ID);
+        Archetype::from(owner.id()).mark_own_module();
         owner.mark_newly_defined();
         assert_eq!(
-            import_path(&owner.as_archetype(), false),
+            import_path(&owner, false),
             "crate::tao::newfangled::module::attribute::owner::Owner"
         );
     }
@@ -312,14 +316,14 @@ mod tests {
         initialize_kb();
         BuildInfo::from(Attribute::TYPE_ID)
             .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
-        let mut owner = Owner::archetype();
-        owner.mark_own_module();
+        let mut owner = KnowledgeGraphNode::from(Owner::TYPE_ID);
+        Archetype::from(owner.id()).mark_own_module();
         owner.mark_newly_defined();
         // possible if we've defined a new type, but we did so only to tell yang that it's already
         // been implemented as part of a dependency
         BuildInfo::from(owner.id()).set_crate_name("mycrate");
         assert_eq!(
-            import_path(&owner.as_archetype(), false),
+            import_path(&owner, false),
             "mycrate::tao::newfangled::module::attribute::owner::Owner"
         );
     }
@@ -327,15 +331,17 @@ mod tests {
     #[test]
     fn import_path_multiple_descendants() {
         initialize_kb();
-        let mut type1 = Tao::archetype().individuate_as_archetype();
-        type1.set_internal_name_str("hello");
-        type1.mark_newly_defined();
+        let type1 = Tao::archetype().individuate_as_archetype();
+        let mut type1_node = KnowledgeGraphNode::from(type1.id());
+        type1_node.set_internal_name_str("hello");
+        type1_node.mark_newly_defined();
         let mut type2 = type1.individuate_as_archetype();
-        type2.set_internal_name_str("world");
-        type2.mark_newly_defined();
+        let mut type2_node = KnowledgeGraphNode::from(type2.id());
+        type2_node.set_internal_name_str("world");
+        type2_node.mark_newly_defined();
         type2.mark_own_module();
         assert_eq!(
-            import_path(&type2, false),
+            import_path(&type2_node, false),
             "crate::tao::hello::world::World"
         );
     }
@@ -344,10 +350,11 @@ mod tests {
     fn import_path_custom_root() {
         initialize_kb();
         let mut root = Tao::archetype().individuate_as_archetype();
-        root.set_internal_name_str("my-root");
-        root.mark_newly_defined();
+        let mut root_node = KnowledgeGraphNode::from(root.id());
+        root_node.set_internal_name_str("my-root");
+        root_node.mark_newly_defined();
         root.activate_root_node_logic();
-        assert_eq!(import_path(&root, false), "crate::my_root::MyRoot");
+        assert_eq!(import_path(&root_node, false), "crate::my_root::MyRoot");
     }
 
     #[test]
@@ -366,7 +373,7 @@ mod tests {
     fn struct_config_attributes() {
         initialize_kb();
         assert_eq!(
-            concept_to_struct(&Attribute::archetype().as_archetype(), false),
+            concept_to_struct(&Attribute::archetype().into(), false),
             StructConfig {
                 name: "Attribute".to_owned(),
                 import: "zamm_yin::tao::relation::attribute::Attribute".to_owned(),
@@ -378,7 +385,7 @@ mod tests {
     fn struct_config_nested() {
         initialize_kb();
         assert_eq!(
-            concept_to_struct(&Owner::archetype().as_archetype(), false),
+            concept_to_struct(&Owner::archetype().into(), false),
             StructConfig {
                 name: "Owner".to_owned(),
                 import: "zamm_yin::tao::relation::attribute::Owner".to_owned(),
@@ -392,7 +399,7 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            concept_to_struct(&owner.as_archetype(), false),
+            concept_to_struct(&owner.into(), false),
             StructConfig {
                 name: "Owner".to_owned(),
                 import: "zamm_yin::tao::relation::attribute::owner::Owner".to_owned(),
@@ -403,10 +410,10 @@ mod tests {
     #[test]
     fn struct_config_newly_defined() {
         initialize_kb();
-        let mut owner = Owner::archetype();
-        owner.mark_newly_defined();
+        let owner = Owner::archetype();
+        KnowledgeGraphNode::from(owner.id()).mark_newly_defined();
         assert_eq!(
-            concept_to_struct(&owner.as_archetype(), false),
+            concept_to_struct(&owner.into(), false),
             StructConfig {
                 name: "Owner".to_owned(),
                 import: "crate::tao::relation::attribute::Owner".to_owned(),
