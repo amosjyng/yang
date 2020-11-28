@@ -60,7 +60,9 @@ fn generic_config(
         this.clone()
     };
 
-    let internal_name_cfg = if Crate::yin().version_at_least(0, 1, 1) {
+    let internal_name_cfg = if Crate::yin().version_at_least(0, 1, 4) {
+        InternalNameConfig::YIN_AT_LEAST_0_1_4
+    } else if Crate::yin().version_at_least(0, 1, 1) {
         InternalNameConfig::YIN_AT_LEAST_0_1_1
     } else {
         InternalNameConfig::DEFAULT
