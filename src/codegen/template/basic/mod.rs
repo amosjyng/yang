@@ -1,5 +1,6 @@
 /// Code fragment that can be combined with other code fragments.
 mod appended;
+mod assert;
 /// Code fragment that cannot be broken down any further.
 mod atomic;
 /// Fragment for an entire code file.
@@ -15,6 +16,7 @@ mod nested;
 mod trait_fragment;
 
 pub use appended::AppendedFragment;
+pub use assert::AssertFragment;
 pub use atomic::AtomicFragment;
 pub use file::FileFragment;
 pub use function::{FunctionFragment, SelfReference};

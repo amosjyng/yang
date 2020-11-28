@@ -1,4 +1,7 @@
-use crate::codegen::template::basic::{AtomicFragment, FileFragment};
+use crate::codegen::template::basic::{
+    AppendedFragment, AssertFragment, AtomicFragment, FileFragment, FunctionCallFragment,
+    FunctionFragment,
+};
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -204,9 +207,12 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
 }
 
 /// Get the Tao test fragment
-fn tao_test_fragment(cfg: &TaoConfig) -> AtomicFragment {
+fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
+    let init_kb = Rc::new(RefCell::new(FunctionCallFragment::new(AtomicFragment {
+        imports: vec!["crate::tao::initialize_kb".to_owned()],
+        atom: "initialize_kb".to_owned(),
+    })));
     let mut imports = vec![
-        "crate::tao::initialize_kb".to_owned(),
         "std::rc::Rc".to_owned(),
         "zamm_yin::node_wrappers::CommonNodeTrait".to_owned(),
         "zamm_yin::tao::archetype::ArchetypeFormTrait".to_owned(),
@@ -217,19 +223,39 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AtomicFragment {
     for attr_import in &cfg.introduced_attribute_imports {
         imports.push(attr_import.clone());
     }
-    AtomicFragment {
+    let mut test_frag = AppendedFragment::default();
+
+    let name = &cfg.this.name;
+    let mut check_type_created = FunctionFragment::new("check_type_created".to_owned());
+    check_type_created.mark_as_test();
+    check_type_created.append(init_kb.clone());
+    check_type_created.append(Rc::new(RefCell::new(AssertFragment::new_eq(
+        Rc::new(RefCell::new(AtomicFragment::new(format!(
+            "{}::archetype().id()",
+            name
+        )))),
+        Rc::new(RefCell::new(AtomicFragment::new(format!(
+            "{}::TYPE_ID",
+            name
+        )))),
+    ))));
+    check_type_created.append(Rc::new(RefCell::new(AssertFragment::new_eq(
+        Rc::new(RefCell::new(AtomicFragment::new(format!(
+            "{name}::archetype().{getter}()",
+            name = name,
+            getter = cfg.internal_name_cfg.getter
+        )))),
+        Rc::new(RefCell::new(AtomicFragment::new(format!(
+            "Some(Rc::from({name}::TYPE_NAME{suffix}))",
+            name = name,
+            suffix = cfg.internal_name_cfg.suffix
+        )))),
+    ))));
+    test_frag.append(Rc::new(RefCell::new(check_type_created)));
+
+    test_frag.append(Rc::new(RefCell::new(AtomicFragment {
         imports,
         atom: formatdoc! {r#"
-            #[test]
-            fn check_type_created() {{
-                initialize_kb();
-                assert_eq!({name}::archetype().id(), {name}::TYPE_ID);
-                assert_eq!(
-                    {name}::archetype().{internal_name_getter}(),
-                    Some(Rc::from({name}::TYPE_NAME{internal_name_suffix}))
-                );
-            }}
-
             #[test]
             fn check_type_attributes() {{
                 initialize_kb();
@@ -261,7 +287,6 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AtomicFragment {
                 assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
             }}"#,
             name = cfg.this.name,
-            internal_name_getter = cfg.internal_name_cfg.getter,
             internal_name_setter = cfg.internal_name_cfg.setter,
             internal_name_suffix = cfg.internal_name_cfg.suffix,
             added_attributes_f = cfg.internal_name_cfg.added_attributes,
@@ -269,7 +294,8 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AtomicFragment {
             introduced_attributes = cfg.introduced_attributes,
             all_attributes = cfg.all_attributes,
         },
-    }
+    })));
+    test_frag
 }
 
 /// Returns a file fragment, which may be appended to further.
