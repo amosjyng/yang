@@ -24,6 +24,11 @@ impl AppendedFragment {
         }
     }
 
+    /// Update the separator between fragments.
+    pub fn set_separator(&mut self, separator: &str) {
+        self.block_separator = separator.to_owned();
+    }
+
     /// Append other code fragment into this one.
     pub fn append(&mut self, other: Rc<RefCell<dyn CodeFragment>>) {
         self.appendages.push(other);

@@ -130,13 +130,12 @@ impl CodeFragment for ItemDeclaration {
         .trim()
         .to_owned();
         match &self.body {
-            Some(actual_implementation) => NestedFragment {
-                imports: vec![],
-                preamble: format!("{} {{", preamble),
-                nesting: Some(actual_implementation.clone()),
-                postamble: "}".to_owned(),
+            Some(actual_implementation) => {
+                let mut nested =
+                    NestedFragment::new(AtomicFragment::new(format!("{} {{", preamble)), "}");
+                nested.append(actual_implementation.clone());
+                nested.body(line_width) // nested fragment will take care of indent size
             }
-            .body(line_width), // nested fragment will take care of indent size
             None => format!("{};", preamble),
         }
     }
