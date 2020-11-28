@@ -7,8 +7,7 @@ use crate::tao::form::{BuildInfo, BuildInfoExtension};
 use crate::tao::form::{Module, ModuleExtension};
 use crate::tao::{Implement, ImplementExtension};
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait};
-use zamm_yin::tao::form::FormTrait;
+use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait};
 
 /// Generate code for a given module. Post-processing still needed.
 pub fn code_module(request: Implement, module: Module, parent: Archetype) -> String {
@@ -31,11 +30,7 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
         if in_own_submodule(&child) {
             let child_submodule = match BuildInfo::from(child.id()).representative_module() {
                 Some(existing_module) => existing_module,
-                None => {
-                    let mut new_submodule = Module::new();
-                    new_submodule.set_most_prominent_member(&child.as_form());
-                    new_submodule
-                }
+                None => continue,
             };
             public_submodules.push(
                 (*ModuleExtension::implementation_name(&child_submodule).unwrap()).to_owned(),
