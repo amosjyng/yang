@@ -17,6 +17,7 @@ pub struct ModuleFragment {
     re_exports: Vec<String>,
     submodules: Vec<Rc<RefCell<ModuleFragment>>>,
     content: Rc<RefCell<AppendedFragment>>,
+    current_crate: Option<Rc<str>>,
 }
 
 impl ModuleFragment {
@@ -94,6 +95,11 @@ impl ModuleFragment {
         }
         submodules_frag
     }
+
+    /// Set the current crate for file imports.
+    pub fn set_current_crate(&mut self, current_crate: Rc<str>) {
+        self.current_crate = Some(current_crate);
+    }
 }
 
 impl Default for ModuleFragment {
@@ -108,6 +114,7 @@ impl Default for ModuleFragment {
             re_exports: vec![],
             submodules: vec![],
             content: Rc::new(RefCell::new(AppendedFragment::default())),
+            current_crate: None,
         }
     }
 }
@@ -169,8 +176,15 @@ impl CodeFragment for ModuleFragment {
         if self.test {
             imports.push("super::*".to_owned());
         }
-        let mut imports_str =
-            imports_as_str(&imports.iter().map(|s| s.as_str()).collect::<Vec<&str>>());
+        let mut imports_str = imports_as_str(
+            &self
+                .current_crate
+                .as_ref()
+                .cloned()
+                .unwrap_or_else(|| Rc::from("DUMMY-TEST-CRATE")),
+            imports,
+            &[],
+        );
         if !imports_str.is_empty() {
             imports_str += "\n\n";
         }

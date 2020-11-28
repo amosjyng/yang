@@ -24,10 +24,7 @@ pub struct AttributeFormatConfig {
 fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![
-            format!(
-                "{}::tao::relation::attribute::AttributeTrait",
-                cfg.tao_cfg.yin_crate
-            ),
+            "zamm_yin::tao::relation::attribute::AttributeTrait".to_owned(),
             cfg.owner_form.import.clone(),
             cfg.value_form.import.clone(),
         ],
@@ -45,14 +42,8 @@ fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
 /// Get the attribute test fragment.
 fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
     let mut imports = vec![
-        format!(
-            "{}::tao::archetype::ArchetypeFormTrait",
-            cfg.tao_cfg.yin_crate
-        ),
-        format!(
-            "{}::tao::archetype::AttributeArchetypeFormTrait",
-            cfg.tao_cfg.yin_crate
-        ),
+        "zamm_yin::tao::archetype::ArchetypeFormTrait".to_owned(),
+        "zamm_yin::tao::archetype::AttributeArchetypeFormTrait".to_owned(),
     ];
     // there's a chance the form is the same as the type, in which case it will have gotten
     // imported above already

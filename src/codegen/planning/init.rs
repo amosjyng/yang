@@ -7,7 +7,6 @@ use zamm_yin::tao::archetype::Archetype;
 
 /// Create initialization file for newly defined concepts.
 pub fn handle_init(archetype_requests: &[Implement], codegen_cfg: &CodegenConfig) {
-    let yin_crate = if codegen_cfg.yin { "crate" } else { "zamm_yin" };
     let mut concepts_to_initialize = Vec::<StructConfig>::new();
     for implement_command in archetype_requests {
         let mut implement = Implement::from(implement_command.id());
@@ -21,7 +20,6 @@ pub fn handle_init(archetype_requests: &[Implement], codegen_cfg: &CodegenConfig
     }
 
     let code = code_init(&KBInitConfig {
-        yin_crate: yin_crate.to_owned(),
         concepts_to_initialize,
     });
     output_code(&code, "src/tao/auto_init.rs", codegen_cfg);

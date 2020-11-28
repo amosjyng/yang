@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 fn form_fragment(cfg: &TaoConfig) -> ImplementationFragment {
     let mut implementation = ImplementationFragment::new_trait_impl(
-        StructConfig::new(format!("{}::tao::form::FormTrait", cfg.yin_crate)),
+        StructConfig::new("zamm_yin::tao::form::FormTrait".to_owned()),
         cfg.this.clone(),
     );
     implementation.mark_same_file_as_struct();
