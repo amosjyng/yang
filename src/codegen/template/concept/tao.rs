@@ -206,12 +206,30 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
     }
 }
 
-/// Get the Tao test fragment
-fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
+fn new_kb_test(test_frag: &mut AppendedFragment, name: &str) -> Rc<RefCell<FunctionFragment>> {
     let init_kb = Rc::new(RefCell::new(FunctionCallFragment::new(AtomicFragment {
         imports: vec!["crate::tao::initialize_kb".to_owned()],
         atom: "initialize_kb".to_owned(),
     })));
+    let mut new_test = FunctionFragment::new(name.to_owned());
+    new_test.mark_as_test();
+    new_test.append(init_kb);
+    let rc = Rc::new(RefCell::new(new_test));
+    test_frag.append(rc.clone());
+    rc
+}
+
+fn add_assert(test_function: &Rc<RefCell<FunctionFragment>>, lhs: String, rhs: String) {
+    test_function
+        .borrow_mut()
+        .append(Rc::new(RefCell::new(AssertFragment::new_eq(
+            Rc::new(RefCell::new(AtomicFragment::new(lhs))),
+            Rc::new(RefCell::new(AtomicFragment::new(rhs))),
+        ))));
+}
+
+/// Get the Tao test fragment
+fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
     let mut imports = vec![
         "std::rc::Rc".to_owned(),
         "zamm_yin::node_wrappers::CommonNodeTrait".to_owned(),
@@ -226,32 +244,49 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
     let mut test_frag = AppendedFragment::default();
 
     let name = &cfg.this.name;
-    let mut check_type_created = FunctionFragment::new("check_type_created".to_owned());
-    check_type_created.mark_as_test();
-    check_type_created.append(init_kb.clone());
-    check_type_created.append(Rc::new(RefCell::new(AssertFragment::new_eq(
-        Rc::new(RefCell::new(AtomicFragment::new(format!(
-            "{}::archetype().id()",
-            name
-        )))),
-        Rc::new(RefCell::new(AtomicFragment::new(format!(
-            "{}::TYPE_ID",
-            name
-        )))),
-    ))));
-    check_type_created.append(Rc::new(RefCell::new(AssertFragment::new_eq(
-        Rc::new(RefCell::new(AtomicFragment::new(format!(
+
+    let check_type_created = new_kb_test(&mut test_frag, "check_type_created");
+    add_assert(
+        &check_type_created,
+        format!("{}::archetype().id()", name),
+        format!("{}::TYPE_ID", name),
+    );
+    add_assert(
+        &check_type_created,
+        format!(
             "{name}::archetype().{getter}()",
             name = name,
             getter = cfg.internal_name_cfg.getter
-        )))),
-        Rc::new(RefCell::new(AtomicFragment::new(format!(
+        ),
+        format!(
             "Some(Rc::from({name}::TYPE_NAME{suffix}))",
             name = name,
             suffix = cfg.internal_name_cfg.suffix
-        )))),
-    ))));
-    test_frag.append(Rc::new(RefCell::new(check_type_created)));
+        ),
+    );
+
+    let from_name = new_kb_test(&mut test_frag, "from_name");
+    from_name
+        .borrow_mut()
+        .append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc!(
+            r#"
+        let mut concept = {name}::new();
+        concept.{internal_name_setter}("A"{internal_name_suffix});"#,
+            name = name,
+            internal_name_setter = cfg.internal_name_cfg.setter,
+            internal_name_suffix = cfg.internal_name_cfg.suffix,
+        )))));
+    add_assert(
+        &from_name,
+        format!(r#"{}::try_from("A").map(|c| c.id())"#, name),
+        "Ok(concept.id())".to_owned(),
+    );
+    from_name
+        .borrow_mut()
+        .append(Rc::new(RefCell::new(AtomicFragment::new(format!(
+            r#"assert!({}::try_from("B").is_err());"#,
+            name
+        )))));
 
     test_frag.append(Rc::new(RefCell::new(AtomicFragment {
         imports,
@@ -272,23 +307,12 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
             }}
 
             #[test]
-            fn from_name() {{
-                initialize_kb();
-                let mut concept = {name}::new();
-                concept.{internal_name_setter}("A"{internal_name_suffix});
-                assert_eq!({name}::try_from("A").map(|c| c.id()), Ok(concept.id()));
-                assert!({name}::try_from("B").is_err());
-            }}
-
-            #[test]
             fn test_wrapper_implemented() {{
                 initialize_kb();
                 let concept = {name}::new();
                 assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
             }}"#,
             name = cfg.this.name,
-            internal_name_setter = cfg.internal_name_cfg.setter,
-            internal_name_suffix = cfg.internal_name_cfg.suffix,
             added_attributes_f = cfg.internal_name_cfg.added_attributes,
             all_attributes_f = cfg.internal_name_cfg.all_attributes,
             introduced_attributes = cfg.introduced_attributes,
