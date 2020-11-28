@@ -133,7 +133,7 @@ impl CodeFragment for ItemDeclaration {
             Some(actual_implementation) => {
                 let mut nested =
                     NestedFragment::new(AtomicFragment::new(format!("{} {{", preamble)), "}");
-                nested.set_nesting(actual_implementation.clone());
+                nested.append(actual_implementation.clone());
                 nested.body(line_width) // nested fragment will take care of indent size
             }
             None => format!("{};", preamble),
