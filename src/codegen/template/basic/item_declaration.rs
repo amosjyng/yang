@@ -107,7 +107,7 @@ impl ItemDeclarationAPI for ItemDeclaration {
 impl CodeFragment for ItemDeclaration {
     fn body(&self) -> String {
         let doc = match &self.doc {
-            Some(d) => into_docstring(&d, 0) + "\n",
+            Some(d) => into_docstring(&d, 80) + "\n", // todo: codewidth decrease
             None => String::new(),
         };
         let public = if self.public { "pub " } else { "" };

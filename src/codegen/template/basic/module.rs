@@ -4,6 +4,7 @@ use super::{
 };
 use crate::codegen::docstring::into_parent_docstring;
 use crate::codegen::template::imports::{imports_as_str, re_exports_as_str};
+use crate::codegen::CODE_WIDTH;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::rc::Rc;
@@ -218,7 +219,7 @@ impl CodeFragment for ModuleFragment {
         if self.uses_entire_file {
             let mut f = FileFragment::new();
             if let Some(doc) = &self.declaration.doc {
-                f.set_preamble(AtomicFragment::new(into_parent_docstring(&doc, 0)));
+                f.set_preamble(AtomicFragment::new(into_parent_docstring(&doc, CODE_WIDTH)));
             }
             f.append(internals_rc);
             f.generate_code()

@@ -2,7 +2,7 @@ use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::{
     AtomicFragment, FileFragment, FunctionFragment, ItemDeclarationAPI,
 };
-use crate::codegen::StructConfig;
+use crate::codegen::{StructConfig, CODE_WIDTH};
 use crate::tao::form::{Crate, CrateExtension};
 use indoc::formatdoc;
 use itertools::Itertools;
@@ -57,7 +57,7 @@ fn init_types_fragment(cfg: &KBInitConfig) -> FunctionFragment {
 
 /// Defines the number of concepts generated.
 fn max_id_fragment(cfg: &KBInitConfig) -> AtomicFragment {
-    let max_id_doc = into_docstring("The maximum concept ID inside the types distributed by Yin itself. App-specific type concepts should continue their numbering on top of this.", 0);
+    let max_id_doc = into_docstring("The maximum concept ID inside the types distributed by Yin itself. App-specific type concepts should continue their numbering on top of this.", CODE_WIDTH);
     AtomicFragment::new(formatdoc! {"
         {doc}
         pub const YIN_MAX_ID: usize = {concepts_size};
