@@ -19,7 +19,7 @@ fn main() {
         .set_import_path("zamm_yin::tao::relation::attribute::Attribute");
 
     define!(target);
-    target.add_parent(Attribute::archetype().as_archetype());
+    target.add_parent(Attribute::archetype().into());
     target.set_internal_name_str("Target");
     target.implement_with_doc("The target of an implement command.");
 

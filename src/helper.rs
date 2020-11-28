@@ -17,7 +17,7 @@ macro_rules! define {
 /// Convenience function to convert an `Archetype` to an `AttributeArchetype`.
 pub fn aa(archetype: Archetype) -> AttributeArchetype {
     if !(archetype.attribute_logic_activated()
-        || archetype.has_parent(Attribute::archetype().as_archetype())
+        || archetype.has_parent(Attribute::archetype().into())
         || archetype
             .parents()
             .iter()

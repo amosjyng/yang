@@ -185,7 +185,7 @@ mod tests {
     fn folder_path_attributes() {
         initialize_kb();
         assert_eq!(
-            archetype_file_path(&Attribute::archetype().as_archetype()),
+            archetype_file_path(&Attribute::archetype().into()),
             "src/tao/relation/attribute/attribute_form.rs"
         );
     }
@@ -194,7 +194,7 @@ mod tests {
     fn folder_path_nested() {
         initialize_kb();
         assert_eq!(
-            archetype_file_path(&Owner::archetype().as_archetype()),
+            archetype_file_path(&Owner::archetype().into()),
             "src/tao/relation/attribute/owner_form.rs"
         );
     }
@@ -205,7 +205,7 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            archetype_file_path(&owner.as_archetype()),
+            archetype_file_path(&owner.into()),
             "src/tao/relation/attribute/owner/owner_form.rs"
         );
     }
@@ -218,7 +218,7 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            archetype_file_path(&owner.as_archetype()),
+            archetype_file_path(&owner.into()),
             "src/tao/newfangled/module/attribute/owner/owner_form.rs"
         );
     }
@@ -233,7 +233,7 @@ mod tests {
     fn module_path_attributes() {
         initialize_kb();
         assert_eq!(
-            module_file_path(&Attribute::archetype().as_archetype()),
+            module_file_path(&Attribute::archetype().into()),
             "src/tao/relation/attribute/mod.rs"
         );
     }
@@ -244,7 +244,7 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            module_file_path(&owner.as_archetype()),
+            module_file_path(&owner.into()),
             "src/tao/relation/attribute/owner/mod.rs"
         );
     }
@@ -373,7 +373,7 @@ mod tests {
     fn struct_config_attributes() {
         initialize_kb();
         assert_eq!(
-            concept_to_struct(&Attribute::archetype().as_archetype(), false),
+            concept_to_struct(&Attribute::archetype().into(), false),
             StructConfig {
                 name: "Attribute".to_owned(),
                 import: "zamm_yin::tao::relation::attribute::Attribute".to_owned(),
@@ -385,7 +385,7 @@ mod tests {
     fn struct_config_nested() {
         initialize_kb();
         assert_eq!(
-            concept_to_struct(&Owner::archetype().as_archetype(), false),
+            concept_to_struct(&Owner::archetype().into(), false),
             StructConfig {
                 name: "Owner".to_owned(),
                 import: "zamm_yin::tao::relation::attribute::Owner".to_owned(),
@@ -399,7 +399,7 @@ mod tests {
         let mut owner = Owner::archetype();
         owner.mark_own_module();
         assert_eq!(
-            concept_to_struct(&owner.as_archetype(), false),
+            concept_to_struct(&owner.into(), false),
             StructConfig {
                 name: "Owner".to_owned(),
                 import: "zamm_yin::tao::relation::attribute::owner::Owner".to_owned(),
@@ -413,7 +413,7 @@ mod tests {
         let owner = Owner::archetype();
         KnowledgeGraphNode::from(owner.id()).mark_newly_defined();
         assert_eq!(
-            concept_to_struct(&owner.as_archetype(), false),
+            concept_to_struct(&owner.into(), false),
             StructConfig {
                 name: "Owner".to_owned(),
                 import: "crate::tao::relation::attribute::Owner".to_owned(),
