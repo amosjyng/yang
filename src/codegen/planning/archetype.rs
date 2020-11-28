@@ -35,9 +35,9 @@ fn or_form_default(archetype: Archetype) -> Archetype {
     }
 }
 
-fn activate_archetype(target: &Archetype, parent: &Archetype) -> bool {
+fn activate_archetype(target: &Archetype) -> bool {
     target == &Attribute::archetype().as_archetype()
-        || parent.has_ancestor(Attribute::archetype().as_archetype())
+        || target.has_ancestor(Attribute::archetype().as_archetype())
         || target.attribute_logic_activated()
 }
 
@@ -122,7 +122,7 @@ fn generic_config(
         .map(|s| s.import.clone())
         .collect();
 
-    let archetype_name = if activate_archetype(target, parent) {
+    let archetype_name = if activate_archetype(target) {
         "AttributeArchetype".to_owned()
     } else {
         "Archetype".to_owned()
@@ -146,6 +146,18 @@ fn generic_config(
     }
 }
 
+fn into_archetype_fn(yin: &Crate, archetype: &Archetype) -> String {
+    if yin.version_at_least(0, 1, 4) {
+        if activate_archetype(archetype) {
+            ".into()".to_owned()
+        } else {
+            String::new()
+        }
+    } else {
+        ".as_archetype()".to_owned()
+    }
+}
+
 fn attribute_config(
     base_cfg: &TaoConfig,
     target: &Archetype,
@@ -161,11 +173,9 @@ fn attribute_config(
     let owner_form = concept_to_struct(&or_form_default(owner_type_concept), codegen_cfg.yin);
     let value_form = concept_to_struct(&or_form_default(value_type_concept), codegen_cfg.yin);
 
-    let into_archetype = if Crate::yin().version_at_least(0, 1, 4) {
-        "into".to_owned()
-    } else {
-        "as_archetype".to_owned()
-    };
+    let yin = Crate::yin();
+    let owner_into_archetype = into_archetype_fn(&yin, &owner_type_concept);
+    let value_into_archetype = into_archetype_fn(&yin, &value_type_concept);
 
     AttributeFormatConfig {
         tao_cfg: base_cfg.clone(),
@@ -173,7 +183,8 @@ fn attribute_config(
         owner_form,
         value_type,
         value_form,
-        into_archetype,
+        owner_into_archetype,
+        value_into_archetype,
     }
 }
 
@@ -212,7 +223,7 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
         add_form_fragment(&base_cfg, &mut file);
     }
 
-    if activate_archetype(&target, &parent) {
+    if activate_archetype(&target) {
         add_attr_fragments(
             &attribute_config(&base_cfg, &target, codegen_cfg),
             &mut file,
@@ -261,7 +272,7 @@ mod tests {
         );
 
         assert!(!target.root_node_logic_activated());
-        assert!(!activate_archetype(&target, &primary_parent(&target)));
+        assert!(!activate_archetype(&target));
         assert!(!activate_data(&target));
 
         assert!(cfg.id.contains("YIN_MAX_ID"));
@@ -324,7 +335,7 @@ mod tests {
         target.activate_root_node_logic();
 
         assert!(target.root_node_logic_activated());
-        assert!(!activate_archetype(&target, &primary_parent(&target)));
+        assert!(!activate_archetype(&target));
         assert!(!activate_data(&target));
     }
 
@@ -351,7 +362,7 @@ mod tests {
         );
 
         assert!(!target.root_node_logic_activated());
-        assert!(activate_archetype(&target.as_archetype(), &parent));
+        assert!(activate_archetype(&target.as_archetype()));
         assert!(!activate_data(&target.as_archetype()));
 
         assert_eq!(attr_cfg.owner_type.name, "Tao".to_owned());
@@ -371,7 +382,7 @@ mod tests {
         target.activate_data_logic();
 
         assert!(!target.root_node_logic_activated());
-        assert!(!activate_archetype(&target, &primary_parent(&target)));
+        assert!(!activate_archetype(&target));
         assert!(activate_data(&target));
     }
 
