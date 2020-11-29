@@ -12,6 +12,7 @@ use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::DataExtension;
 use crate::tao::form::{BuildInfo, BuildInfoExtension, Crate, CrateExtension};
+use crate::tao::perspective::KnowledgeGraphNode;
 use crate::tao::{Implement, ImplementExtension};
 use heck::{KebabCase, SnakeCase};
 use itertools::Itertools;
@@ -38,7 +39,7 @@ fn or_form_default(archetype: Archetype) -> Archetype {
 fn activate_archetype(target: &Archetype) -> bool {
     target == &Attribute::archetype().into()
         || target.has_ancestor(Attribute::archetype().into())
-        || target.attribute_logic_activated()
+        || KnowledgeGraphNode::from(target.id()).is_attribute_analogue()
 }
 
 fn activate_data(target: &Archetype) -> bool {
@@ -345,8 +346,9 @@ mod tests {
         initialize_kb();
         let mut target = AttributeArchetype::from(Tao::archetype().individuate_as_archetype().id());
         target.set_internal_name_str("MyAttrType");
-        KnowledgeGraphNode::from(target.id()).mark_newly_defined();
-        target.activate_attribute_logic();
+        let mut kgn = KnowledgeGraphNode::from(target.id());
+        kgn.mark_newly_defined();
+        kgn.mark_attribute_analogue();
         // todo: reset after set_owner_archetype and set_value_archetype moved to
         // BackwardsCompatibility
         AttributeArchetypeFormTrait::set_owner_archetype(&mut target, Tao::archetype());

@@ -52,8 +52,8 @@ When Yin tells us about herself, we must forget all preconceptions we have about
 However, this also means that Yin's new attribute node won't be the same `Attribute` node that Yang ties all his custom attribute generation code to. Until all of the logic that goes into generating attributes becomes fully defined in graph form, we're going to need some way of telling Yang to activate that custom logic for newly defined nodes that don't inherit from the existing `Attribute` node:
 
 ```rust
-define!(uses_attribute_logic);
-uses_attribute_logic.add_parent(Flag::archetype());
+define!(attribute_analogue);
+attribute_analogue.add_parent(Flag::archetype());
 ```
 
 The same is true of Tao and Data:
@@ -100,6 +100,13 @@ define!(newly_defined);
 newly_defined.add_parent(Flag::archetype());
 aa(newly_defined).set_owner_archetype(knowledge_graph_node);
 knowledge_graph_node.add_flag(newly_defined);
+```
+
+We'll do the same for other knowledge-graph-related nodes:
+
+```rust
+aa(attribute_analogue).set_owner_archetype(knowledge_graph_node);
+knowledge_graph_node.add_flag(attribute_analogue);
 ```
 
 Rust groups things by modules.
@@ -216,9 +223,10 @@ rust_primitive.implement_with_doc(
     "The Rust primitive that a Yin data concept is implemented by."
 );
 
-uses_attribute_logic.implement_with_doc(
+let mut aa_impl = attribute_analogue.implement_with_doc(
     "Marks an archetype and all its descendants as requiring attribute-specific logic during generation."
 );
+aa_impl.dual_document("as logically analogous to an attribute node.");
 
 uses_data_logic.implement_with_doc(
     "Marks an archetype and all its descendants as requiring data-specific logic during generation."
