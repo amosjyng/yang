@@ -47,27 +47,6 @@ rust_primitive.add_parent(Attribute::archetype().as_archetype());
 
 This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
 
-When Yin tells us about herself, we must forget all preconceptions we have about the world and listen to what she has to say. That means when she speaks of what an attribute is, we *listen* instead of shoehorning her description into what we already think of as an attribute.
-
-However, this also means that Yin's new attribute node won't be the same `Attribute` node that Yang ties all his custom attribute generation code to. Until all of the logic that goes into generating attributes becomes fully defined in graph form, we're going to need some way of telling Yang to activate that custom logic for newly defined nodes that don't inherit from the existing `Attribute` node:
-
-```rust
-define!(attribute_analogue);
-attribute_analogue.add_parent(Flag::archetype());
-```
-
-The same is true of Tao and Data:
-
-```rust
-define!(uses_root_node_logic);
-uses_root_node_logic.add_parent(Flag::archetype());
-
-define!(uses_data_logic);
-uses_data_logic.add_parent(Flag::archetype());
-```
-
-Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
-
 ### Perspective
 
 All this can apply to any concept at all that's being implemented. However, these attributes are only meaningful within the context of code generation. As such, they should live inside a build config lens -- a way of viewing concepts through a different perspective than usual.
@@ -86,6 +65,8 @@ Everything is relative -- but of course even relativity is relative. Physics is 
 define!(perspective);
 ```
 
+#### The knowledge graph perspective
+
 One perspective through which to look at things is the knowledge graph perspective, through which everything described here are equally first-class concept nodes. There are superficial differences between the nodes and how well-connected, yes, but all nodes are fundamentally equivalent as pieces of knowledge. We look at knowledge the same way humanism looks at humans.
 
 ```rust
@@ -93,7 +74,7 @@ define!(knowledge_graph_node);
 knowledge_graph_node.add_parent(perspective);
 ```
 
-As part of this perspective, We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
+As part of this perspective, we should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
 
 ```rust
 define!(newly_defined);
@@ -102,12 +83,30 @@ aa(newly_defined).set_owner_archetype(knowledge_graph_node);
 knowledge_graph_node.add_flag(newly_defined);
 ```
 
-We'll do the same for other knowledge-graph-related nodes:
+When Yin tells us about herself, we must forget all preconceptions we have about the world and listen to what she has to say. That means when she speaks of what an attribute is, we *listen* instead of shoehorning her description into what we already think of as an attribute.
+
+However, this also means that Yin's new attribute node won't be the same `Attribute` node that Yang ties all his custom attribute generation code to. Until all of the logic that goes into generating attributes becomes fully defined in graph form, we're going to need some way of telling Yang to activate that custom logic for newly defined nodes that don't inherit from the existing `Attribute` node:
 
 ```rust
+define!(attribute_analogue);
+attribute_analogue.add_parent(Flag::archetype());
 aa(attribute_analogue).set_owner_archetype(knowledge_graph_node);
 knowledge_graph_node.add_flag(attribute_analogue);
 ```
+
+The same is true of Tao and Data:
+
+```rust
+define!(uses_root_node_logic);
+uses_root_node_logic.add_parent(Flag::archetype());
+
+define!(data_analogue);
+data_analogue.add_parent(Flag::archetype());
+aa(data_analogue).set_owner_archetype(knowledge_graph_node);
+knowledge_graph_node.add_flag(data_analogue);
+```
+
+Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
 
 Rust groups things by modules.
 
@@ -228,9 +227,10 @@ let mut aa_impl = attribute_analogue.implement_with_doc(
 );
 aa_impl.dual_document("as logically analogous to an attribute node.");
 
-uses_data_logic.implement_with_doc(
+let mut da_impl = data_analogue.implement_with_doc(
     "Marks an archetype and all its descendants as requiring data-specific logic during generation."
 );
+da_impl.dual_document("as logically analogous to a data node.");
 
 uses_root_node_logic.implement_with_doc(
     "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this."

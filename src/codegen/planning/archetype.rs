@@ -43,7 +43,8 @@ fn activate_archetype(target: &Archetype) -> bool {
 }
 
 fn activate_data(target: &Archetype) -> bool {
-    target.has_ancestor(Data::archetype()) || target.data_logic_activated()
+    target.has_ancestor(Data::archetype())
+        || KnowledgeGraphNode::from(target.id()).is_data_analogue()
 }
 
 fn generic_config(
@@ -381,8 +382,9 @@ mod tests {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name_str("MyDataType");
-        KnowledgeGraphNode::from(target.id()).mark_newly_defined();
-        target.activate_data_logic();
+        let mut kgn = KnowledgeGraphNode::from(target.id());
+        kgn.mark_newly_defined();
+        kgn.mark_data_analogue();
 
         assert!(!target.root_node_logic_activated());
         assert!(!activate_archetype(&target));

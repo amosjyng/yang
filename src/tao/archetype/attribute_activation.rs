@@ -1,5 +1,5 @@
 use crate::tao::perspective::KnowledgeGraphNode;
-use crate::tao::relation::flag::{OwnModule, UsesDataLogic, UsesRootNodeLogic};
+use crate::tao::relation::flag::{OwnModule, UsesRootNodeLogic};
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::FormTrait;
@@ -59,13 +59,21 @@ pub trait CodegenFlags: FormTrait + CommonNodeTrait {
     }
 
     /// Activate data-specific logic for this concept during code generation.
+    #[deprecated(
+        since = "0.1.7",
+        note = "Please use KnowledgeGraphNode::mark_data_analogue"
+    )]
     fn activate_data_logic(&mut self) {
-        self.essence_mut().add_flag(UsesDataLogic::TYPE_ID);
+        KnowledgeGraphNode::from(self.id()).mark_data_analogue();
     }
 
     /// Whether this concept should have data-specific logic activated during code generation.
+    #[deprecated(
+        since = "0.1.7",
+        note = "Please use KnowledgeGraphNode::is_data_analogue"
+    )]
     fn data_logic_activated(&self) -> bool {
-        self.essence().has_flag(UsesDataLogic::TYPE_ID)
+        KnowledgeGraphNode::from(self.id()).is_data_analogue()
     }
 
     /// Mark concept to be generated inside its own module.
@@ -124,15 +132,5 @@ mod tests {
 
         new_attr.mark_own_module();
         assert!(new_attr.force_own_module());
-    }
-
-    #[test]
-    fn test_data_activation() {
-        initialize_kb();
-        let mut new_attr = Tao::archetype().individuate_as_archetype();
-        assert!(!new_attr.data_logic_activated());
-
-        new_attr.activate_data_logic();
-        assert!(new_attr.data_logic_activated());
     }
 }
