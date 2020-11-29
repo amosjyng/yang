@@ -21,6 +21,11 @@ macro_rules! define_child {
         define!($name);
         $name.add_parent($parent);
     };
+    ($name:ident, $parent:ident, $doc:expr) => {
+        define!($name);
+        $name.add_parent($parent);
+        $name.implement_with_doc($doc);
+    };
 }
 
 /// Defines a new concept as a child of the given imported parent type.
@@ -29,6 +34,11 @@ macro_rules! define_child_imported {
     ($name:ident, $parent:ty) => {
         define!($name);
         $name.add_parent(<$parent>::archetype().into());
+    };
+    ($name:ident, $parent:ty, $doc:expr) => {
+        define!($name);
+        $name.add_parent(<$parent>::archetype().into());
+        $name.implement_with_doc($doc);
     };
 }
 
