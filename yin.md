@@ -13,31 +13,49 @@ define!(implement);
 Implementations are lower-level concepts that *target* specific higher-level concepts.
 
 ```rust
-define_child_imported!(target, Attribute);
+define_child_imported!(
+    target,
+    Attribute,
+    "The target of an implement command."
+);
 ```
 
 We need some way of efficiently distinguishing Yin concepts from each other. We can't just compare the memory addresses of a Yin struct, since different ephemeral structs may in fact be referring to the same concept. An easy way to do this is by assigning a different integer ID to each one, so that each Yin concept effectively becomes a wrapper around an integer, and we are just defining the relations between different integers:
 
 ```rust
-define_child_imported!(concept_id, Attribute);
+define_child_imported!(concept_id, Attribute, "The integer ID associated with a concept.");
 ```
 
-When implementing anything in Rust, we should consider documenting it for the user's sake:
+When implementing anything in Rust, we should consider documenting it for the user's sake.
 
 ```rust
-define_child_imported!(documentation, Attribute);
+define_child_imported!(
+    documentation,
+    Attribute,
+    "The documentation associated with an implementation."
+);
 ```
+
+Now we finally understand why there's a documentation string with each introduced concept.
 
 Getters and setters in particular have their own dual-purpose documentation strings:
 
 ```rust
-define_child_imported!(dual_purpose_documentation, Attribute);
+define_child_imported!(
+    dual_purpose_documentation,
+    Attribute,
+    "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string."
+);
 ```
 
 Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
 
 ```rust
-define_child_imported!(rust_primitive, Attribute);
+define_child_imported!(
+    rust_primitive,
+    Attribute,
+    "The Rust primitive that a Yin data concept is implemented by."
+);
 ```
 
 This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
@@ -65,7 +83,11 @@ define!(perspective);
 One perspective through which to look at things is the knowledge graph perspective, through which everything described here are equally first-class concept nodes. There are superficial differences between the nodes and how well-connected, yes, but all nodes are fundamentally equivalent as pieces of knowledge. We look at knowledge the same way humanism looks at humans.
 
 ```rust
-define_child!(knowledge_graph_node, perspective);
+define_child!(
+    knowledge_graph_node,
+    perspective,
+    "Look at all information as knowledge graph entities."
+);
 ```
 
 As part of this perspective, we should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
@@ -85,8 +107,11 @@ add_flag!(attribute_analogue, knowledge_graph_node);
 The same is true of Tao and Data:
 
 ```rust
-define!(uses_root_node_logic);
-uses_root_node_logic.add_parent(Flag::archetype());
+define_child_imported!(
+    uses_root_node_logic,
+    Flag,
+    "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this."
+);
 
 add_flag!(data_analogue, knowledge_graph_node);
 ```
@@ -98,7 +123,11 @@ Unlike the markers for data and attribute logic, the root node marker does not g
 Most concepts end up manifesting themselves in the codebase one way or another. We should look at these from the perspective of built items:
 
 ```rust
-define_child!(build_info, perspective);
+define_child!(
+    build_info,
+    perspective,
+    "Represents build information about a generated concept."
+);
 ```
 
 There are some concepts that might only reveal themselves in a debugging or deployment context, and other meta-concepts that indirectly influence how the code is built but is not represented directly in any part of the code. These are out of scope for now.
@@ -136,13 +165,21 @@ add_flag!(own_module, build_info);
 Once built, structs have a certain import path:
 
 ```rust
-define_child_imported!(import_path, Attribute);
+define_child_imported!(
+    import_path,
+    Attribute,
+    "Describes the import path of a defined struct."
+);
 ```
 
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
 
 ```rust
-define_child_imported!(crate_concept, Form);
+define_child_imported!(
+    crate_concept,
+    Form,
+    "Crate that a concept was built as a part of."
+);
 crate_concept.set_internal_name_str("crate");
 ```
 
@@ -151,13 +188,21 @@ We can reuse the existing generic `HasMember` relation for describing the relati
 Crates are versioned:
 
 ```rust
-define_child_imported!(version, Attribute);
+define_child_imported!(
+    version,
+    Attribute,
+    "Version number for a versioned object."
+);
 ```
 
 Concepts and crates alike might also have their own implementation name:
 
 ```rust
-define_child_imported!(implementation_name, Attribute);
+define_child_imported!(
+    implementation_name,
+    Attribute,
+    "Name the concept actually took on when implemented."
+);
 ```
 
 It is only natural for the human mind to use the name of the crate as a metonymy for the crate itself, just as humans also tend to use a filename or a file icon as a metonymy for the inode that points to the actual blocks of data on disk. How often do we stop to remind ourselves that the filename is only a symbolic handle for the actual data, or that when we're dragging a file icon from one folder to another, we're not dragging the data but only the visual representation of the data? We don't do so very often, because such details usually don't matter. It does matter here, however, so we will keep them separate and distinct.
@@ -169,13 +214,6 @@ Unlike with Yin, we don't actually want to implement *everything* we know, becau
 ```rust
 implement.implement_with_doc(
     "The act of implementing something. When created, this effectively serves as a call to action for Yang."
-);
-
-target.implement_with_doc("The target of an implement command.");
-concept_id.implement_with_doc("The integer ID associated with a concept.");
-documentation.implement_with_doc("The documentation associated with an implementation.");
-dual_purpose_documentation.implement_with_doc(
-    "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string."
 );
 
 let mut nd_impl = newly_defined.implement_with_doc(
@@ -200,10 +238,6 @@ let mut om_impl = own_module.implement_with_doc(
 );
 om_impl.dual_document("residing in its own Rust module.");
 
-rust_primitive.implement_with_doc(
-    "The Rust primitive that a Yin data concept is implemented by."
-);
-
 let mut aa_impl = attribute_analogue.implement_with_doc(
     "Marks an archetype and all its descendants as requiring attribute-specific logic during generation."
 );
@@ -214,22 +248,11 @@ let mut da_impl = data_analogue.implement_with_doc(
 );
 da_impl.dual_document("logically analogous to a data node.");
 
-uses_root_node_logic.implement_with_doc(
-    "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this."
-);
-import_path.implement_with_doc("Describes the import path of a defined struct.");
-build_info.implement_with_doc("Represents build information about a generated concept.");
-
 perspective.implement_with_doc(
     "Describes a way of looking at things that is only well-defined within a specific context."
 );
 let mut perspective_mod = perspective.impl_mod("Perspectives on the world.");
 perspective_mod.has_extension("build_info_extension::BuildInfoExtension");
-knowledge_graph_node.implement_with_doc("Look at all information as knowledge graph entities.");
-
-crate_concept.implement_with_doc("Crate that a concept was built as a part of.");
-version.implement_with_doc("Version number for a versioned object.");
-implementation_name.implement_with_doc("Name the concept actually took on when implemented.");
 ```
 
 Last but not least, let's make sure to also define the modules for concepts that were first introduced in Yin, but which we have since created new children for:
