@@ -34,10 +34,14 @@ macro_rules! define_child {
 /// Defines a new flag, and add it as a property of the owner.
 #[macro_export]
 macro_rules! add_flag {
-    ($name:ident, $owner:ident) => {
+    ($name:ident, $owner:ident, $doc:expr, $dual_doc:expr) => {
         define_child!($name, zamm_yang::tao::relation::flag::Flag::archetype());
         zamm_yang::tao::archetype::AttributeArchetype::from($name.id()).set_owner_archetype($owner);
         $owner.add_flag($name);
+        {
+            let mut new_impl = $name.implement_with_doc($doc);
+            new_impl.dual_document($dual_doc);
+        }
     };
 }
 
