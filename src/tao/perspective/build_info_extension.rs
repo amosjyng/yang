@@ -1,4 +1,5 @@
-use crate::tao::form::{BuildInfo, Crate, CrateExtension, Module};
+use super::BuildInfo;
+use crate::tao::form::{Crate, CrateExtension, Module};
 use crate::tao::relation::attribute::{
     DualPurposeDocumentation, HasMember, ImplementationName, ImportPath, MostProminentMember,
     SupportsMembership,

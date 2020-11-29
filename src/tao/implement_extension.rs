@@ -1,4 +1,4 @@
-use crate::tao::form::{BuildInfo, BuildInfoExtension};
+use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::{ConceptId, Documentation, Target};
 use crate::tao::Implement;
 use std::rc::Rc;

@@ -1,7 +1,6 @@
 use crate::codegen::StructConfig;
 use crate::tao::archetype::CodegenFlags;
-use crate::tao::form::{BuildInfo, BuildInfoExtension};
-use crate::tao::perspective::KnowledgeGraphNode;
+use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
 use std::rc::Rc;
@@ -12,7 +11,7 @@ use zamm_yin::tao::form::FormTrait;
 /// Whether or not the given archetype belongs in its own submodule.
 pub fn in_own_submodule(target: &Archetype) -> bool {
     // todo: filter by type, once Yin has that functionality
-    target.force_own_module()
+    BuildInfo::from(target.id()).is_own_module()
         || target.root_node_logic_activated()
         // todo: this is a hack to check if the children are archetypes or not
         || target.child_archetypes().iter().any(|c|
@@ -202,8 +201,8 @@ mod tests {
     #[test]
     fn folder_path_forced_own_module() {
         initialize_kb();
-        let mut owner = Owner::archetype();
-        owner.mark_own_module();
+        let owner = Owner::archetype();
+        BuildInfo::from(owner.id()).mark_own_module();
         assert_eq!(
             archetype_file_path(&owner.into()),
             "src/tao/relation/attribute/owner/owner_form.rs"
@@ -215,8 +214,8 @@ mod tests {
         initialize_kb();
         BuildInfo::from(Attribute::TYPE_ID)
             .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
-        let mut owner = Owner::archetype();
-        owner.mark_own_module();
+        let owner = Owner::archetype();
+        BuildInfo::from(owner.id()).mark_own_module();
         assert_eq!(
             archetype_file_path(&owner.into()),
             "src/tao/newfangled/module/attribute/owner/owner_form.rs"
@@ -241,8 +240,8 @@ mod tests {
     #[test]
     fn module_path_forced_own_module() {
         initialize_kb();
-        let mut owner = Owner::archetype();
-        owner.mark_own_module();
+        let owner = Owner::archetype();
+        BuildInfo::from(owner.id()).mark_own_module();
         assert_eq!(
             module_file_path(&owner.into()),
             "src/tao/relation/attribute/owner/mod.rs"
@@ -279,7 +278,7 @@ mod tests {
     #[test]
     fn import_path_forced_own_module() {
         initialize_kb();
-        Owner::archetype().mark_own_module();
+        BuildInfo::from(Owner::TYPE_ID).mark_own_module();
         assert_eq!(
             import_path(&KnowledgeGraphNode::from(Owner::TYPE_ID), false),
             "zamm_yin::tao::relation::attribute::owner::Owner"
@@ -303,7 +302,7 @@ mod tests {
         BuildInfo::from(Attribute::TYPE_ID)
             .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
         let mut owner = KnowledgeGraphNode::from(Owner::TYPE_ID);
-        Archetype::from(owner.id()).mark_own_module();
+        BuildInfo::from(Owner::TYPE_ID).mark_own_module();
         owner.mark_newly_defined();
         assert_eq!(
             import_path(&owner, false),
@@ -317,7 +316,7 @@ mod tests {
         BuildInfo::from(Attribute::TYPE_ID)
             .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
         let mut owner = KnowledgeGraphNode::from(Owner::TYPE_ID);
-        Archetype::from(owner.id()).mark_own_module();
+        BuildInfo::from(Owner::TYPE_ID).mark_own_module();
         owner.mark_newly_defined();
         // possible if we've defined a new type, but we did so only to tell yang that it's already
         // been implemented as part of a dependency
@@ -335,11 +334,11 @@ mod tests {
         let mut type1_node = KnowledgeGraphNode::from(type1.id());
         type1_node.set_internal_name_str("hello");
         type1_node.mark_newly_defined();
-        let mut type2 = type1.individuate_as_archetype();
+        let type2 = type1.individuate_as_archetype();
         let mut type2_node = KnowledgeGraphNode::from(type2.id());
         type2_node.set_internal_name_str("world");
         type2_node.mark_newly_defined();
-        type2.mark_own_module();
+        BuildInfo::from(type2.id()).mark_own_module();
         assert_eq!(
             import_path(&type2_node, false),
             "crate::tao::hello::world::World"
@@ -396,10 +395,9 @@ mod tests {
     #[test]
     fn struct_config_forced_own_module() {
         initialize_kb();
-        let mut owner = Owner::archetype();
-        owner.mark_own_module();
+        BuildInfo::from(Owner::TYPE_ID).mark_own_module();
         assert_eq!(
-            concept_to_struct(&owner.into(), false),
+            concept_to_struct(&Owner::archetype().into(), false),
             StructConfig {
                 name: "Owner".to_owned(),
                 import: "zamm_yin::tao::relation::attribute::owner::Owner".to_owned(),

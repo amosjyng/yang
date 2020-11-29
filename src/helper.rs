@@ -1,4 +1,4 @@
-use crate::tao::archetype::CodegenFlags;
+use crate::tao::perspective::KnowledgeGraphNode;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::*;
 use zamm_yin::tao::form::FormTrait;
@@ -16,12 +16,12 @@ macro_rules! define {
 
 /// Convenience function to convert an `Archetype` to an `AttributeArchetype`.
 pub fn aa(archetype: Archetype) -> AttributeArchetype {
-    if !(archetype.attribute_logic_activated()
+    if !(KnowledgeGraphNode::from(archetype.id()).is_attribute_analogue()
         || archetype.has_parent(Attribute::archetype().into())
         || archetype
             .parents()
             .iter()
-            .any(|a| a.attribute_logic_activated()))
+            .any(|a| KnowledgeGraphNode::from(a.id()).is_attribute_analogue()))
     {
         // currently catches Relation, which is not an attribute but still deserves to have its
         // owner archetype set

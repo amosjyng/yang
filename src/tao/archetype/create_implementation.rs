@@ -1,5 +1,5 @@
 use crate::tao::form::{Module, ModuleExtension};
-use crate::tao::BuildInfo;
+use crate::tao::perspective::BuildInfo;
 use crate::tao::{Implement, ImplementExtension};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};

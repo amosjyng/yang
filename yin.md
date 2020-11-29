@@ -47,27 +47,6 @@ rust_primitive.add_parent(Attribute::archetype().into());
 
 This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
 
-When Yin tells us about herself, we must forget all preconceptions we have about the world and listen to what she has to say. That means when she speaks of what an attribute is, we *listen* instead of shoehorning her description into what we already think of as an attribute.
-
-However, this also means that Yin's new attribute node won't be the same `Attribute` node that Yang ties all his custom attribute generation code to. Until all of the logic that goes into generating attributes becomes fully defined in graph form, we're going to need some way of telling Yang to activate that custom logic for newly defined nodes that don't inherit from the existing `Attribute` node:
-
-```rust
-define!(uses_attribute_logic);
-uses_attribute_logic.add_parent(Flag::archetype());
-```
-
-The same is true of Tao and Data:
-
-```rust
-define!(uses_root_node_logic);
-uses_root_node_logic.add_parent(Flag::archetype());
-
-define!(uses_data_logic);
-uses_data_logic.add_parent(Flag::archetype());
-```
-
-Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
-
 ### Perspective
 
 All this can apply to any concept at all that's being implemented. However, these attributes are only meaningful within the context of code generation. As such, they should live inside a build config lens -- a way of viewing concepts through a different perspective than usual.
@@ -86,6 +65,8 @@ Everything is relative -- but of course even relativity is relative. Physics is 
 define!(perspective);
 ```
 
+#### The knowledge graph perspective
+
 One perspective through which to look at things is the knowledge graph perspective, through which everything described here are equally first-class concept nodes. There are superficial differences between the nodes and how well-connected, yes, but all nodes are fundamentally equivalent as pieces of knowledge. We look at knowledge the same way humanism looks at humans.
 
 ```rust
@@ -93,7 +74,7 @@ define!(knowledge_graph_node);
 knowledge_graph_node.add_parent(perspective);
 ```
 
-As part of this perspective, We should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
+As part of this perspective, we should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
 
 ```rust
 define!(newly_defined);
@@ -101,6 +82,42 @@ newly_defined.add_parent(Flag::archetype());
 aa(newly_defined).set_owner_archetype(knowledge_graph_node);
 knowledge_graph_node.add_flag(newly_defined);
 ```
+
+When Yin tells us about herself, we must forget all preconceptions we have about the world and listen to what she has to say. That means when she speaks of what an attribute is, we *listen* instead of shoehorning her description into what we already think of as an attribute.
+
+However, this also means that Yin's new attribute node won't be the same `Attribute` node that Yang ties all his custom attribute generation code to. Until all of the logic that goes into generating attributes becomes fully defined in graph form, we're going to need some way of telling Yang to activate that custom logic for newly defined nodes that don't inherit from the existing `Attribute` node:
+
+```rust
+define!(attribute_analogue);
+attribute_analogue.add_parent(Flag::archetype());
+aa(attribute_analogue).set_owner_archetype(knowledge_graph_node);
+knowledge_graph_node.add_flag(attribute_analogue);
+```
+
+The same is true of Tao and Data:
+
+```rust
+define!(uses_root_node_logic);
+uses_root_node_logic.add_parent(Flag::archetype());
+
+define!(data_analogue);
+data_analogue.add_parent(Flag::archetype());
+aa(data_analogue).set_owner_archetype(knowledge_graph_node);
+knowledge_graph_node.add_flag(data_analogue);
+```
+
+Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
+
+#### The build information perspective
+
+Most concepts end up manifesting themselves in the codebase one way or another. We should look at these from the perspective of built items:
+
+```rust
+define!(build_info);
+build_info.add_parent(perspective);
+```
+
+There are some concepts that might only reveal themselves in a debugging or deployment context, and other meta-concepts that indirectly influence how the code is built but is not represented directly in any part of the code. These are out of scope for now.
 
 Rust groups things by modules.
 
@@ -135,6 +152,8 @@ During implementation, we should be able to force a new attribute to live inside
 ```rust
 define!(own_module);
 own_module.add_parent(Flag::archetype());
+build_info.add_flag(own_module);
+aa(own_module).set_owner_archetype(build_info);
 ```
 
 Once built, structs have a certain import path:
@@ -142,11 +161,6 @@ Once built, structs have a certain import path:
 ```rust
 define!(import_path);
 import_path.add_parent(Attribute::archetype().into());
-```
-
-```rust
-define!(build_info);
-build_info.add_parent(Form::archetype());
 ```
 
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
@@ -208,21 +222,24 @@ most_prominent_member.implement_with_doc(
     "The most prominent member of a Rust module. The module will take its name after this member."
 );
 
-own_module.implement_with_doc(
+let mut om_impl = own_module.implement_with_doc(
     "Marks an archetype as living inside its own module, even if it doesn't have any defined child archetypes yet."
 );
+om_impl.dual_document("residing in its own Rust module.");
 
 rust_primitive.implement_with_doc(
     "The Rust primitive that a Yin data concept is implemented by."
 );
 
-uses_attribute_logic.implement_with_doc(
+let mut aa_impl = attribute_analogue.implement_with_doc(
     "Marks an archetype and all its descendants as requiring attribute-specific logic during generation."
 );
+aa_impl.dual_document("logically analogous to an attribute node.");
 
-uses_data_logic.implement_with_doc(
+let mut da_impl = data_analogue.implement_with_doc(
     "Marks an archetype and all its descendants as requiring data-specific logic during generation."
 );
+da_impl.dual_document("logically analogous to a data node.");
 
 uses_root_node_logic.implement_with_doc(
     "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this."
@@ -233,7 +250,8 @@ build_info.implement_with_doc("Represents build information about a generated co
 perspective.implement_with_doc(
     "Describes a way of looking at things that is only well-defined within a specific context."
 );
-perspective.impl_mod("Perspectives on the world.");
+let mut perspective_mod = perspective.impl_mod("Perspectives on the world.");
+perspective_mod.has_extension("build_info_extension::BuildInfoExtension");
 knowledge_graph_node.implement_with_doc("Look at all information as knowledge graph entities.");
 
 crate_concept.implement_with_doc("Crate that a concept was built as a part of.");
@@ -245,7 +263,6 @@ Last but not least, let's make sure to also define the modules for concepts that
 
 ```rust
 let mut form_mod = Form::archetype().impl_mod("All things that can be interacted with have form.");
-form_mod.has_extension("build_info_extension::BuildInfoExtension");
 form_mod.has_extension("crate_extension::CrateExtension");
 form_mod.has_extension("defined_marker::DefinedMarker");
 form_mod.has_extension("module_extension::ModuleExtension");

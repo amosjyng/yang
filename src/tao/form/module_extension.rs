@@ -1,6 +1,6 @@
 use crate::tao::form::data::StringConcept;
 use crate::tao::form::Module;
-use crate::tao::form::{BuildInfo, BuildInfoExtension};
+use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::{MostProminentMember, ReExports, SupportsMembership};
 use heck::SnakeCase;
 use std::rc::Rc;

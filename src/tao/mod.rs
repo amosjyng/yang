@@ -11,7 +11,6 @@ pub mod relation;
 use crate::tao::form::{Crate, CrateExtension};
 use auto_init::initialize_types;
 pub use auto_init::YIN_MAX_ID;
-use form::BuildInfo;
 pub use implement_extension::ImplementExtension;
 pub use implement_form::Implement;
 use zamm_yin::node_wrappers::CommonNodeTrait;
