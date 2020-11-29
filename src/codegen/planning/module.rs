@@ -2,9 +2,8 @@ use super::{ancestor_path, in_own_submodule};
 use crate::codegen::template::concept::archetype_module::{
     code_archetype_module, ArchetypeModuleConfig,
 };
-use crate::tao::form::{BuildInfo, BuildInfoExtension};
 use crate::tao::form::{Module, ModuleExtension};
-use crate::tao::perspective::KnowledgeGraphNode;
+use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
 use crate::tao::{Implement, ImplementExtension};
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait};

@@ -1,5 +1,4 @@
-use crate::tao::form::BuildInfo;
-use crate::tao::perspective::KnowledgeGraphNode;
+use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
 use crate::tao::relation::flag::UsesRootNodeLogic;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};

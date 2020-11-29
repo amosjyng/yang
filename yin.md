@@ -114,7 +114,7 @@ Most concepts end up manifesting themselves in the codebase one way or another. 
 
 ```rust
 define!(build_info);
-build_info.add_parent(Form::archetype());
+build_info.add_parent(perspective);
 ```
 
 There are some concepts that might only reveal themselves in a debugging or deployment context, and other meta-concepts that indirectly influence how the code is built but is not represented directly in any part of the code. These are out of scope for now.
@@ -250,7 +250,8 @@ build_info.implement_with_doc("Represents build information about a generated co
 perspective.implement_with_doc(
     "Describes a way of looking at things that is only well-defined within a specific context."
 );
-perspective.impl_mod("Perspectives on the world.");
+let mut perspective_mod = perspective.impl_mod("Perspectives on the world.");
+perspective_mod.has_extension("build_info_extension::BuildInfoExtension");
 knowledge_graph_node.implement_with_doc("Look at all information as knowledge graph entities.");
 
 crate_concept.implement_with_doc("Crate that a concept was built as a part of.");
@@ -262,7 +263,6 @@ Last but not least, let's make sure to also define the modules for concepts that
 
 ```rust
 let mut form_mod = Form::archetype().impl_mod("All things that can be interacted with have form.");
-form_mod.has_extension("build_info_extension::BuildInfoExtension");
 form_mod.has_extension("crate_extension::CrateExtension");
 form_mod.has_extension("defined_marker::DefinedMarker");
 form_mod.has_extension("module_extension::ModuleExtension");

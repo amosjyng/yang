@@ -1,7 +1,6 @@
 use crate::codegen::StructConfig;
 use crate::tao::archetype::CodegenFlags;
-use crate::tao::form::{BuildInfo, BuildInfoExtension};
-use crate::tao::perspective::KnowledgeGraphNode;
+use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
 use std::rc::Rc;
@@ -128,7 +127,6 @@ pub fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tao::form::BuildInfo;
     use crate::tao::initialize_kb;
     use zamm_yin::tao::archetype::ArchetypeTrait;
     use zamm_yin::tao::relation::attribute::{Attribute, Owner};
