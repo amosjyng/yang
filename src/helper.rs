@@ -21,26 +21,13 @@ macro_rules! define {
 /// Defines a new concept as a child of the given parent type, defined within the current context.
 #[macro_export]
 macro_rules! define_child {
-    ($name:ident, $parent:ident) => {
+    ($name:ident, $parent:expr) => {
         define!($name);
-        $name.add_parent($parent);
+        $name.add_parent($parent.into());
     };
-    ($name:ident, $parent:ident, $doc:expr) => {
+    ($name:ident, $parent:expr, $doc:expr) => {
         define!($name, $doc);
-        $name.add_parent($parent);
-    };
-}
-
-/// Defines a new concept as a child of the given imported parent type.
-#[macro_export]
-macro_rules! define_child_imported {
-    ($name:ident, $parent:ty) => {
-        define!($name);
-        $name.add_parent(<$parent>::archetype().into());
-    };
-    ($name:ident, $parent:ty, $doc:expr) => {
-        define!($name, $doc);
-        $name.add_parent(<$parent>::archetype().into());
+        $name.add_parent($parent.into());
     };
 }
 
@@ -48,7 +35,7 @@ macro_rules! define_child_imported {
 #[macro_export]
 macro_rules! add_flag {
     ($name:ident, $owner:ident) => {
-        define_child_imported!($name, Flag);
+        define_child!($name, zamm_yang::tao::relation::flag::Flag::archetype());
         zamm_yang::tao::archetype::AttributeArchetype::from($name.id()).set_owner_archetype($owner);
         $owner.add_flag($name);
     };
