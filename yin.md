@@ -108,6 +108,17 @@ knowledge_graph_node.add_flag(data_analogue);
 
 Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
 
+#### The build information perspective
+
+Most concepts end up manifesting themselves in the codebase one way or another. We should look at these from the perspective of built items:
+
+```rust
+define!(build_info);
+build_info.add_parent(Form::archetype());
+```
+
+There are some concepts that might only reveal themselves in a debugging or deployment context, and other meta-concepts that indirectly influence how the code is built but is not represented directly in any part of the code. These are out of scope for now.
+
 Rust groups things by modules.
 
 ```rust
@@ -141,6 +152,8 @@ During implementation, we should be able to force a new attribute to live inside
 ```rust
 define!(own_module);
 own_module.add_parent(Flag::archetype());
+build_info.add_flag(own_module);
+aa(own_module).set_owner_archetype(build_info);
 ```
 
 Once built, structs have a certain import path:
@@ -148,11 +161,6 @@ Once built, structs have a certain import path:
 ```rust
 define!(import_path);
 import_path.add_parent(Attribute::archetype().as_archetype());
-```
-
-```rust
-define!(build_info);
-build_info.add_parent(Form::archetype());
 ```
 
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
@@ -214,9 +222,10 @@ most_prominent_member.implement_with_doc(
     "The most prominent member of a Rust module. The module will take its name after this member."
 );
 
-own_module.implement_with_doc(
+let mut om_impl = own_module.implement_with_doc(
     "Marks an archetype as living inside its own module, even if it doesn't have any defined child archetypes yet."
 );
+om_impl.dual_document("residing in its own Rust module.");
 
 rust_primitive.implement_with_doc(
     "The Rust primitive that a Yin data concept is implemented by."
@@ -225,12 +234,12 @@ rust_primitive.implement_with_doc(
 let mut aa_impl = attribute_analogue.implement_with_doc(
     "Marks an archetype and all its descendants as requiring attribute-specific logic during generation."
 );
-aa_impl.dual_document("as logically analogous to an attribute node.");
+aa_impl.dual_document("logically analogous to an attribute node.");
 
 let mut da_impl = data_analogue.implement_with_doc(
     "Marks an archetype and all its descendants as requiring data-specific logic during generation."
 );
-da_impl.dual_document("as logically analogous to a data node.");
+da_impl.dual_document("logically analogous to a data node.");
 
 uses_root_node_logic.implement_with_doc(
     "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this."

@@ -1,5 +1,6 @@
+use crate::tao::form::BuildInfo;
 use crate::tao::perspective::KnowledgeGraphNode;
-use crate::tao::relation::flag::{OwnModule, UsesRootNodeLogic};
+use crate::tao::relation::flag::UsesRootNodeLogic;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::FormTrait;
@@ -77,13 +78,15 @@ pub trait CodegenFlags: FormTrait + CommonNodeTrait {
     }
 
     /// Mark concept to be generated inside its own module.
+    #[deprecated(since = "0.1.7", note = "Please use BuildInfo::mark_own_module")]
     fn mark_own_module(&mut self) {
-        self.essence_mut().add_flag(OwnModule::TYPE_ID);
+        BuildInfo::from(self.id()).mark_own_module();
     }
 
     /// Whether or not concept should be generated inside its own module.
+    #[deprecated(since = "0.1.7", note = "Please use BuildInfo::is_own_module")]
     fn force_own_module(&self) -> bool {
-        self.essence().has_flag(OwnModule::TYPE_ID)
+        BuildInfo::from(self.id()).is_own_module()
     }
 }
 
@@ -122,15 +125,5 @@ mod tests {
 
         new_root.activate_root_node_logic();
         assert!(!non_root.root_node_logic_activated());
-    }
-
-    #[test]
-    fn test_own_module_activation() {
-        initialize_kb();
-        let mut new_attr = Tao::archetype().individuate_as_archetype();
-        assert!(!new_attr.force_own_module());
-
-        new_attr.mark_own_module();
-        assert!(new_attr.force_own_module());
     }
 }
