@@ -12,6 +12,10 @@ macro_rules! define {
         $name.set_internal_name_str(stringify!($name));
         zamm_yang::tao::perspective::KnowledgeGraphNode::from($name.id()).mark_newly_defined();
     };
+    ($name:ident, $doc:expr) => {
+        define!($name);
+        $name.implement_with_doc($doc);
+    };
 }
 
 /// Defines a new concept as a child of the given parent type, defined within the current context.
@@ -22,9 +26,8 @@ macro_rules! define_child {
         $name.add_parent($parent);
     };
     ($name:ident, $parent:ident, $doc:expr) => {
-        define!($name);
+        define!($name, $doc);
         $name.add_parent($parent);
-        $name.implement_with_doc($doc);
     };
 }
 
@@ -36,9 +39,8 @@ macro_rules! define_child_imported {
         $name.add_parent(<$parent>::archetype().into());
     };
     ($name:ident, $parent:ty, $doc:expr) => {
-        define!($name);
+        define!($name, $doc);
         $name.add_parent(<$parent>::archetype().into());
-        $name.implement_with_doc($doc);
     };
 }
 
