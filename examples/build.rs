@@ -2,7 +2,6 @@ use zamm_yang::codegen::CodegenConfig;
 use zamm_yang::define;
 use zamm_yang::tao::archetype::CreateImplementation;
 use zamm_yang::tao::callbacks::handle_all_implementations;
-use zamm_yang::tao::form::BuildInfoExtension;
 use zamm_yang::tao::initialize_kb;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
@@ -13,10 +12,6 @@ use zamm_yin::tao::Tao;
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     initialize_kb();
-
-    Attribute::archetype()
-        .build_info()
-        .set_import_path("zamm_yin::tao::relation::attribute::Attribute");
 
     define!(target);
     target.add_parent(Attribute::archetype().into());

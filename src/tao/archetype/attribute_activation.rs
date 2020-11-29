@@ -1,6 +1,5 @@
-use crate::tao::relation::flag::{
-    NewlyDefined, OwnModule, UsesAttributeLogic, UsesDataLogic, UsesRootNodeLogic,
-};
+use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
+use crate::tao::relation::flag::UsesRootNodeLogic;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::FormTrait;
@@ -14,7 +13,7 @@ pub trait CodegenFlags: FormTrait + CommonNodeTrait {
         note = "Please use KnowledgeGraphNode::mark_newly_defined"
     )]
     fn mark_newly_defined(&mut self) {
-        self.essence_mut().add_flag(NewlyDefined::TYPE_ID);
+        KnowledgeGraphNode::from(self.id()).mark_newly_defined()
     }
 
     /// Whether or not a concept has been newly defined as part of the current build.
@@ -23,7 +22,7 @@ pub trait CodegenFlags: FormTrait + CommonNodeTrait {
         note = "Please use KnowledgeGraphNode::is_newly_defined"
     )]
     fn is_newly_defined(&self) -> bool {
-        self.essence().has_flag(NewlyDefined::TYPE_ID)
+        KnowledgeGraphNode::from(self.id()).is_newly_defined()
     }
 
     /// Activate root-node-specific logic for this concept during code generation.
@@ -42,33 +41,51 @@ pub trait CodegenFlags: FormTrait + CommonNodeTrait {
     }
 
     /// Activate attribute-specific logic for this concept during code generation.
+    #[deprecated(
+        since = "0.1.7",
+        note = "Please use KnowledgeGraphNode::mark_attribute_analogue"
+    )]
     fn activate_attribute_logic(&mut self) {
-        self.essence_mut().add_flag(UsesAttributeLogic::TYPE_ID);
+        KnowledgeGraphNode::from(self.id()).mark_attribute_analogue()
     }
 
     /// Whether this concept should have attribute-specific logic activated during code generation.
+    #[deprecated(
+        since = "0.1.7",
+        note = "Please use KnowledgeGraphNode::is_attribute_analogue"
+    )]
     fn attribute_logic_activated(&self) -> bool {
-        self.essence().has_flag(UsesAttributeLogic::TYPE_ID)
+        KnowledgeGraphNode::from(self.id()).is_attribute_analogue()
     }
 
     /// Activate data-specific logic for this concept during code generation.
+    #[deprecated(
+        since = "0.1.7",
+        note = "Please use KnowledgeGraphNode::mark_data_analogue"
+    )]
     fn activate_data_logic(&mut self) {
-        self.essence_mut().add_flag(UsesDataLogic::TYPE_ID);
+        KnowledgeGraphNode::from(self.id()).mark_data_analogue();
     }
 
     /// Whether this concept should have data-specific logic activated during code generation.
+    #[deprecated(
+        since = "0.1.7",
+        note = "Please use KnowledgeGraphNode::is_data_analogue"
+    )]
     fn data_logic_activated(&self) -> bool {
-        self.essence().has_flag(UsesDataLogic::TYPE_ID)
+        KnowledgeGraphNode::from(self.id()).is_data_analogue()
     }
 
     /// Mark concept to be generated inside its own module.
+    #[deprecated(since = "0.1.7", note = "Please use BuildInfo::mark_own_module")]
     fn mark_own_module(&mut self) {
-        self.essence_mut().add_flag(OwnModule::TYPE_ID);
+        BuildInfo::from(self.id()).mark_own_module();
     }
 
     /// Whether or not concept should be generated inside its own module.
+    #[deprecated(since = "0.1.7", note = "Please use BuildInfo::is_own_module")]
     fn force_own_module(&self) -> bool {
-        self.essence().has_flag(OwnModule::TYPE_ID)
+        BuildInfo::from(self.id()).is_own_module()
     }
 }
 
@@ -81,29 +98,6 @@ mod tests {
     use crate::tao::initialize_kb;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
     use zamm_yin::tao::Tao;
-
-    #[allow(deprecated)]
-    #[test]
-    fn test_newly_defined() {
-        initialize_kb();
-        let mut new_attr = Tao::archetype().individuate_as_archetype();
-        assert!(!new_attr.is_newly_defined());
-
-        new_attr.mark_newly_defined();
-        assert!(new_attr.is_newly_defined());
-    }
-
-    #[allow(deprecated)]
-    #[test]
-    fn test_activation_inherited() {
-        initialize_kb();
-        let mut new_attr = Tao::archetype().individuate_as_archetype();
-        let sub_attr = new_attr.individuate_as_archetype();
-        assert!(!sub_attr.is_newly_defined());
-
-        new_attr.mark_newly_defined();
-        assert!(sub_attr.is_newly_defined());
-    }
 
     #[test]
     fn test_root_node_logic_activation() {
@@ -130,46 +124,5 @@ mod tests {
 
         new_root.activate_root_node_logic();
         assert!(!non_root.root_node_logic_activated());
-    }
-
-    #[test]
-    fn test_attribute_logic_activation() {
-        initialize_kb();
-        let mut new_attr = Tao::archetype().individuate_as_archetype();
-        assert!(!new_attr.attribute_logic_activated());
-
-        new_attr.activate_attribute_logic();
-        assert!(new_attr.attribute_logic_activated());
-    }
-
-    #[test]
-    fn test_attribute_logic_activation_inherited() {
-        initialize_kb();
-        let mut new_attr = Tao::archetype().individuate_as_archetype();
-        let sub_attr = new_attr.individuate_as_archetype();
-        assert!(!sub_attr.attribute_logic_activated());
-
-        new_attr.activate_attribute_logic();
-        assert!(sub_attr.attribute_logic_activated());
-    }
-
-    #[test]
-    fn test_own_module_activation() {
-        initialize_kb();
-        let mut new_attr = Tao::archetype().individuate_as_archetype();
-        assert!(!new_attr.force_own_module());
-
-        new_attr.mark_own_module();
-        assert!(new_attr.force_own_module());
-    }
-
-    #[test]
-    fn test_data_activation() {
-        initialize_kb();
-        let mut new_attr = Tao::archetype().individuate_as_archetype();
-        assert!(!new_attr.data_logic_activated());
-
-        new_attr.activate_data_logic();
-        assert!(new_attr.data_logic_activated());
     }
 }
