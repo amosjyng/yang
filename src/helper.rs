@@ -14,6 +14,34 @@ macro_rules! define {
     };
 }
 
+/// Defines a new concept as a child of the given parent type, defined within the current context.
+#[macro_export]
+macro_rules! define_child {
+    ($name:ident, $parent:ident) => {
+        define!($name);
+        $name.add_parent($parent);
+    };
+}
+
+/// Defines a new concept as a child of the given imported parent type.
+#[macro_export]
+macro_rules! define_child_imported {
+    ($name:ident, $parent:ty) => {
+        define!($name);
+        $name.add_parent(<$parent>::archetype().into());
+    };
+}
+
+/// Defines a new flag, and add it as a property of the owner.
+#[macro_export]
+macro_rules! add_flag {
+    ($name:ident, $owner:ident) => {
+        define_child_imported!($name, Flag);
+        zamm_yang::tao::archetype::AttributeArchetype::from($name.id()).set_owner_archetype($owner);
+        $owner.add_flag($name);
+    };
+}
+
 /// Convenience function to convert an `Archetype` to an `AttributeArchetype`.
 pub fn aa(archetype: Archetype) -> AttributeArchetype {
     if !(KnowledgeGraphNode::from(archetype.id()).is_attribute_analogue()
