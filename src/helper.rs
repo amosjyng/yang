@@ -18,6 +18,22 @@ macro_rules! define {
     };
 }
 
+/// Defines a module for the given concept.
+#[macro_export]
+macro_rules! module {
+    ($name:ident, $doc:expr) => {
+        $name.impl_mod($doc)
+    };
+    ($name:ident, $doc:expr, [$($extension:expr),*]) => {
+        {
+            let mut new_mod = $name.impl_mod($doc);
+            $(
+                new_mod.has_extension($extension);
+            )*
+        }
+    };
+}
+
 /// Defines a new concept as a child of the given parent type, defined within the current context.
 #[macro_export]
 macro_rules! define_child {
