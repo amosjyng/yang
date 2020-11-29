@@ -13,36 +13,31 @@ define!(implement);
 Implementations are lower-level concepts that *target* specific higher-level concepts.
 
 ```rust
-define!(target);
-target.add_parent(Attribute::archetype().into());
+define_child_imported!(target, Attribute);
 ```
 
 We need some way of efficiently distinguishing Yin concepts from each other. We can't just compare the memory addresses of a Yin struct, since different ephemeral structs may in fact be referring to the same concept. An easy way to do this is by assigning a different integer ID to each one, so that each Yin concept effectively becomes a wrapper around an integer, and we are just defining the relations between different integers:
 
 ```rust
-define!(concept_id);
-concept_id.add_parent(Attribute::archetype().into());
+define_child_imported!(concept_id, Attribute);
 ```
 
 When implementing anything in Rust, we should consider documenting it for the user's sake:
 
 ```rust
-define!(documentation);
-documentation.add_parent(Attribute::archetype().into());
+define_child_imported!(documentation, Attribute);
 ```
 
 Getters and setters in particular have their own dual-purpose documentation strings:
 
 ```rust
-define!(dual_purpose_documentation);
-dual_purpose_documentation.add_parent(Attribute::archetype().into());
+define_child_imported!(dual_purpose_documentation, Attribute);
 ```
 
 Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
 
 ```rust
-define!(rust_primitive);
-rust_primitive.add_parent(Attribute::archetype().into());
+define_child_imported!(rust_primitive, Attribute);
 ```
 
 This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
@@ -70,17 +65,13 @@ define!(perspective);
 One perspective through which to look at things is the knowledge graph perspective, through which everything described here are equally first-class concept nodes. There are superficial differences between the nodes and how well-connected, yes, but all nodes are fundamentally equivalent as pieces of knowledge. We look at knowledge the same way humanism looks at humans.
 
 ```rust
-define!(knowledge_graph_node);
-knowledge_graph_node.add_parent(perspective);
+define_child!(knowledge_graph_node, perspective);
 ```
 
 As part of this perspective, we should start tracking what has and hasn't gotten introduced in this particular build (and not, say, pre-existing as a part of the dependencies):
 
 ```rust
-define!(newly_defined);
-newly_defined.add_parent(Flag::archetype());
-aa(newly_defined).set_owner_archetype(knowledge_graph_node);
-knowledge_graph_node.add_flag(newly_defined);
+add_flag!(newly_defined, knowledge_graph_node);
 ```
 
 When Yin tells us about herself, we must forget all preconceptions we have about the world and listen to what she has to say. That means when she speaks of what an attribute is, we *listen* instead of shoehorning her description into what we already think of as an attribute.
@@ -88,10 +79,7 @@ When Yin tells us about herself, we must forget all preconceptions we have about
 However, this also means that Yin's new attribute node won't be the same `Attribute` node that Yang ties all his custom attribute generation code to. Until all of the logic that goes into generating attributes becomes fully defined in graph form, we're going to need some way of telling Yang to activate that custom logic for newly defined nodes that don't inherit from the existing `Attribute` node:
 
 ```rust
-define!(attribute_analogue);
-attribute_analogue.add_parent(Flag::archetype());
-aa(attribute_analogue).set_owner_archetype(knowledge_graph_node);
-knowledge_graph_node.add_flag(attribute_analogue);
+add_flag!(attribute_analogue, knowledge_graph_node);
 ```
 
 The same is true of Tao and Data:
@@ -100,10 +88,7 @@ The same is true of Tao and Data:
 define!(uses_root_node_logic);
 uses_root_node_logic.add_parent(Flag::archetype());
 
-define!(data_analogue);
-data_analogue.add_parent(Flag::archetype());
-aa(data_analogue).set_owner_archetype(knowledge_graph_node);
-knowledge_graph_node.add_flag(data_analogue);
+add_flag!(data_analogue, knowledge_graph_node);
 ```
 
 Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
@@ -113,8 +98,7 @@ Unlike the markers for data and attribute logic, the root node marker does not g
 Most concepts end up manifesting themselves in the codebase one way or another. We should look at these from the perspective of built items:
 
 ```rust
-define!(build_info);
-build_info.add_parent(perspective);
+define_child!(build_info, perspective);
 ```
 
 There are some concepts that might only reveal themselves in a debugging or deployment context, and other meta-concepts that indirectly influence how the code is built but is not represented directly in any part of the code. These are out of scope for now.
@@ -122,53 +106,44 @@ There are some concepts that might only reveal themselves in a debugging or depl
 Rust groups things by modules.
 
 ```rust
-define!(module);
-module.add_parent(Form::archetype());
+define_child_imported!(module, Form);
 ```
 
 Things that are grouped inside of a module will be considered a member of the module:
 
 ```rust
-define!(has_member);
-has_member.add_parent(Attribute::archetype().into());
+define_child_imported!(has_member, Attribute);
 ```
 
 Rust modules sometimes re-export things so that it looks like it's coming from that module.
 
 ```rust
-define!(re_exports);
-re_exports.add_parent(Attribute::archetype().into());
+define_child_imported!(re_exports, Attribute);
 ```
 
 It seems to make sense to group a concept and its descendants inside the same module. For such modules, we'll mark the concept as the most prominent member of the module.
 
 ```rust
-define!(most_prominent_member);
-most_prominent_member.add_parent(Attribute::archetype().into());
+define_child_imported!(most_prominent_member, Attribute);
 ```
 
 During implementation, we should be able to force a new attribute to live inside its own module. This override should take place even if the concept doesn't have any child archetypes yet, so that any concepts in downstream packages that depend on it will know where to look:
 
 ```rust
-define!(own_module);
-own_module.add_parent(Flag::archetype());
-build_info.add_flag(own_module);
-aa(own_module).set_owner_archetype(build_info);
+add_flag!(own_module, build_info);
 ```
 
 Once built, structs have a certain import path:
 
 ```rust
-define!(import_path);
-import_path.add_parent(Attribute::archetype().into());
+define_child_imported!(import_path, Attribute);
 ```
 
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
 
 ```rust
-define!(crate_concept);
+define_child_imported!(crate_concept, Form);
 crate_concept.set_internal_name_str("crate");
-crate_concept.add_parent(Form::archetype());
 ```
 
 We can reuse the existing generic `HasMember` relation for describing the relationship between a concept and its crate, because there is nothing special about this particular membership scenario that warrants a separate membership concept specifically for this.
@@ -176,15 +151,13 @@ We can reuse the existing generic `HasMember` relation for describing the relati
 Crates are versioned:
 
 ```rust
-define!(version);
-version.add_parent(Attribute::archetype().into());
+define_child_imported!(version, Attribute);
 ```
 
 Concepts and crates alike might also have their own implementation name:
 
 ```rust
-define!(implementation_name);
-implementation_name.add_parent(Attribute::archetype().into());
+define_child_imported!(implementation_name, Attribute);
 ```
 
 It is only natural for the human mind to use the name of the crate as a metonymy for the crate itself, just as humans also tend to use a filename or a file icon as a metonymy for the inode that points to the actual blocks of data on disk. How often do we stop to remind ourselves that the filename is only a symbolic handle for the actual data, or that when we're dragging a file icon from one folder to another, we're not dragging the data but only the visual representation of the data? We don't do so very often, because such details usually don't matter. It does matter here, however, so we will keep them separate and distinct.
@@ -316,7 +289,10 @@ Crate::current().set_implementation_name("zamm_yang");
 These are the generic imports for general Yang generation:
 
 ```rust
+use zamm_yang::add_flag;
 use zamm_yang::define;
+use zamm_yang::define_child;
+use zamm_yang::define_child_imported;
 use zamm_yang::tao::initialize_kb;
 use zamm_yang::tao::Tao;
 use zamm_yang::tao::ImplementExtension;
