@@ -4,7 +4,7 @@ use crate::codegen::template::basic::{
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub fn new_kb_test(test_frag: &mut AppendedFragment, name: &str) -> Rc<RefCell<FunctionFragment>> {
+pub fn kb_test_function(name: &str) -> FunctionFragment {
     let init_kb = Rc::new(RefCell::new(FunctionCallFragment::new(AtomicFragment {
         imports: vec!["crate::tao::initialize_kb".to_owned()],
         atom: "initialize_kb".to_owned(),
@@ -12,7 +12,11 @@ pub fn new_kb_test(test_frag: &mut AppendedFragment, name: &str) -> Rc<RefCell<F
     let mut new_test = FunctionFragment::new(name.to_owned());
     new_test.mark_as_test();
     new_test.append(init_kb);
-    let rc = Rc::new(RefCell::new(new_test));
+    new_test
+}
+
+pub fn new_kb_test(test_frag: &mut AppendedFragment, name: &str) -> Rc<RefCell<FunctionFragment>> {
+    let rc = Rc::new(RefCell::new(kb_test_function(name)));
     test_frag.append(rc.clone());
     rc
 }
