@@ -205,6 +205,7 @@ fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype
         doc: BuildInfo::from(flag.id()).dual_documentation().unwrap(),
         flag: concept_to_struct(flag, codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
+        hereditary: !AttributeArchetype::from(flag.id()).is_nonhereditary_attr(),
     }
 }
 
