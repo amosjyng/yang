@@ -1,5 +1,5 @@
 use super::concept_to_struct;
-use super::imports::in_own_submodule;
+use super::imports::{in_own_submodule, root_node_or_equivalent};
 use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::ImplementationFragment;
 use crate::codegen::template::concept::attribute::{add_attr_fragments, AttributeFormatConfig};
@@ -29,7 +29,7 @@ use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::tao::relation::attribute::Attribute;
 
 fn or_form_default(archetype: Archetype) -> Archetype {
-    if archetype.root_node_logic_activated() {
+    if root_node_or_equivalent(&archetype) {
         Archetype::try_from(Form::TYPE_NAME).unwrap() // allow user to override Form
     } else {
         archetype
@@ -205,6 +205,7 @@ fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype
         doc: BuildInfo::from(flag.id()).dual_documentation().unwrap(),
         flag: concept_to_struct(flag, codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
+        hereditary: !AttributeArchetype::from(flag.id()).is_nonhereditary_attr(),
     }
 }
 

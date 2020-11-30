@@ -1,8 +1,7 @@
 use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
+use zamm_yin::tao::archetype::{Archetype, AttributeArchetype};
 use zamm_yin::tao::form::FormTrait;
-use zamm_yin::tao::Tao;
 
 /// Archetype code generation flags defined when reading from a Yin.md
 pub trait CodegenFlags: FormTrait + CommonNodeTrait {
@@ -35,7 +34,7 @@ pub trait CodegenFlags: FormTrait + CommonNodeTrait {
 
     /// Whether this concept should have root-node-specific logic activated during code generation.
     fn root_node_logic_activated(&self) -> bool {
-        self.id() == Tao::TYPE_ID || KnowledgeGraphNode::from(self.id()).is_root_analogue()
+        KnowledgeGraphNode::from(self.id()).is_root_analogue()
     }
 
     /// Activate attribute-specific logic for this concept during code generation.
@@ -89,16 +88,3 @@ pub trait CodegenFlags: FormTrait + CommonNodeTrait {
 
 impl CodegenFlags for Archetype {}
 impl CodegenFlags for AttributeArchetype {}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::tao::initialize_kb;
-    use zamm_yin::tao::Tao;
-
-    #[test]
-    fn test_root_node_logic_activation_if_tao() {
-        initialize_kb();
-        assert!(Tao::archetype().root_node_logic_activated());
-    }
-}
