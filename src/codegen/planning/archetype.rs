@@ -9,7 +9,6 @@ use crate::codegen::template::concept::form::add_form_fragment;
 use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
 use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
-use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::DataExtension;
 use crate::tao::form::{Crate, CrateExtension};
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
@@ -55,7 +54,7 @@ fn generic_config(
 ) -> TaoConfig {
     let this = concept_to_struct(&target, codegen_cfg.yin);
     let internal_name = this.name.to_kebab_case();
-    let form = if target.root_node_logic_activated() {
+    let form = if KnowledgeGraphNode::from(target.id()).is_root_analogue() {
         // technically we should allow the user to customize this as well
         concept_to_struct(&Form::archetype(), codegen_cfg.yin)
     } else {
@@ -222,7 +221,7 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
 
     let mut file = tao_file_fragment(&base_cfg);
 
-    if !target.root_node_logic_activated() {
+    if !KnowledgeGraphNode::from(target.id()).is_root_analogue() {
         add_form_fragment(&base_cfg, &mut file);
     }
 
@@ -265,7 +264,8 @@ mod tests {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name_str("MyAttrType");
-        KnowledgeGraphNode::from(target.id()).mark_newly_defined();
+        let mut target_kgn = KnowledgeGraphNode::from(target.id());
+        target_kgn.mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(target.as_form());
         let cfg = generic_config(
@@ -275,7 +275,7 @@ mod tests {
             &CodegenConfig::default(),
         );
 
-        assert!(!target.root_node_logic_activated());
+        assert!(!target_kgn.is_root_analogue());
         assert!(!activate_archetype(&target));
         assert!(!activate_data(&target));
 
@@ -339,7 +339,7 @@ mod tests {
         target_kgn.mark_newly_defined();
         target_kgn.mark_root_analogue();
 
-        assert!(target.root_node_logic_activated());
+        assert!(target_kgn.is_root_analogue());
         assert!(!activate_archetype(&target));
         assert!(!activate_data(&target));
     }
@@ -367,7 +367,7 @@ mod tests {
             &codegen_cfg,
         );
 
-        assert!(!target.root_node_logic_activated());
+        assert!(!kgn.is_root_analogue());
         assert!(activate_archetype(&target.into()));
         assert!(!activate_data(&target.into()));
 
@@ -388,7 +388,7 @@ mod tests {
         kgn.mark_newly_defined();
         kgn.mark_data_analogue();
 
-        assert!(!target.root_node_logic_activated());
+        assert!(!kgn.is_root_analogue());
         assert!(!activate_archetype(&target));
         assert!(activate_data(&target));
     }

@@ -1,5 +1,4 @@
 use crate::codegen::StructConfig;
-use crate::tao::archetype::CodegenFlags;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
@@ -11,7 +10,7 @@ use zamm_yin::tao::Tao;
 
 /// Whether or not this is the root node, or marked as an analogous root node.
 pub fn root_node_or_equivalent(target: &Archetype) -> bool {
-    target.id() == Tao::TYPE_ID || target.root_node_logic_activated()
+    target.id() == Tao::TYPE_ID || KnowledgeGraphNode::from(target.id()).is_root_analogue()
 }
 
 /// Whether or not the given archetype belongs in its own submodule.

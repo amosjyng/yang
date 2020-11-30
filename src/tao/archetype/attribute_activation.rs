@@ -33,6 +33,10 @@ pub trait CodegenFlags: FormTrait + CommonNodeTrait {
     }
 
     /// Whether this concept should have root-node-specific logic activated during code generation.
+    #[deprecated(
+        since = "0.1.8",
+        note = "Please use KnowledgeGraphNode::is_root_analogue"
+    )]
     fn root_node_logic_activated(&self) -> bool {
         KnowledgeGraphNode::from(self.id()).is_root_analogue()
     }
