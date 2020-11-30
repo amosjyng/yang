@@ -142,6 +142,10 @@ add_flag!(
 
 Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
 
+```rust
+aa(uses_root_node_logic).mark_nonhereditary_attr();
+```
+
 #### The build information perspective
 
 Most concepts end up manifesting themselves in the codebase one way or another. We should look at these from the perspective of built items:
