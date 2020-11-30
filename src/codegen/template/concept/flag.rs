@@ -26,6 +26,9 @@ pub struct FlagConfig {
     pub flag: StructConfig,
     /// Concept representing the owner of the flag.
     pub owner_type: StructConfig,
+    /// Whether or not the flag will be passed on to the owner's children via the `Inherits`
+    /// attribute.
+    pub hereditary: bool,
 }
 
 impl Default for FlagConfig {
@@ -36,6 +39,7 @@ impl Default for FlagConfig {
             doc: Rc::from(""),
             flag: StructConfig::default(),
             owner_type: StructConfig::default(),
+            hereditary: true,
         }
     }
 }
@@ -72,10 +76,21 @@ fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
     f.add_import("zamm_yin::tao::form::FormTrait".to_owned());
     f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
-    f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
-        "self.essence().has_flag({}::TYPE_ID)",
-        cfg.flag.name
-    )))));
+    if cfg.hereditary {
+        f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
+            "self.essence().has_flag({}::TYPE_ID)",
+            cfg.flag.name
+        )))));
+    } else {
+        f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc!(
+            "
+            self.essence()
+                .inheritance_wrapper()
+                .base_wrapper()
+                .has_flag({}::TYPE_ID)",
+            cfg.flag.name
+        )))));
+    }
     f
 }
 
@@ -102,7 +117,13 @@ fn test_fragment(cfg: &FlagConfig) -> FunctionFragment {
 
 /// Test that the getter and setter work as intended when inherited.
 fn test_inheritance_fragment(cfg: &FlagConfig) -> FunctionFragment {
-    let mut f = FunctionFragment::new(format!("test_{}_inheritance", cfg.property_name));
+    let inheritance_name = if cfg.hereditary {
+        "inheritance"
+    } else {
+        "non_inheritance"
+    };
+    let inheritance_check = if cfg.hereditary { "" } else { "!" };
+    let mut f = FunctionFragment::new(format!("test_{}_{}", cfg.property_name, inheritance_name));
     f.mark_as_test();
     f.add_import("crate::tao::initialize_kb".to_owned());
     f.add_import(cfg.owner_type.import.clone());
@@ -113,11 +134,12 @@ fn test_inheritance_fragment(cfg: &FlagConfig) -> FunctionFragment {
         assert!(!new_instance.{getter}{property}());
 
         {owner}::from(new_type.id()).{setter}{property}();
-        assert!(new_instance.{getter}{property}());
+        assert!({inheritance}new_instance.{getter}{property}());
     ", owner = cfg.owner_type.name,
         getter = GETTER_PREFIX,
         setter = SETTER_PREFIX,
-        property = cfg.property_name
+        property = cfg.property_name,
+        inheritance = inheritance_check,
     }))));
     f
 }
@@ -153,6 +175,7 @@ mod tests {
                 name: "Tao".to_owned(),
                 import: "zamm_yin::tao::Tao".to_owned(),
             },
+            hereditary: true,
         }
     }
 
