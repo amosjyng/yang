@@ -32,12 +32,10 @@ pub trait CodegenFlags: FormTrait + CommonNodeTrait {
 
     /// Whether this concept should have root-node-specific logic activated during code generation.
     fn root_node_logic_activated(&self) -> bool {
-        self.id() == Tao::TYPE_ID
-            || self
-                .essence()
-                .inheritance_wrapper()
-                .base_wrapper()
-                .has_flag(UsesRootNodeLogic::TYPE_ID)
+        self.essence()
+            .inheritance_wrapper()
+            .base_wrapper()
+            .has_flag(UsesRootNodeLogic::TYPE_ID)
     }
 
     /// Activate attribute-specific logic for this concept during code generation.
