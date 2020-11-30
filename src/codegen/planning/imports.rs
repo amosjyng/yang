@@ -5,14 +5,20 @@ use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait};
+use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
+use zamm_yin::tao::Tao;
+
+/// Whether or not this is the root node, or marked as an analogous root node.
+pub fn root_node_or_equivalent(target: &Archetype) -> bool {
+    target.id() == Tao::TYPE_ID || target.root_node_logic_activated()
+}
 
 /// Whether or not the given archetype belongs in its own submodule.
 pub fn in_own_submodule(target: &Archetype) -> bool {
     // todo: filter by type, once Yin has that functionality
     BuildInfo::from(target.id()).is_own_module()
-        || target.root_node_logic_activated()
+        || root_node_or_equivalent(target)
         // todo: this is a hack to check if the children are archetypes or not
         || target.child_archetypes().iter().any(|c|
             c.internal_name_str().is_some() && !c.internal_name_str().unwrap().contains("DUMMY"))
@@ -34,7 +40,7 @@ pub fn ancestor_path(target: &Archetype, separator: &str) -> String {
         None => {
             // parent path matters because we want to follow whatever convention the parent is
             // following
-            let parent_path = if target.root_node_logic_activated() {
+            let parent_path = if root_node_or_equivalent(target) {
                 None
             } else {
                 Some(ancestor_path(&target.parents().first().unwrap(), separator))

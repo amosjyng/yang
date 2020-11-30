@@ -3,7 +3,6 @@ use crate::tao::relation::flag::UsesRootNodeLogic;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::FormTrait;
-use zamm_yin::tao::Tao;
 
 /// Archetype code generation flags defined when reading from a Yin.md
 pub trait CodegenFlags: FormTrait + CommonNodeTrait {
@@ -32,12 +31,10 @@ pub trait CodegenFlags: FormTrait + CommonNodeTrait {
 
     /// Whether this concept should have root-node-specific logic activated during code generation.
     fn root_node_logic_activated(&self) -> bool {
-        self.id() == Tao::TYPE_ID
-            || self
-                .essence()
-                .inheritance_wrapper()
-                .base_wrapper()
-                .has_flag(UsesRootNodeLogic::TYPE_ID)
+        self.essence()
+            .inheritance_wrapper()
+            .base_wrapper()
+            .has_flag(UsesRootNodeLogic::TYPE_ID)
     }
 
     /// Activate attribute-specific logic for this concept during code generation.
@@ -107,12 +104,6 @@ mod tests {
 
         new_root.activate_root_node_logic();
         assert!(new_root.root_node_logic_activated());
-    }
-
-    #[test]
-    fn test_root_node_logic_activation_if_tao() {
-        initialize_kb();
-        assert!(Tao::archetype().root_node_logic_activated());
     }
 
     #[test]
