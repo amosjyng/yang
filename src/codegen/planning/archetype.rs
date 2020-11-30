@@ -334,8 +334,9 @@ mod tests {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name_str("MyRoot");
-        KnowledgeGraphNode::from(target.id()).mark_newly_defined();
-        target.activate_root_node_logic();
+        let mut target_kgn = KnowledgeGraphNode::from(target.id());
+        target_kgn.mark_newly_defined();
+        target_kgn.mark_root_analogue();
 
         assert!(target.root_node_logic_activated());
         assert!(!activate_archetype(&target));
@@ -396,7 +397,7 @@ mod tests {
         initialize_kb();
         Crate::current().set_implementation_name("moo");
         let mut my_root = Tao::archetype().individuate_as_archetype();
-        my_root.activate_root_node_logic();
+        KnowledgeGraphNode::from(my_root.id()).mark_root_analogue();
         my_root.set_internal_name_str("my-root");
         let mut i = Implement::new();
         i.set_target(my_root.as_form());

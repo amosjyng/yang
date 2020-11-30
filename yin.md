@@ -120,16 +120,18 @@ add_flag!(
     attribute_analogue,
     knowledge_graph_node,
     "Marks an archetype and all its descendants as requiring attribute-specific logic during generation.",
-    "logically analogous to an attribute node.");
+    "logically analogous to an attribute node."
+);
 ```
 
 The same is true of Tao and Data:
 
 ```rust
-define_child!(
-    uses_root_node_logic,
-    Flag::archetype(),
-    "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this."
+add_flag!(
+    root_analogue,
+    knowledge_graph_node,
+    "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this.",
+    "logically analogous to the root node."
 );
 
 add_flag!(
@@ -143,7 +145,7 @@ add_flag!(
 Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
 
 ```rust
-aa(uses_root_node_logic).mark_nonhereditary_attr();
+aa(root_analogue).mark_nonhereditary_attr();
 ```
 
 #### The build information perspective

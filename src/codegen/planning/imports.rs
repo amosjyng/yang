@@ -348,11 +348,11 @@ mod tests {
     #[test]
     fn import_path_custom_root() {
         initialize_kb();
-        let mut root = Tao::archetype().individuate_as_archetype();
+        let root = Tao::archetype().individuate_as_archetype();
         let mut root_node = KnowledgeGraphNode::from(root.id());
         root_node.set_internal_name_str("my-root");
         root_node.mark_newly_defined();
-        root.activate_root_node_logic();
+        root_node.mark_root_analogue();
         assert_eq!(import_path(&root_node, false), "crate::my_root::MyRoot");
     }
 
