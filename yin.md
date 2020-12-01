@@ -198,6 +198,7 @@ It seems to make sense to group a concept and its descendants inside the same mo
 add_attr!(
     most_prominent_member,
     module,
+    Tao::archetype(),
     "The most prominent member of a Rust module. The module will take its name after this member.",
     "the most prominent member of the module. By default, the name of the module will be the same as the name of this member."
 );
@@ -217,11 +218,21 @@ add_flag!(
 Once built, structs have a certain import path:
 
 ```rust
-define_child!(
+add_attr!(
     import_path,
-    Attribute::archetype(),
-    "Describes the import path of a defined struct."
+    build_info,
+    StringConcept::archetype(),
+    "Describes the import path of a defined struct.",
+    "the import path the Rust implementation ended up at."
 );
+aa(import_path).mark_nonhereditary_attr();
+```
+
+Unfortunately, Yin's information about her data attributes didn't survive the code generation process, so here it is again:
+
+```rust
+StringConcept::archetype().set_default_value("String::new()");
+StringConcept::archetype().set_rust_primitive("String");
 ```
 
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
@@ -338,6 +349,8 @@ use zamm_yang::tao::archetype::AttributeArchetypeFormTrait;
 use zamm_yang::tao::archetype::ArchetypeFormExtensionTrait;
 use zamm_yang::tao::archetype::CreateImplementation;
 use zamm_yang::tao::archetype::CodegenFlags;
+use zamm_yang::tao::form::data::DataExtension;
+use zamm_yang::tao::form::data::StringConcept;
 use zamm_yang::tao::form::Crate;
 use zamm_yang::tao::form::CrateExtension;
 use zamm_yang::tao::form::Form;

@@ -1,7 +1,7 @@
 use super::BuildInfo;
 use crate::tao::form::{Crate, CrateExtension, Module};
 use crate::tao::relation::attribute::{
-    DualPurposeDocumentation, HasMember, ImplementationName, ImportPath, MostProminentMember,
+    DualPurposeDocumentation, HasMember, ImplementationName, MostProminentMember,
     SupportsMembership,
 };
 use std::rc::Rc;
@@ -39,32 +39,6 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
             .map(|n| Form::from(n.id()))
             .find(|f| f.has_ancestor(Crate::archetype()))
             .map(|c| Crate::from(c.id()).implementation_name())
-            .flatten()
-    }
-
-    /// Set import path the concept ended up at, relative to the crate.
-    fn set_import_path(&mut self, path: &str) {
-        let mut s = StringConcept::new();
-        // todo: set using StringConcept API once that is correctly generated once more
-        s.essence_mut()
-            .set_value(Rc::new(StrongValue::new(path.to_owned())));
-        self.essence_mut()
-            .add_outgoing(ImportPath::TYPE_ID, s.essence());
-    }
-
-    /// Retrieve import path the concept ended up at, relative to the crate.
-    fn import_path(&self) -> Option<Rc<str>> {
-        // todo: retrieve using StringConcept API once that is correctly generated once more
-        self.essence()
-            .inheritance_wrapper()
-            .base_wrapper()
-            .outgoing_nodes(ImportPath::TYPE_ID)
-            .first()
-            .map(|s| {
-                StringConcept::from(s.id())
-                    .value()
-                    .map(|rc| Rc::from(rc.as_str()))
-            })
             .flatten()
     }
 
@@ -147,17 +121,6 @@ mod tests {
     }
 
     #[test]
-    fn set_and_retrieve_import_path() {
-        initialize_kb();
-        let mut info = BuildInfo::new();
-        info.set_import_path("zamm_yang::import::path");
-        assert_eq!(
-            info.import_path(),
-            Some(Rc::from("zamm_yang::import::path"))
-        );
-    }
-
-    #[test]
     fn set_and_retrieve_implementation_name() {
         initialize_kb();
         let mut info = BuildInfo::new();
@@ -171,13 +134,13 @@ mod tests {
         initialize_kb();
         let mut info = BuildInfo::new();
         info.set_crate_name("zamm_yang");
-        info.set_import_path("zamm_yang::import::path");
+        info.set_import_path("zamm_yang::import::path".to_owned());
         info.set_implementation_name("Yolo");
 
         assert_eq!(info.crate_name(), Some(Rc::from("zamm_yang")));
         assert_eq!(
             info.import_path(),
-            Some(Rc::from("zamm_yang::import::path"))
+            Some(Rc::new("zamm_yang::import::path".to_owned()))
         );
         assert_eq!(info.implementation_name(), Some(Rc::from("Yolo")));
     }
@@ -189,7 +152,7 @@ mod tests {
         let type1 = Tao::archetype().individuate_as_archetype();
         let mut info = BuildInfo::from(type1.id());
         info.set_crate_name("zamm_yang");
-        info.set_import_path("zamm_yang::import::path");
+        info.set_import_path("zamm_yang::import::path".to_owned());
         info.set_implementation_name("Yolo");
 
         let type2 = type1.individuate_as_archetype();
