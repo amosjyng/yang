@@ -8,13 +8,14 @@ mod implement_form;
 pub mod perspective;
 pub mod relation;
 
-use crate::tao::form::{Crate, CrateExtension};
+use crate::tao::form::{Crate, CrateExtension, Module};
+use crate::tao::relation::attribute::MostProminentMember;
 use auto_init::initialize_types;
 pub use auto_init::YIN_MAX_ID;
 pub use implement_extension::ImplementExtension;
 pub use implement_form::Implement;
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::ArchetypeTrait;
+use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait, AttributeArchetypeFormTrait};
 pub use zamm_yin::tao::*;
 
 /// Only here for backwards compatibility reasons.
@@ -29,6 +30,11 @@ pub struct ImplementConfig;
 pub fn initialize_kb() {
     zamm_yin::tao::initialize_kb();
     initialize_types();
+
+    let mut module = Module::archetype();
+    let mut mpm = MostProminentMember::archetype();
+    module.add_attribute(mpm);
+    mpm.set_owner_archetype(module);
 
     let mut yin = Crate::new();
     yin.set_implementation_name(Crate::YIN_CRATE_NAME);

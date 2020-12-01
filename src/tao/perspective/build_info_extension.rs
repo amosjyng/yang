@@ -133,7 +133,6 @@ impl BuildInfoExtension for BuildInfo {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tao::form::ModuleExtension;
     use crate::tao::initialize_kb;
     use zamm_yin::node_wrappers::CommonNodeTrait;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;

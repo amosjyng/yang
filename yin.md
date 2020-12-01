@@ -195,10 +195,11 @@ define_child!(
 It seems to make sense to group a concept and its descendants inside the same module. For such modules, we'll mark the concept as the most prominent member of the module.
 
 ```rust
-define_child!(
+add_attr!(
     most_prominent_member,
-    Attribute::archetype(),
-    "The most prominent member of a Rust module. The module will take its name after this member."
+    module,
+    "The most prominent member of a Rust module. The module will take its name after this member.",
+    "the most prominent member of the module. By default, the name of the module will be the same as the name of this member."
 );
 ```
 
@@ -325,6 +326,7 @@ These are the generic imports for general Yang generation:
 
 ```rust
 use zamm_yang::add_flag;
+use zamm_yang::add_attr;
 use zamm_yang::define;
 use zamm_yang::define_child;
 use zamm_yang::tao::initialize_kb;
