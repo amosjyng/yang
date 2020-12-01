@@ -1,7 +1,7 @@
 use super::util::kb_test_function;
 use crate::codegen::template::basic::{
-    AtomicFragment, FileFragment, FunctionFragment, ImplementationFragment, ItemDeclarationAPI,
-    SelfReference,
+    AtomicFragment, FileFragment, FunctionCallFragment, FunctionFragment, ImplementationFragment,
+    ItemDeclarationAPI, SelfReference,
 };
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
@@ -90,11 +90,15 @@ fn setter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     } else {
         format!("{}.essence()", cfg.property_name)
     };
-    f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
-        "self.essence_mut().add_outgoing({attr}::TYPE_ID, {value});",
-        attr = cfg.attr.name,
-        value = final_value
+    let mut add_outgoing = FunctionCallFragment::new(AtomicFragment::new(
+        "self.essence_mut().add_outgoing".to_owned(),
+    ));
+    add_outgoing.add_argument(Rc::new(RefCell::new(AtomicFragment::new(format!(
+        "{}::TYPE_ID",
+        cfg.attr.name
     )))));
+    add_outgoing.add_argument(Rc::new(RefCell::new(AtomicFragment::new(final_value))));
+    f.append(Rc::new(RefCell::new(add_outgoing)));
     f
 }
 
@@ -292,7 +296,10 @@ mod tests {
             indoc! {"
                 /// Set the crate associated with the struct.
                 fn set_associated_crate(&mut self, associated_crate: &Crate) {
-                    self.essence_mut().add_outgoing(AssociatedCrate::TYPE_ID, associated_crate.essence());
+                    self.essence_mut().add_outgoing(
+                        AssociatedCrate::TYPE_ID,
+                        associated_crate.essence(),
+                    );
                 }"}
         );
     }
@@ -306,7 +313,10 @@ mod tests {
                 fn set_associated_crate(&mut self, associated_crate: String) {
                     let mut value_concept = Crate::new();
                     value_concept.set_value(associated_crate);
-                    self.essence_mut().add_outgoing(AssociatedCrate::TYPE_ID, value_concept.essence());
+                    self.essence_mut().add_outgoing(
+                        AssociatedCrate::TYPE_ID,
+                        value_concept.essence(),
+                    );
                 }"}
         );
     }
