@@ -30,9 +30,9 @@ pub struct AttributePropertyConfig {
     /// Concept representing the value of the attribute.
     pub value_type: StructConfig,
     /// The Rust primitive that this represents.
-    pub rust_primitive: Option<String>,
+    pub rust_primitive: Option<Rc<str>>,
     /// Dummy test value to set the primitive to.
-    pub primitive_test_value: Option<String>,
+    pub primitive_test_value: Option<Rc<str>>,
     /// Whether or not the flag will be passed on to the owner's children via the `Inherits`
     /// attribute.
     pub hereditary: bool,
@@ -73,7 +73,7 @@ fn setter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     let arg_name = cfg.property_name.to_string();
     match &cfg.rust_primitive {
         Some(primitive) => {
-            f.add_arg(arg_name, primitive.clone());
+            f.add_arg(arg_name, primitive.to_string());
             f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
                 let mut value_concept = {value_concept}::new();
                 value_concept.set_value({value});",
@@ -126,21 +126,20 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
         "\n    .inheritance_wrapper()\n    .base_wrapper()"
     };
     let primitive_map = if cfg.rust_primitive.is_some() {
-        format!(
-            "\n    .map(|f| {}::from(*f).value().unwrap())",
-            cfg.value_type.name
-        )
+        ".value().unwrap()"
     } else {
-        String::new()
+        ""
     };
 
     f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
         self.essence(){inheritance}
             .outgoing_nodes({attr}::TYPE_ID)
-            .first(){primitive}",
+            .first()
+            .map(|f| {value_type}::from(*f){primitive_map})",
         inheritance = nonhereditary_access,
         attr = cfg.attr.name,
-        primitive = primitive_map
+        value_type = cfg.value_type.name,
+        primitive_map = primitive_map
     }))));
 
     f
@@ -152,21 +151,27 @@ fn test_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     f.add_import(cfg.owner_type.import.clone());
     f.add_import(cfg.value_type.import.clone());
     let value = match &cfg.primitive_test_value {
-        Some(primitive_value) => primitive_value.clone(),
+        Some(primitive_value) => primitive_value.to_string(),
         None => format!("{}::new()", cfg.value_type.name),
+    };
+    let value_set = if cfg.primitive_test_value.is_some() {
+        "value.clone()"
+    } else {
+        "&value"
     };
     f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
         let mut new_instance = {owner}::new();
         assert_eq!(new_instance.{getter}{property}(), None);
 
         let value = {value};
-        new_instance.{setter}{property}(value.clone());
+        new_instance.{setter}{property}({value_set});
         assert_eq!(new_instance.{getter}{property}(), Some(value));",
         owner = cfg.owner_type.name,
         getter = GETTER_PREFIX,
         setter = SETTER_PREFIX,
         property = cfg.property_name,
         value = value,
+        value_set = value_set,
     }))));
     f
 }
@@ -179,8 +184,13 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
         "non_inheritance"
     };
     let value = match &cfg.primitive_test_value {
-        Some(primitive_value) => primitive_value.clone(),
+        Some(primitive_value) => primitive_value.to_string(),
         None => format!("{}::new()", cfg.value_type.name),
+    };
+    let value_set = if cfg.primitive_test_value.is_some() {
+        "value.clone()"
+    } else {
+        "&value"
     };
     let inheritance_check = if cfg.hereditary {
         "Some(value)"
@@ -198,7 +208,7 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
         assert_eq!(new_instance.{getter}{property}(), None);
 
         let value = {value};
-        {owner}::from(new_type.id()).{setter}{property}(value.clone());
+        {owner}::from(new_type.id()).{setter}{property}({value_set});
         assert_eq!(new_instance.{getter}{property}(), {inheritance});
     ", owner = cfg.owner_type.name,
         getter = GETTER_PREFIX,
@@ -206,12 +216,13 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
         property = cfg.property_name,
         inheritance = inheritance_check,
         value = value,
+        value_set = value_set,
     }))));
     f
 }
 
 /// Add these flags to an implementation and its corresponding test module.
-pub fn add_flag_to_impl(
+pub fn add_attr_to_impl(
     cfg: &AttributePropertyConfig,
     implementation: &mut ImplementationFragment,
     file: &mut FileFragment,
@@ -253,8 +264,8 @@ mod tests {
 
     fn primitive_attr_config() -> AttributePropertyConfig {
         AttributePropertyConfig {
-            rust_primitive: Some("String".to_owned()),
-            primitive_test_value: Some("String::new()".to_owned()),
+            rust_primitive: Some(Rc::from("String")),
+            primitive_test_value: Some(Rc::from("String::new()")),
             ..concept_attr_config()
         }
     }
@@ -295,6 +306,7 @@ mod tests {
                     self.essence()
                         .outgoing_nodes(AssociatedCrate::TYPE_ID)
                         .first()
+                        .map(|f| Crate::from(*f))
                 }"}
         );
     }
@@ -347,7 +359,7 @@ mod tests {
                     assert_eq!(new_instance.associated_crate(), None);
 
                     let value = Crate::new();
-                    new_instance.set_associated_crate(value.clone());
+                    new_instance.set_associated_crate(&value);
                     assert_eq!(new_instance.associated_crate(), Some(value));
                 }"}
         );
@@ -384,7 +396,7 @@ mod tests {
                     assert_eq!(new_instance.associated_crate(), None);
 
                     let value = Crate::new();
-                    Form::from(new_type.id()).set_associated_crate(value.clone());
+                    Form::from(new_type.id()).set_associated_crate(&value);
                     assert_eq!(new_instance.associated_crate(), Some(value));
                 }"}
         );

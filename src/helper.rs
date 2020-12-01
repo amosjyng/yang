@@ -61,6 +61,25 @@ macro_rules! add_flag {
     };
 }
 
+/// Defines a new attribute, and add it as a property of the owner.
+#[macro_export]
+macro_rules! add_attr {
+    ($name:ident, $owner:ident, $doc:expr, $dual_doc:expr) => {
+        define_child!(
+            $name,
+            zamm_yang::tao::relation::attribute::Attribute::archetype()
+        );
+        zamm_yang::tao::archetype::AttributeArchetype::from($name.id()).set_owner_archetype($owner);
+        $owner.add_attribute(zamm_yang::tao::archetype::AttributeArchetype::from(
+            $name.id(),
+        ));
+        {
+            let mut new_impl = $name.implement_with_doc($doc);
+            new_impl.dual_document($dual_doc);
+        }
+    };
+}
+
 /// Convenience function to convert an `Archetype` to an `AttributeArchetype`.
 pub fn aa(archetype: Archetype) -> AttributeArchetype {
     if !(KnowledgeGraphNode::from(archetype.id()).is_attribute_analogue()
