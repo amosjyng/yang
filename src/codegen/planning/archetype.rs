@@ -218,6 +218,13 @@ fn attr_config(
     attr: &AttributeArchetype,
 ) -> AttributePropertyConfig {
     let value_type = or_form_default(attr.value_archetype());
+    if activate_data(&value_type) {
+        assert!(
+            value_type.rust_primitive().is_some(),
+            "Data type {:?} has no defined Rust primitive.",
+            value_type
+        );
+    }
     AttributePropertyConfig {
         public: true,
         property_name: Rc::from(attr.internal_name_str().unwrap().to_snake_case()),
@@ -235,22 +242,26 @@ fn primary_parent(target: &Archetype) -> Archetype {
     *target.parents().first().unwrap()
 }
 
-fn add_struct_flag_fragments(target: &Archetype, cfg: &CodegenConfig, file: &mut FileFragment) {
-    let mut implementation =
-        ImplementationFragment::new_struct_impl(concept_to_struct(&target, cfg.yin));
+fn add_struct_flag_fragments(
+    target: &Archetype,
+    cfg: &CodegenConfig,
+    implementation: &mut ImplementationFragment,
+    file: &mut FileFragment,
+) {
     for flag in target.added_flags() {
-        add_flag_to_impl(&flag_config(cfg, &target, &flag), &mut implementation, file);
+        add_flag_to_impl(&flag_config(cfg, &target, &flag), implementation, file);
     }
-    file.append(Rc::new(RefCell::new(implementation)));
 }
 
-fn add_struct_attr_fragments(target: &Archetype, cfg: &CodegenConfig, file: &mut FileFragment) {
-    let mut implementation =
-        ImplementationFragment::new_struct_impl(concept_to_struct(&target, cfg.yin));
+fn add_struct_attr_fragments(
+    target: &Archetype,
+    cfg: &CodegenConfig,
+    implementation: &mut ImplementationFragment,
+    file: &mut FileFragment,
+) {
     for attr in target.added_attributes() {
-        add_attr_to_impl(&attr_config(cfg, &target, &attr), &mut implementation, file);
+        add_attr_to_impl(&attr_config(cfg, &target, &attr), implementation, file);
     }
-    file.append(Rc::new(RefCell::new(implementation)));
 }
 
 /// Generate code for a given concept. Post-processing still needed.
@@ -276,11 +287,16 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
     }
 
     if !in_own_submodule(&target) {
+        let mut implementation =
+            ImplementationFragment::new_struct_impl(concept_to_struct(&target, codegen_cfg.yin));
         if !target.added_flags().is_empty() {
-            add_struct_flag_fragments(&target, codegen_cfg, &mut file);
+            add_struct_flag_fragments(&target, codegen_cfg, &mut implementation, &mut file);
         }
         if !target.added_attributes().is_empty() {
-            add_struct_attr_fragments(&target, codegen_cfg, &mut file);
+            add_struct_attr_fragments(&target, codegen_cfg, &mut implementation, &mut file);
+        }
+        if !implementation.content.borrow().appendages.is_empty() {
+            file.append(Rc::new(RefCell::new(implementation)));
         }
     }
 
