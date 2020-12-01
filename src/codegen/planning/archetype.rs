@@ -218,6 +218,13 @@ fn attr_config(
     attr: &AttributeArchetype,
 ) -> AttributePropertyConfig {
     let value_type = or_form_default(attr.value_archetype());
+    if activate_data(&value_type) {
+        assert!(
+            value_type.rust_primitive().is_some(),
+            "Data type {:?} has no defined Rust primitive.",
+            value_type
+        );
+    }
     AttributePropertyConfig {
         public: true,
         property_name: Rc::from(attr.internal_name_str().unwrap().to_snake_case()),

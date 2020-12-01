@@ -64,12 +64,13 @@ macro_rules! add_flag {
 /// Defines a new attribute, and add it as a property of the owner.
 #[macro_export]
 macro_rules! add_attr {
-    ($name:ident, $owner:ident, $doc:expr, $dual_doc:expr) => {
+    ($name:ident, $owner:expr, $value:expr, $doc:expr, $dual_doc:expr) => {
         define_child!(
             $name,
             zamm_yang::tao::relation::attribute::Attribute::archetype()
         );
         zamm_yang::tao::archetype::AttributeArchetype::from($name.id()).set_owner_archetype($owner);
+        zamm_yang::tao::archetype::AttributeArchetype::from($name.id()).set_value_archetype($value);
         $owner.add_attribute(zamm_yang::tao::archetype::AttributeArchetype::from(
             $name.id(),
         ));
