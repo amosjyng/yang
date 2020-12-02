@@ -115,6 +115,9 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
         f.mark_as_public();
     }
     f.document(format!("Get {}", cfg.doc));
+    if cfg.rust_primitive.is_some() {
+        f.add_attribute("allow(clippy::rc_buffer)".to_owned());
+    }
     f.set_self_reference(SelfReference::Immutable);
     let base_return_type = match &cfg.rust_primitive {
         Some(primitive) => {
@@ -202,7 +205,11 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
         None => format!("{}::new()", cfg.value_type.name),
     };
     let value_set = if cfg.primitive_test_value.is_some() {
-        "value.clone()"
+        if cfg.hereditary {
+            "value.clone()" // value will get used in inheritance check, so clone it
+        } else {
+            "value" // value won't get used again, so just use it directly
+        }
     } else {
         "&value"
     };
@@ -342,6 +349,7 @@ mod tests {
             getter_fragment(&primitive_attr_config()).body(80),
             indoc! {"
                 /// Get the crate associated with the struct.
+                #[allow(clippy::rc_buffer)]
                 fn associated_crate(&self) -> Option<Rc<String>> {
                     self.essence()
                         .outgoing_nodes(AssociatedCrate::TYPE_ID)
@@ -361,6 +369,7 @@ mod tests {
             .body(80),
             indoc! {"
                 /// Get the crate associated with the struct.
+                #[allow(clippy::rc_buffer)]
                 fn associated_crate(&self) -> Option<Rc<String>> {
                     self.essence()
                         .inheritance_wrapper()
