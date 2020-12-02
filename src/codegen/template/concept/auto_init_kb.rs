@@ -10,7 +10,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Represents a binary relation between two nodes.
-#[derive(Default)]
+#[derive(Debug, Default, Eq, PartialEq)]
 pub struct Link {
     /// The struct name of the from-node.
     pub from: StructConfig,
@@ -18,6 +18,17 @@ pub struct Link {
     pub link_type: StructConfig,
     /// The struct name of the to-node.
     pub to: StructConfig,
+}
+
+impl Link {
+    /// Get the relationship as a 3-tuple of concept names.
+    pub fn as_tuple(&self) -> (&str, &str, &str) {
+        (
+            self.from.name.as_str(),
+            self.link_type.name.as_str(),
+            self.to.name.as_str(),
+        )
+    }
 }
 
 /// Configuration values for KB initialization template.
