@@ -13,6 +13,27 @@ const SETTER_PREFIX: &str = "set_";
 /// Prefix for attribute getter function name.
 const GETTER_PREFIX: &str = "";
 
+struct PrimitiveValueConfig<'a> {
+    pub value: String,
+    pub value_get: &'a str,
+    pub value_set: &'a str,
+}
+
+fn primitive_config(attr_cfg: &AttributePropertyConfig) -> PrimitiveValueConfig {
+    match &attr_cfg.primitive_test_value {
+        Some(primitive_value) => PrimitiveValueConfig {
+            value: primitive_value.to_string(),
+            value_set: "value.clone()",
+            value_get: "Rc::new(value)",
+        },
+        None => PrimitiveValueConfig {
+            value: format!("{}::new()", attr_cfg.value_type.name),
+            value_set: "&value",
+            value_get: "value",
+        },
+    }
+}
+
 /// Config values at the time of Attribute getter/setter code generation.
 pub struct AttributePropertyConfig {
     /// The public name to serve as a basis for the getter/setter function names.
@@ -161,20 +182,7 @@ fn test_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
         // if some, will use that directly instead of the concept
         f.add_import(cfg.value_type.import.clone());
     }
-    let value = match &cfg.primitive_test_value {
-        Some(primitive_value) => primitive_value.to_string(),
-        None => format!("{}::new()", cfg.value_type.name),
-    };
-    let value_set = if cfg.primitive_test_value.is_some() {
-        "value.clone()"
-    } else {
-        "&value"
-    };
-    let value_get = if cfg.primitive_test_value.is_some() {
-        "Rc::new(value)"
-    } else {
-        "value"
-    };
+    let value_cfg = primitive_config(cfg);
     f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
         let mut new_instance = {owner}::new();
         assert_eq!(new_instance.{getter}{property}(), None);
@@ -186,9 +194,9 @@ fn test_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
         getter = GETTER_PREFIX,
         setter = SETTER_PREFIX,
         property = cfg.property_name,
-        value = value,
-        value_set = value_set,
-        value_get = value_get,
+        value = value_cfg.value,
+        value_set = value_cfg.value_set,
+        value_get = value_cfg.value_get,
     }))));
     f
 }
@@ -200,26 +208,14 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
     } else {
         "non_inheritance"
     };
-    let value = match &cfg.primitive_test_value {
-        Some(primitive_value) => primitive_value.to_string(),
-        None => format!("{}::new()", cfg.value_type.name),
-    };
-    let value_set = if cfg.primitive_test_value.is_some() {
-        if cfg.hereditary {
-            "value.clone()" // value will get used in inheritance check, so clone it
-        } else {
-            "value" // value won't get used again, so just use it directly
-        }
+    let value_cfg = primitive_config(cfg);
+    let value_set = if cfg.primitive_test_value.is_some() && !cfg.hereditary {
+        "value" // value won't get used again, so just use it directly
     } else {
-        "&value"
-    };
-    let value_get = if cfg.primitive_test_value.is_some() {
-        "Rc::new(value)"
-    } else {
-        "value"
+        value_cfg.value_set
     };
     let inheritance_check = if cfg.hereditary {
-        format!("Some({})", value_get)
+        format!("Some({})", value_cfg.value_get)
     } else {
         "None".to_owned()
     };
@@ -241,7 +237,7 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
         setter = SETTER_PREFIX,
         property = cfg.property_name,
         inheritance = inheritance_check,
-        value = value,
+        value = value_cfg.value,
         value_set = value_set,
     }))));
     f
