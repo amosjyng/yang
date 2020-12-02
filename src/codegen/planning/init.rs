@@ -6,12 +6,10 @@ use crate::tao::{Implement, ImplementExtension};
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{
-    Archetype, ArchetypeFormExtensionTrait, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype,
+    Archetype, ArchetypeFormExtensionTrait, ArchetypeFormTrait, ArchetypeTrait,
 };
-use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::relation::attribute::has_property::{HasAttribute, HasFlag};
-use zamm_yin::tao::relation::attribute::{Attribute, OwnerArchetype, ValueArchetype};
-use zamm_yin::tao::relation::Relation;
+use zamm_yin::tao::relation::attribute::{OwnerArchetype, ValueArchetype};
 use zamm_yin::Wrapper;
 
 fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig) -> KBInitConfig {
@@ -21,8 +19,6 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
 
     let has_attr = concept_to_struct(&HasAttribute::archetype().into(), codegen_cfg.yin);
     let has_flag = concept_to_struct(&HasFlag::archetype().into(), codegen_cfg.yin);
-    let owner_type = concept_to_struct(&OwnerArchetype::archetype().into(), codegen_cfg.yin);
-    let value_type = concept_to_struct(&ValueArchetype::archetype().into(), codegen_cfg.yin);
 
     for implement in archetype_requests {
         let target_type = Archetype::from(implement.target().unwrap().id());
@@ -37,43 +33,7 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
         // only initialize concept attributes if user hasn't already done it because they were
         // using an older version of Yang
         if add_attributes {
-            let aa = AttributeArchetype::from(target_type.id());
             let target_struct = concept_to_struct(&target_type, codegen_cfg.yin);
-
-            if target_type.has_ancestor(Relation::archetype()) {
-                // we want to see if it has a custom owner, not an inherited one
-                let owners = aa
-                    .essence()
-                    .base_wrapper()
-                    .outgoing_nodes(OwnerArchetype::TYPE_ID);
-                if let Some(owner) = owners.first() {
-                    println!("Owner of {:?} is {:?}", aa, Archetype::from(owner.id()));
-                    let owner_struct =
-                        concept_to_struct(&Archetype::from(owner.id()), codegen_cfg.yin);
-                    attributes.push(Link {
-                        from: target_struct.clone(),
-                        link_type: owner_type.clone(),
-                        to: owner_struct,
-                    });
-                }
-            }
-
-            if target_type.has_ancestor(Attribute::archetype().into()) {
-                // we want to see if it has a custom value, not an inherited one
-                let values = aa
-                    .essence()
-                    .base_wrapper()
-                    .outgoing_nodes(ValueArchetype::TYPE_ID);
-                if let Some(value) = values.first() {
-                    let value_struct =
-                        concept_to_struct(&Archetype::from(value.id()), codegen_cfg.yin);
-                    attributes.push(Link {
-                        from: target_struct.clone(),
-                        link_type: value_type.clone(),
-                        to: value_struct,
-                    });
-                }
-            }
 
             for flag in target_type.added_flags() {
                 attributes.push(Link {
@@ -81,7 +41,7 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
                     link_type: has_flag.clone(),
                     to: concept_to_struct(&flag, codegen_cfg.yin),
                 });
-            }
+            } // todo: set flags like we set attributes down below
 
             for attr in target_type.added_attributes() {
                 attributes.push(Link {
@@ -89,6 +49,25 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
                     link_type: has_attr.clone(),
                     to: concept_to_struct(&attr.into(), codegen_cfg.yin),
                 });
+            }
+            let mut attributes_to_check = target_type.attributes();
+            attributes_to_check.push(OwnerArchetype::archetype());
+            attributes_to_check.push(ValueArchetype::archetype());
+            for attr in attributes_to_check {
+                let attr_struct = concept_to_struct(&Archetype::from(attr.id()), codegen_cfg.yin);
+                // use base wrapper because we want to see if the flag is set with this node, not
+                // with an ancestor
+                for outgoing in target_type
+                    .essence()
+                    .base_wrapper()
+                    .outgoing_nodes(attr.id())
+                {
+                    attributes.push(Link {
+                        from: target_struct.clone(),
+                        link_type: attr_struct.clone(),
+                        to: concept_to_struct(&Archetype::from(outgoing.id()), codegen_cfg.yin),
+                    });
+                }
             }
         }
     }
@@ -110,7 +89,8 @@ mod tests {
     use super::*;
     use crate::tao::initialize_kb;
     use zamm_yin::tao::archetype::AttributeArchetypeFormTrait;
-    use zamm_yin::tao::form::Form;
+    use zamm_yin::tao::form::{Form, FormTrait};
+    use zamm_yin::tao::relation::attribute::Attribute;
 
     #[test]
     fn test_single_new_concept() {
@@ -174,6 +154,30 @@ mod tests {
                 ("Name", "ValueArchetype", "Word"),
                 ("Bobby", "HasAttribute", "Name"),
             ]
+        );
+    }
+
+    #[test]
+    fn test_generic_attr() {
+        initialize_kb();
+        Crate::yang().set_version("0.1.7");
+        let mut impls = vec![];
+
+        let mut new_attr = Attribute::archetype().individuate_as_archetype();
+        new_attr.set_internal_name_str("Name");
+
+        let mut implement_attr = Implement::new();
+        implement_attr.set_target(new_attr.as_form());
+        impls.push(implement_attr);
+
+        let cfg = init_config(&mut impls, &CodegenConfig::default());
+        // it should avoid outputting inherited attributes introduced by its ancestors
+        assert_eq!(
+            cfg.attributes
+                .iter()
+                .map(|l| l.as_tuple())
+                .collect::<Vec<(&str, &str, &str)>>(),
+            Vec::<(&str, &str, &str)>::new()
         );
     }
 }
