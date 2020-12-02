@@ -7,9 +7,9 @@ use indoc::formatdoc;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-/// Prefix for setter function name.
+/// Prefix for flag setter function name.
 const SETTER_PREFIX: &str = "mark_";
-/// Prefix for getter function name.
+/// Prefix for flag getter function name.
 const GETTER_PREFIX: &str = "is_";
 
 /// Config values at the time of Flag getter/setter code generation.

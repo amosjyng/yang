@@ -120,9 +120,15 @@ pub fn import_path(target: &KnowledgeGraphNode, yin_override: bool) -> String {
 /// Turns a concept into a struct to be imported.
 pub fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig {
     let build_info = BuildInfo::from(target.id());
-    let name = build_info
-        .implementation_name()
-        .unwrap_or_else(|| Rc::from(target.internal_name_str().unwrap().to_camel_case().as_str()));
+    let name = build_info.implementation_name().unwrap_or_else(|| {
+        Rc::from(
+            target
+                .internal_name_str()
+                .unwrap_or_else(|| panic!("{:?} has no internal name", target))
+                .to_camel_case()
+                .as_str(),
+        )
+    });
     StructConfig {
         name: (*name).to_owned(),
         import: import_path(&KnowledgeGraphNode::from(target.id()), yin_override),
