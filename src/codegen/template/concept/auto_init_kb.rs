@@ -1,6 +1,6 @@
 use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::{
-    AtomicFragment, FileFragment, FunctionFragment, ItemDeclarationAPI,
+    AtomicFragment, FileFragment, FunctionCallFragment, FunctionFragment, ItemDeclarationAPI,
 };
 use crate::codegen::{StructConfig, CODE_WIDTH};
 use crate::tao::form::{Crate, CrateExtension};
@@ -9,11 +9,42 @@ use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+/// Represents a binary relation between two nodes.
+#[derive(Debug, Default, Eq, PartialEq)]
+pub struct Link {
+    /// The struct name of the from-node.
+    pub from: StructConfig,
+    /// The struct name of the link type.
+    pub link_type: StructConfig,
+    /// The struct name of the to-node.
+    pub to: StructConfig,
+}
+
+impl Link {
+    /// Get the relationship as a 3-tuple of concept names.
+    pub fn as_tuple(&self) -> (&str, &str, &str) {
+        (
+            self.from.name.as_str(),
+            self.link_type.name.as_str(),
+            self.to.name.as_str(),
+        )
+    }
+}
+
 /// Configuration values for KB initialization template.
 #[derive(Default)]
 pub struct KBInitConfig {
     /// The list of concepts to be initialized.
     pub concepts_to_initialize: Vec<StructConfig>,
+    /// The list of binary relations between concepts.
+    pub attributes: Vec<Link>,
+}
+
+fn concept_id_fragment(concept: &StructConfig) -> AtomicFragment {
+    AtomicFragment {
+        imports: vec![concept.import.clone()],
+        atom: format!("{}::TYPE_ID", concept.name),
+    }
 }
 
 /// Get the function that initializes concept types.
@@ -52,6 +83,14 @@ fn init_types_fragment(cfg: &KBInitConfig) -> FunctionFragment {
         );
     ", concepts = concepts_list}))));
 
+    for attr in &cfg.attributes {
+        let mut add_edge = FunctionCallFragment::new(AtomicFragment::new("ig.add_edge".to_owned()));
+        add_edge.add_argument(Rc::new(RefCell::new(concept_id_fragment(&attr.from))));
+        add_edge.add_argument(Rc::new(RefCell::new(concept_id_fragment(&attr.link_type))));
+        add_edge.add_argument(Rc::new(RefCell::new(concept_id_fragment(&attr.to))));
+        init_fn.append(Rc::new(RefCell::new(add_edge)));
+    }
+
     init_fn
 }
 
@@ -89,7 +128,8 @@ mod tests {
                 concepts_to_initialize: vec![StructConfig {
                     name: "Me".to_owned(),
                     import: "crate::people::Me".to_owned(),
-                }]
+                }],
+                ..KBInitConfig::default()
             })
             .body(80),
             indoc! {"
@@ -124,7 +164,8 @@ mod tests {
                         name: "Us".to_owned(),
                         import: "crate::groups::Us".to_owned(),
                     }
-                ]
+                ],
+                ..KBInitConfig::default()
             })
             .body(80),
             indoc! {"
@@ -140,6 +181,57 @@ mod tests {
                         Us
                     )
                 );
+            }"}
+        );
+    }
+
+    #[test]
+    fn test_init_additional_relations() {
+        assert_eq!(
+            init_types_fragment(&KBInitConfig {
+                concepts_to_initialize: vec![
+                    StructConfig {
+                        name: "Me".to_owned(),
+                        import: "zamm_yin::people::Me".to_owned(),
+                    },
+                    StructConfig {
+                        name: "You".to_owned(),
+                        import: "crate::people::You".to_owned(),
+                    },
+                    StructConfig {
+                        name: "Us".to_owned(),
+                        import: "crate::groups::Us".to_owned(),
+                    }
+                ],
+                attributes: vec![
+                    Link {
+                        from: StructConfig::new("zamm_yin::people::Me".to_owned()),
+                        link_type: StructConfig::new("crate::emotions::Dislike".to_owned()),
+                        to: StructConfig::new("crate::people::You".to_owned()),
+                    },
+                    Link {
+                        from: StructConfig::new("zamm_yin::people::Me".to_owned()),
+                        link_type: StructConfig::new("crate::emotions::Like".to_owned()),
+                        to: StructConfig::new("crate::people::Us".to_owned()),
+                    },
+                ],
+            })
+            .body(80),
+            indoc! {"
+            /// Adds all concepts to knowledge graph.
+            pub fn initialize_types() {
+                let mut ig = InjectionGraph::new();
+                #[rustfmt::skip]
+                initialize_type!(
+                    ig,
+                    (
+                        Me,
+                        You,
+                        Us
+                    )
+                );
+                ig.add_edge(Me::TYPE_ID, Dislike::TYPE_ID, You::TYPE_ID);
+                ig.add_edge(Me::TYPE_ID, Like::TYPE_ID, Us::TYPE_ID);
             }"}
         );
     }
@@ -163,6 +255,7 @@ mod tests {
                     import: "crate::groups::Us".to_owned(),
                 },
             ],
+            ..KBInitConfig::default()
         });
         assert!(code.contains("YIN_MAX_ID: usize = 2"));
         assert!(!code.contains("zamm_yin"));

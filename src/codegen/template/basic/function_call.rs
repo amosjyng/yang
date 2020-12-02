@@ -28,6 +28,13 @@ impl FunctionCallFragment {
         self.arguments.push(argument);
     }
 
+    /// Add a new argument as a string without imports.
+    pub fn add_argument_str(&mut self, argument: &str) {
+        self.add_argument(Rc::new(RefCell::new(AtomicFragment::new(
+            argument.to_owned(),
+        ))));
+    }
+
     /// Mark this as a macro call instead of a function call.
     pub fn mark_macro(&mut self) {
         self.is_macro = true;
