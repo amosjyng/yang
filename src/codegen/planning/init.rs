@@ -75,6 +75,7 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
     KBInitConfig {
         concepts_to_initialize,
         attributes,
+        yin: codegen_cfg.yin,
     }
 }
 
