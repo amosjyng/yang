@@ -280,6 +280,7 @@ mod tests {
                     import: "crate::groups::Us".to_owned(),
                 },
             ],
+            yin: true,
             ..KBInitConfig::default()
         });
         assert!(code.contains("YIN_MAX_ID: usize = 2"));
