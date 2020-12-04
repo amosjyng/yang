@@ -18,7 +18,6 @@ use crate::tao::form::{Crate, CrateExtension};
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
 use crate::tao::{Implement, ImplementExtension};
 use heck::{KebabCase, SnakeCase};
-use itertools::Itertools;
 use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::rc::Rc;
@@ -104,24 +103,18 @@ fn generic_config(
         .into_iter()
         .map(|a| concept_to_struct(&a.into(), codegen_cfg.yin))
         .collect();
-    let all_attributes = format!(
-        "vec![{}]",
-        all_attribute_structs
-            .iter()
-            .map(|s| format!("{}::archetype()", s.name))
-            .format(", ")
-    );
+    let all_attributes = all_attribute_structs
+        .iter()
+        .map(|s| format!("{}::archetype()", s.name))
+        .collect();
     let all_attribute_imports = all_attribute_structs
         .iter()
         .map(|s| s.import.clone())
         .collect();
-    let introduced_attributes = format!(
-        "vec![{}]",
-        introduced_attribute_structs
-            .iter()
-            .map(|s| format!("{}::archetype()", s.name))
-            .format(", ")
-    );
+    let introduced_attributes = introduced_attribute_structs
+        .iter()
+        .map(|s| format!("{}::archetype()", s.name))
+        .collect();
     let introduced_attribute_imports = introduced_attribute_structs
         .iter()
         .map(|s| s.import.clone())

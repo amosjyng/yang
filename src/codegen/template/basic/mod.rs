@@ -14,6 +14,7 @@ mod module;
 /// Code fragment that nests another code fragment inside.
 mod nested;
 mod trait_fragment;
+mod vector;
 
 pub use appended::AppendedFragment;
 pub use assert::AssertFragment;
@@ -26,6 +27,7 @@ pub use item_declaration::{ItemDeclaration, ItemDeclarationAPI};
 pub use module::ModuleFragment;
 pub use nested::NestedFragment;
 pub use trait_fragment::TraitFragment;
+pub use vector::VecFragment;
 
 /// Number of spaces Rust is usually indented by.
 const RUST_INDENTATION: usize = 4; // todo: combined with INDENT_SIZE
