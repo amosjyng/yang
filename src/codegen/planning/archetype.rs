@@ -15,7 +15,7 @@ use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::form::data::DataExtension;
 use crate::tao::form::{Crate, CrateExtension};
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
-use crate::tao::{Implement, ImplementExtension};
+use crate::tao::Implement;
 use heck::{KebabCase, SnakeCase};
 use itertools::Itertools;
 use std::cell::RefCell;
@@ -78,7 +78,7 @@ fn generic_config(
     };
 
     // allow a default, especially for tests
-    let initial_id = request.implementation_id().unwrap_or_else(|| Rc::new(0));
+    let initial_id = request.concept_id().unwrap_or_else(|| Rc::new(0));
     let id = if codegen_cfg.yin {
         format!("{}", initial_id)
     } else {
@@ -319,7 +319,7 @@ mod tests {
         let mut target_kgn = KnowledgeGraphNode::from(target.id());
         target_kgn.mark_newly_defined();
         let mut implement = Implement::new();
-        implement.set_target(target.as_form());
+        implement.set_target(&target.as_form());
         let cfg = generic_config(
             &implement,
             &target,
@@ -341,7 +341,7 @@ mod tests {
         target.set_internal_name_str("MyDataType");
         KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         let mut implement = Implement::new();
-        implement.set_target(target.as_form());
+        implement.set_target(&target.as_form());
         let cfg = generic_config(
             &implement,
             &target,
@@ -362,8 +362,8 @@ mod tests {
         target.set_internal_name_str("MyAttrType");
         KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         let mut implement = Implement::new();
-        implement.set_target(target.as_form());
-        implement.document("One.\n\nTwo.");
+        implement.set_target(&target.as_form());
+        implement.set_documentation("One.\n\nTwo.".to_owned());
         let cfg = generic_config(
             &implement,
             &target,
@@ -409,7 +409,7 @@ mod tests {
         AttributeArchetypeFormTrait::set_owner_archetype(&mut target, Tao::archetype());
         AttributeArchetypeFormTrait::set_value_archetype(&mut target, Form::archetype());
         let mut implement = Implement::new();
-        implement.set_target(target.as_form());
+        implement.set_target(&target.as_form());
         let parent = primary_parent(&target.into());
         let codegen_cfg = CodegenConfig::default();
 
@@ -453,7 +453,7 @@ mod tests {
         KnowledgeGraphNode::from(my_root.id()).mark_root_analogue();
         my_root.set_internal_name_str("my-root");
         let mut i = Implement::new();
-        i.set_target(my_root.as_form());
+        i.set_target(&my_root.as_form());
         let code = code_archetype(i, &CodegenConfig::default());
         assert!(!code.contains("impl FormTrait"));
     }

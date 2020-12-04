@@ -16,30 +16,36 @@ define!(
 Implementations are lower-level concepts that *target* specific higher-level concepts.
 
 ```rust
-define_child!(
+add_attr!(
     target,
-    Attribute::archetype(),
-    "The target of an implement command."
+    implement,
+    Tao::archetype(),
+    "The target of an implement command.",
+    "target concept for this implementation."
 );
 ```
 
 We need some way of efficiently distinguishing Yin concepts from each other. We can't just compare the memory addresses of a Yin struct, since different ephemeral structs may in fact be referring to the same concept. An easy way to do this is by assigning a different integer ID to each one, so that each Yin concept effectively becomes a wrapper around an integer, and we are just defining the relations between different integers:
 
 ```rust
-define_child!(
+add_attr!(
     concept_id,
-    Attribute::archetype(),
-    "The integer ID associated with a concept."
+    implement,
+    Number::archetype(),
+    "The integer ID associated with a concept.",
+    "the concept's ID during code generation time, as opposed to the concept's currently assigned runtime ID."
 );
 ```
 
 When implementing anything in Rust, we should consider documenting it for the user's sake.
 
 ```rust
-define_child!(
+add_attr!(
     documentation,
-    Attribute::archetype(),
-    "The documentation associated with an implementation."
+    implement,
+    StringConcept::archetype(),
+    "The documentation associated with an implementation.",
+    "the documentation string associated with this particular Rust implementation."
 );
 ```
 
@@ -233,6 +239,8 @@ Unfortunately, Yin's information about her data attributes didn't survive the co
 ```rust
 StringConcept::archetype().set_default_value("String::new()");
 StringConcept::archetype().set_rust_primitive("String");
+Number::archetype().set_default_value("0");
+Number::archetype().set_rust_primitive("usize");
 ```
 
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
@@ -349,8 +357,8 @@ use zamm_yang::tao::archetype::ArchetypeFormTrait;
 use zamm_yang::tao::archetype::AttributeArchetypeFormTrait;
 use zamm_yang::tao::archetype::ArchetypeFormExtensionTrait;
 use zamm_yang::tao::archetype::CreateImplementation;
-use zamm_yang::tao::archetype::CodegenFlags;
 use zamm_yang::tao::form::data::DataExtension;
+use zamm_yang::tao::form::data::Number;
 use zamm_yang::tao::form::data::StringConcept;
 use zamm_yang::tao::form::Crate;
 use zamm_yang::tao::form::CrateExtension;

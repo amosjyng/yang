@@ -1,4 +1,4 @@
-use super::{Implement, ImplementExtension};
+use super::Implement;
 use crate::codegen::planning::{
     archetype_file_path, code_archetype, code_module, handle_init, module_file_path,
 };
