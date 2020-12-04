@@ -183,11 +183,14 @@ fn test_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
         f.add_import(cfg.value_type.import.clone());
     }
     let value_cfg = primitive_config(cfg);
+    // todo: only clone when it's not a Copy type, to avoid the clone_on_copy warning. The thing
+    // is, this is specific to Rust, so it should be Yang-only knowledge.
     f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
         let mut new_instance = {owner}::new();
         assert_eq!(new_instance.{getter}{property}(), None);
 
         let value = {value};
+        #[allow(clippy::clone_on_copy)]
         new_instance.{setter}{property}({value_set});
         assert_eq!(new_instance.{getter}{property}(), Some({value_get}));",
         owner = cfg.owner_type.name,
@@ -223,6 +226,8 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
     f.mark_as_test();
     f.add_import("crate::tao::initialize_kb".to_owned());
     f.add_import(cfg.owner_type.import.clone());
+    // todo: only clone when it's not a Copy type, to avoid the clone_on_copy warning. The thing
+    // is, this is specific to Rust, so it should be Yang-only knowledge.
     f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
         initialize_kb();
         let new_type = {owner}::archetype().individuate_as_archetype();
@@ -230,6 +235,7 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
         assert_eq!(new_instance.{getter}{property}(), None);
 
         let value = {value};
+        #[allow(clippy::clone_on_copy)]
         {owner}::from(new_type.id()).{setter}{property}({value_set});
         assert_eq!(new_instance.{getter}{property}(), {inheritance});
     ", owner = cfg.owner_type.name,
@@ -389,6 +395,7 @@ mod tests {
                     assert_eq!(new_instance.associated_crate(), None);
 
                     let value = Crate::new();
+                    #[allow(clippy::clone_on_copy)]
                     new_instance.set_associated_crate(&value);
                     assert_eq!(new_instance.associated_crate(), Some(value));
                 }"}
@@ -407,6 +414,7 @@ mod tests {
                     assert_eq!(new_instance.associated_crate(), None);
 
                     let value = String::new();
+                    #[allow(clippy::clone_on_copy)]
                     new_instance.set_associated_crate(value.clone());
                     assert_eq!(new_instance.associated_crate(), Some(Rc::new(value)));
                 }"}
@@ -426,6 +434,7 @@ mod tests {
                     assert_eq!(new_instance.associated_crate(), None);
 
                     let value = Crate::new();
+                    #[allow(clippy::clone_on_copy)]
                     Form::from(new_type.id()).set_associated_crate(&value);
                     assert_eq!(new_instance.associated_crate(), Some(value));
                 }"}
@@ -445,6 +454,7 @@ mod tests {
                     assert_eq!(new_instance.associated_crate(), None);
 
                     let value = String::new();
+                    #[allow(clippy::clone_on_copy)]
                     Form::from(new_type.id()).set_associated_crate(value.clone());
                     assert_eq!(new_instance.associated_crate(), Some(Rc::new(value)));
                 }"}
