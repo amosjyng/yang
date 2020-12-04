@@ -1,5 +1,7 @@
-use super::util::{add_assert, new_kb_test};
-use crate::codegen::template::basic::{AppendedFragment, AtomicFragment, FileFragment};
+use super::util::{add_assert, add_assert_frags, new_kb_test};
+use crate::codegen::template::basic::{
+    AppendedFragment, AtomicFragment, FileFragment, VecFragment,
+};
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -80,11 +82,11 @@ pub struct TaoConfig {
     /// Name of the archetype used to represent this.
     pub archetype_name: String,
     /// List of attributes this class has.
-    pub all_attributes: String,
+    pub all_attributes: Vec<String>,
     /// Imports for above list of introduced attributes.
     pub all_attribute_imports: Vec<String>,
     /// List of attributes this class introduced.
-    pub introduced_attributes: String,
+    pub introduced_attributes: Vec<String>,
     /// Imports for above list of introduced attributes.
     pub introduced_attribute_imports: Vec<String>,
     /// Rustdoc for the class.
@@ -104,9 +106,9 @@ impl Default for TaoConfig {
             parent_name: "Tao".to_owned(),
             parent_import: "tao::Tao".to_owned(),
             archetype_name: "Archetype".to_owned(),
-            all_attributes: "vec![]".to_owned(),
+            all_attributes: vec![],
             all_attribute_imports: vec![],
-            introduced_attributes: "vec![]".to_owned(),
+            introduced_attributes: vec![],
             introduced_attribute_imports: vec![],
             doc: "".to_owned(),
             id: "1".to_owned(),
@@ -246,8 +248,8 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
         .borrow_mut()
         .append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc!(
             r#"
-        let mut concept = {name}::new();
-        concept.{internal_name_setter}("A"{internal_name_suffix});"#,
+            let mut concept = {name}::new();
+            concept.{internal_name_setter}("A"{internal_name_suffix});"#,
             name = name,
             internal_name_setter = cfg.internal_name_cfg.setter,
             internal_name_suffix = cfg.internal_name_cfg.suffix,
@@ -265,23 +267,31 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
         )))));
 
     let check_type_attributes = new_kb_test(&mut test_frag, "check_type_attributes");
-    add_assert(
+    let mut introduced_attrs = VecFragment::new();
+    for attr in &cfg.introduced_attributes {
+        introduced_attrs.add_element_str(&attr);
+    }
+    add_assert_frags(
         &check_type_attributes,
-        format!(
+        Rc::new(RefCell::new(AtomicFragment::new(format!(
             "{name}::archetype().{added_attributes_f}()",
             name = name,
             added_attributes_f = cfg.internal_name_cfg.added_attributes
-        ),
-        cfg.introduced_attributes.clone(),
+        )))),
+        Rc::new(RefCell::new(introduced_attrs)),
     );
-    add_assert(
+    let mut all_attrs = VecFragment::new();
+    for attr in &cfg.all_attributes {
+        all_attrs.add_element_str(&attr);
+    }
+    add_assert_frags(
         &check_type_attributes,
-        format!(
+        Rc::new(RefCell::new(AtomicFragment::new(format!(
             "{name}::archetype().{all_attributes_f}()",
             name = name,
             all_attributes_f = cfg.internal_name_cfg.all_attributes
-        ),
-        cfg.all_attributes.clone(),
+        )))),
+        Rc::new(RefCell::new(all_attrs)),
     );
 
     test_frag.append(Rc::new(RefCell::new(AtomicFragment {
