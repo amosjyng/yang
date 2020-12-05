@@ -292,27 +292,37 @@ perspective_mod.has_extension("build_info_extension::BuildInfoExtension");
 This also means redefining the modules for concepts that were first introduced in Yin, but which we have since created new children for:
 
 ```rust
-let mut form_mod = Form::archetype().impl_mod("All things that can be interacted with have form.");
-form_mod.has_extension("crate_extension::CrateExtension");
-form_mod.has_extension("defined_marker::DefinedMarker");
-form_mod.has_extension("module_extension::ModuleExtension");
-
-let mut archetype_mod = Archetype::archetype().impl_mod("Types of forms, as opposed to the forms themselves.");
-archetype_mod.has_extension("attribute_activation::CodegenFlags");
-archetype_mod.has_extension("create_implementation::CreateImplementation");
-
-let mut data_mod = Data::archetype().impl_mod(
-    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
+module!(
+    Form::archetype(),
+    "All things that can be interacted with have form.",
+    [
+        "crate_extension::CrateExtension",
+        "defined_marker::DefinedMarker",
+        "module_extension::ModuleExtension"
+    ]
 );
-data_mod.has_extension("data_extension::DataExtension");
-
-Relation::archetype().impl_mod("Relations between the forms.");
-Flag::archetype().impl_mod("Relations involving only one form.");
-
-let mut attr_mod = Attribute::archetype().impl_mod("Relations between two forms.");
-attr_mod.has_extension("supports_membership::SupportsMembership");
-
-HasProperty::archetype().impl_mod(
+module!(
+    Archetype::archetype(),
+    "Types of forms, as opposed to the forms themselves.",
+    [
+        "attribute_activation::CodegenFlags",
+        "create_implementation::CreateImplementation"
+    ]
+);
+module!(
+    Data::archetype(),
+    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea.",
+    ["data_extension::DataExtension"]
+);
+module!(Relation::archetype(), "Relations between the forms.");
+module!(Flag::archetype(), "Relations involving only one form.");
+module!(
+    Attribute::archetype(),
+    "Relations between two forms.",
+    ["supports_membership::SupportsMembership"]
+);
+module!(
+    HasProperty::archetype(),
     "Meta-attributes around what attributes instances of an archetype have."
 );
 ```
@@ -351,6 +361,7 @@ use zamm_yang::add_flag;
 use zamm_yang::add_attr;
 use zamm_yang::define;
 use zamm_yang::define_child;
+use zamm_yang::module;
 use zamm_yang::tao::initialize_kb;
 use zamm_yang::tao::Tao;
 use zamm_yang::tao::ImplementExtension;
