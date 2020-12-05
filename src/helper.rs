@@ -21,10 +21,10 @@ macro_rules! define {
 /// Defines a module for the given concept.
 #[macro_export]
 macro_rules! module {
-    ($name:ident, $doc:expr) => {
+    ($name:expr, $doc:expr) => {
         $name.impl_mod($doc)
     };
-    ($name:ident, $doc:expr, [$($extension:expr),*]) => {
+    ($name:expr, $doc:expr, [$($extension:expr),*]) => {
         {
             let mut new_mod = $name.impl_mod($doc);
             $(
