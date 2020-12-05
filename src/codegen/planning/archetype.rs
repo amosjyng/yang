@@ -14,7 +14,7 @@ use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::form::data::DataExtension;
 use crate::tao::form::{Crate, CrateExtension};
-use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
+use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
 use crate::tao::Implement;
 use heck::{KebabCase, SnakeCase};
 use itertools::Itertools;
@@ -201,10 +201,13 @@ fn data_config(base_cfg: &TaoConfig, target: &Archetype) -> DataFormatConfig {
 }
 
 fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype) -> FlagConfig {
+    let doc_string = BuildInfo::from(flag.id())
+        .dual_purpose_documentation()
+        .unwrap();
     FlagConfig {
         public: true,
         property_name: Rc::from(flag.internal_name_str().unwrap().to_snake_case()),
-        doc: BuildInfo::from(flag.id()).dual_documentation().unwrap(),
+        doc: Rc::from(doc_string.as_str()),
         flag: concept_to_struct(flag, codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
         hereditary: !AttributeArchetype::from(flag.id()).is_nonhereditary_attr(),
@@ -224,10 +227,13 @@ fn attr_config(
             value_type
         );
     }
+    let doc_string = BuildInfo::from(attr.id())
+        .dual_purpose_documentation()
+        .unwrap();
     AttributePropertyConfig {
         public: true,
         property_name: Rc::from(attr.internal_name_str().unwrap().to_snake_case()),
-        doc: BuildInfo::from(attr.id()).dual_documentation().unwrap(),
+        doc: Rc::from(doc_string.as_str()),
         attr: concept_to_struct(&(*attr).into(), codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
         value_type: concept_to_struct(&value_type, codegen_cfg.yin),

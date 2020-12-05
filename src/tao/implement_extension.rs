@@ -1,4 +1,4 @@
-use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
+use crate::tao::perspective::BuildInfo;
 use crate::tao::Implement;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
@@ -11,7 +11,8 @@ pub trait ImplementExtension: FormTrait + CommonNodeTrait {
         // already defined in Implement, it's just that Implement isn't a trait so we can't rely on
         // it here
         let implement = Implement::from(self.id());
-        BuildInfo::from(implement.target().unwrap().id()).dual_document(document);
+        BuildInfo::from(implement.target().unwrap().id())
+            .set_dual_purpose_documentation(document.to_owned());
     }
 
     /// Get the dual-purpose documentation string for this implementation.
@@ -19,7 +20,9 @@ pub trait ImplementExtension: FormTrait + CommonNodeTrait {
         // already defined in Implement, it's just that Implement isn't a trait so we can't rely on
         // it here
         let implement = Implement::from(self.id());
-        BuildInfo::from(implement.target().unwrap().id()).dual_documentation()
+        BuildInfo::from(implement.target().unwrap().id())
+            .dual_purpose_documentation()
+            .map(|rc| Rc::from(rc.as_str()))
     }
 }
 

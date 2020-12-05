@@ -51,16 +51,6 @@ add_attr!(
 
 Now we finally understand why there's a documentation string with each introduced concept.
 
-Getters and setters in particular have their own dual-purpose documentation strings:
-
-```rust
-define_child!(
-    dual_purpose_documentation,
-    Attribute::archetype(),
-    "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string."
-);
-```
-
 Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
 
 ```rust
@@ -167,6 +157,18 @@ define_child!(
 ```
 
 There are some concepts that might only reveal themselves in a debugging or deployment context, and other meta-concepts that indirectly influence how the code is built but is not represented directly in any part of the code. These are out of scope for now.
+
+Getters and setters in particular have their own dual-purpose documentation strings. This is highly similar in concept to the `documentation` attribute introduced earlier, and should be made a property of the same concept.
+
+```rust
+add_attr!(
+    dual_purpose_documentation,
+    build_info,
+    StringConcept::archetype(),
+    "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string.",
+    "the dual-purpose documentation substring to be used for the implementation of this property as getters and setters in a different concept's class."
+);
+```
 
 Rust groups things by modules.
 
