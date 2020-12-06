@@ -51,7 +51,15 @@ macro_rules! define_child {
 #[macro_export]
 macro_rules! add_flag {
     ($name:ident, $owner:ident, $doc:expr, $dual_doc:expr) => {
-        define_child!($name, zamm_yang::tao::relation::flag::Flag::archetype());
+        add_flag!(
+            $name <= zamm_yang::tao::relation::flag::Flag::archetype(),
+            $owner,
+            $doc,
+            $dual_doc
+        );
+    };
+    ($name:ident <= $parent:expr, $owner:ident, $doc:expr, $dual_doc:expr) => {
+        define_child!($name, $parent);
         zamm_yang::tao::archetype::AttributeArchetype::from($name.id()).set_owner_archetype($owner);
         $owner.add_flag($name);
         {
@@ -65,16 +73,21 @@ macro_rules! add_flag {
 #[macro_export]
 macro_rules! add_attr {
     ($name:ident, $owner:expr, $value:expr, $doc:expr, $dual_doc:expr) => {
-        define_child!(
-            $name,
-            zamm_yang::tao::relation::attribute::Attribute::archetype()
+        add_attr!(
+            $name <= zamm_yang::tao::relation::attribute::Attribute::archetype(),
+            $owner,
+            $value,
+            $doc,
+            $dual_doc
         );
-        zamm_yang::tao::archetype::AttributeArchetype::from($name.id()).set_owner_archetype($owner);
-        zamm_yang::tao::archetype::AttributeArchetype::from($name.id()).set_value_archetype($value);
-        $owner.add_attribute(zamm_yang::tao::archetype::AttributeArchetype::from(
-            $name.id(),
-        ));
+    };
+    ($name:ident <= $parent:expr, $owner:expr, $value:expr, $doc:expr, $dual_doc:expr) => {
+        define_child!($name, $parent);
         {
+            let mut new_aa = zamm_yang::tao::archetype::AttributeArchetype::from($name.id());
+            new_aa.set_owner_archetype($owner);
+            new_aa.set_value_archetype($value);
+            $owner.add_attribute(new_aa);
             let mut new_impl = $name.implement_with_doc($doc);
             new_impl.dual_document($dual_doc);
         }
