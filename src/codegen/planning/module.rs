@@ -22,6 +22,26 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
         // that we can access the children as well. In which case, we should also re-export the
         // concepts defined in the dependency, so that the end consumer does not depend directly on
         // the dependency.
+        //
+        // However, we shouldn't simply re-export the Yin submodule, because otherwise we will end
+        // up with duplicate submodules, and that messes up rustdoc generation. So, we should
+        // re-export only the children that were defined in Yin.
+        //
+        // Re-exporting all concepts that aren't newly defined won't work, because this includes a
+        // lot of the concepts that are loaded on Yang startup. They were newly defined when the
+        // generating Yang was first built, but now that that version of Yang is built and building
+        // the next version of Yang in turn, those previously built concepts are no longer newly
+        // defined. Moreover, they were defined as part of previous Yang, not previous Yin, so
+        // re-exporting them as part of Yin won't work.
+        //
+        // Storing Yin build information during Yin generation, and then loading that back up
+        // on Yang startup, won't work either because that's previous Yin's build information.
+        // We're building for a future Yang that might depend on a future Yin, not on the Yin that
+        // the current Yang depends on, so we can't just rely on the build information stored in
+        // the Yin dependency.
+        //
+        // Instead, this needs to be done properly as part of an import of Yin's `yin.md` file from
+        // within Yang's `yin.md` file. Only then will the diff between Yin and Yang be accurate.
         re_exports.push(format!("zamm_yin::{}::*", ancestor_path(&parent, "::")));
     }
 
