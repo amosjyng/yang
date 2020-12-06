@@ -91,7 +91,7 @@ macro_rules! add_attr {
             let mut new_impl = $name.implement_with_doc($doc);
             new_impl.dual_document($dual_doc);
         }
-    }
+    };
 }
 
 /// Convenience function to convert an `Archetype` to an `AttributeArchetype`.
