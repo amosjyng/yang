@@ -1,4 +1,3 @@
-use crate::tao::form::data::StringConcept;
 use crate::tao::form::Module;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::{MostProminentMember, ReExports, SupportsMembership};
@@ -6,6 +5,7 @@ use heck::SnakeCase;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::ArchetypeTrait;
+use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::Wrapper;
 
