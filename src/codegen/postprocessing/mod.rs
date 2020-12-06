@@ -12,12 +12,16 @@ use mark_fmt::add_fmt_skips;
 /// Do post-processing on generated code. Includes marking lines with autogeneration comments, or
 /// marking lines as requiring formatting skips.
 pub fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
+    if options.release {
+        return code.to_owned(); // no post-processing for releases
+    }
+
     let formatted = if options.add_rustfmt_attributes {
         add_fmt_skips(&code)
     } else {
         code.to_owned()
     };
-    if options.comment_autogen && !options.release {
+    if options.comment_autogen {
         add_autogeneration_comments(&formatted)
     } else {
         formatted
@@ -61,7 +65,7 @@ mod tests {
     }
 
     #[test]
-    fn test_post_process_fmt_not_skip() {
+    fn test_post_process_fmt_always_skip() {
         let code = code_form(&TaoConfig {
             this: StructConfig {
                 name: "S".to_owned(), // short
@@ -70,7 +74,7 @@ mod tests {
             ..TaoConfig::default()
         });
         let result = post_process_generation(&code, &CodegenConfig::default());
-        assert!(!result.contains(FMT_SKIP_MARKER));
+        assert!(result.contains(FMT_SKIP_MARKER));
     }
 
     #[test]
@@ -108,6 +112,6 @@ mod tests {
                 ..CodegenConfig::default()
             },
         );
-        assert!(result.contains(FMT_SKIP_MARKER));
+        assert!(!result.contains(FMT_SKIP_MARKER));
     }
 }
