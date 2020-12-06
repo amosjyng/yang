@@ -1,12 +1,11 @@
 use crate::tao::form::Module;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
-use crate::tao::relation::attribute::{MostProminentMember, ReExports, SupportsMembership};
-use heck::SnakeCase;
+use crate::tao::relation::attribute::{ReExports, SupportsMembership};
 use std::rc::Rc;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::form::data::StringConcept;
-use zamm_yin::tao::form::{Form, FormTrait};
+use zamm_yin::tao::form::FormTrait;
 use zamm_yin::Wrapper;
 
 /// Trait to extend Module functionality that has not been auto-generated.
@@ -14,25 +13,6 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait + SupportsMembership {
     /// Retrieve the public name that this module is actually implemented with.
     fn implementation_name(&self) -> Option<Rc<str>> {
         BuildInfo::from(self.id()).implementation_name()
-    }
-
-    /// Set most prominent member of the module. By default, this also sets the name of the module
-    /// to be a snake-cased version of that member's name.
-    fn set_most_prominent_member(&mut self, member: &Form) {
-        self.essence_mut()
-            .add_outgoing(MostProminentMember::TYPE_ID, member.essence());
-        if let Some(name) = member.internal_name_str() {
-            BuildInfo::from(self.id()).set_implementation_name(&name.to_snake_case())
-        }
-    }
-
-    /// Retrieve most prominent member of the module.
-    fn most_prominent_member(&self) -> Option<Form> {
-        // no need to worry about inheritance because MostProminentMember is not Inherits
-        self.essence()
-            .outgoing_nodes(MostProminentMember::TYPE_ID)
-            .first()
-            .map(|f| Form::from(*f))
     }
 
     /// Add a new submodule as a member of the current one.
@@ -84,22 +64,6 @@ impl ModuleExtension for Module {}
 mod tests {
     use super::*;
     use crate::tao::initialize_kb;
-    use zamm_yin::tao::archetype::ArchetypeFormTrait;
-    use zamm_yin::tao::Tao;
-
-    #[test]
-    fn set_and_retrieve_most_prominent_member() {
-        initialize_kb();
-        let mut my_type = Tao::archetype().individuate_as_archetype().as_form();
-        my_type.set_internal_name_str("my-amazing-type");
-        let mut module = Module::new();
-        module.set_most_prominent_member(&my_type);
-        assert_eq!(module.most_prominent_member(), Some(my_type));
-        assert_eq!(
-            module.implementation_name(),
-            Some(Rc::from("my_amazing_type"))
-        );
-    }
 
     #[test]
     fn add_and_retrieve_submodule() {

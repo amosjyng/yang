@@ -1,5 +1,4 @@
 use crate::codegen::StructConfig;
-use crate::tao::archetype::CodegenFlags;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
 use heck::{CamelCase, SnakeCase};
 use itertools::Itertools;
@@ -11,7 +10,7 @@ use zamm_yin::tao::Tao;
 
 /// Whether or not this is the root node, or marked as an analogous root node.
 pub fn root_node_or_equivalent(target: &Archetype) -> bool {
-    target.id() == Tao::TYPE_ID || target.root_node_logic_activated()
+    target.id() == Tao::TYPE_ID || KnowledgeGraphNode::from(target.id()).is_root_analogue()
 }
 
 /// Whether or not the given archetype belongs in its own submodule.
@@ -225,7 +224,7 @@ mod tests {
     fn folder_path_custom_module() {
         initialize_kb();
         BuildInfo::from(Attribute::TYPE_ID)
-            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
+            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute".to_owned());
         let owner = Owner::archetype();
         BuildInfo::from(owner.id()).mark_own_module();
         assert_eq!(
@@ -312,7 +311,7 @@ mod tests {
     fn import_path_custom_module() {
         initialize_kb();
         BuildInfo::from(Attribute::TYPE_ID)
-            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
+            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute".to_owned());
         let mut owner = KnowledgeGraphNode::from(Owner::TYPE_ID);
         BuildInfo::from(Owner::TYPE_ID).mark_own_module();
         owner.mark_newly_defined();
@@ -326,7 +325,7 @@ mod tests {
     fn import_path_custom_crate() {
         initialize_kb();
         BuildInfo::from(Attribute::TYPE_ID)
-            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
+            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute".to_owned());
         let mut owner = KnowledgeGraphNode::from(Owner::TYPE_ID);
         BuildInfo::from(Owner::TYPE_ID).mark_own_module();
         owner.mark_newly_defined();
@@ -360,11 +359,11 @@ mod tests {
     #[test]
     fn import_path_custom_root() {
         initialize_kb();
-        let mut root = Tao::archetype().individuate_as_archetype();
+        let root = Tao::archetype().individuate_as_archetype();
         let mut root_node = KnowledgeGraphNode::from(root.id());
         root_node.set_internal_name_str("my-root");
         root_node.mark_newly_defined();
-        root.activate_root_node_logic();
+        root_node.mark_root_analogue();
         assert_eq!(import_path(&root_node, false), "crate::my_root::MyRoot");
     }
 
@@ -436,7 +435,7 @@ mod tests {
         initialize_kb();
         let mut tao_build = BuildInfo::from(Tao::TYPE_ID);
         tao_build.set_implementation_name("TaoStruct");
-        tao_build.set_import_path("crate::TaoStruct");
+        tao_build.set_import_path("crate::TaoStruct".to_owned());
         assert_eq!(
             concept_to_struct(&Tao::archetype(), false),
             StructConfig {

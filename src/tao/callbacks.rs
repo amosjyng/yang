@@ -1,10 +1,10 @@
-use super::{Implement, ImplementExtension};
+use super::Implement;
 use crate::codegen::planning::{
     archetype_file_path, code_archetype, code_module, handle_init, module_file_path,
 };
 use crate::codegen::track_autogen::save_autogen;
 use crate::codegen::{output_code, CodegenConfig};
-use crate::tao::form::{Crate, CrateExtension, Module, ModuleExtension};
+use crate::tao::form::{Crate, CrateExtension, Module};
 use colored::*;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait};

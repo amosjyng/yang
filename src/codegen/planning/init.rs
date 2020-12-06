@@ -2,7 +2,7 @@ use super::{concept_to_struct, grab_new_implementation_id};
 use crate::codegen::template::concept::auto_init_kb::{code_init, KBInitConfig, Link};
 use crate::codegen::{output_code, CodegenConfig, StructConfig};
 use crate::tao::form::{Crate, CrateExtension};
-use crate::tao::{Implement, ImplementExtension};
+use crate::tao::Implement;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{
@@ -26,8 +26,8 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
         concepts_to_initialize.push(target_struct.clone());
 
         // only set ID for user if user hasn't already set it
-        if implement.implementation_id().is_none() {
-            implement.set_implementation_id(grab_new_implementation_id(codegen_cfg.yin));
+        if implement.concept_id().is_none() {
+            implement.set_concept_id(grab_new_implementation_id(codegen_cfg.yin));
         }
 
         // only initialize concept attributes if user hasn't already done it because they were
@@ -101,7 +101,7 @@ mod tests {
         let mut implement = Implement::new();
         let mut new_concept = Form::archetype().individuate_as_archetype();
         new_concept.set_internal_name_str("Bobby");
-        implement.set_target(new_concept.as_form());
+        implement.set_target(&new_concept.as_form());
         impls.push(implement);
         let cfg = init_config(&mut impls, &CodegenConfig::default());
         assert_eq!(
@@ -128,13 +128,13 @@ mod tests {
         new_attr.set_value_archetype(value);
 
         let mut implement_attr = Implement::new();
-        implement_attr.set_target(new_attr.as_form());
+        implement_attr.set_target(&new_attr.as_form());
         impls.push(implement_attr);
         let mut implement_owner = Implement::new();
-        implement_owner.set_target(owner.as_form());
+        implement_owner.set_target(&owner.as_form());
         impls.push(implement_owner);
         let mut implement_value = Implement::new();
-        implement_value.set_target(value.as_form());
+        implement_value.set_target(&value.as_form());
         impls.push(implement_value);
 
         let cfg = init_config(&mut impls, &CodegenConfig::default());
@@ -168,7 +168,7 @@ mod tests {
         new_attr.set_internal_name_str("Name");
 
         let mut implement_attr = Implement::new();
-        implement_attr.set_target(new_attr.as_form());
+        implement_attr.set_target(&new_attr.as_form());
         impls.push(implement_attr);
 
         let cfg = init_config(&mut impls, &CodegenConfig::default());

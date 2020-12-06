@@ -12,11 +12,10 @@ use crate::codegen::template::concept::form::add_form_fragment;
 use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
 use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
-use crate::tao::archetype::CodegenFlags;
 use crate::tao::form::data::DataExtension;
 use crate::tao::form::{Crate, CrateExtension};
-use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
-use crate::tao::{Implement, ImplementExtension};
+use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
+use crate::tao::Implement;
 use heck::{KebabCase, SnakeCase};
 use std::cell::RefCell;
 use std::convert::TryFrom;
@@ -57,7 +56,7 @@ fn generic_config(
 ) -> TaoConfig {
     let this = concept_to_struct(&target, codegen_cfg.yin);
     let internal_name = this.name.to_kebab_case();
-    let form = if target.root_node_logic_activated() {
+    let form = if KnowledgeGraphNode::from(target.id()).is_root_analogue() {
         // technically we should allow the user to customize this as well
         concept_to_struct(&Form::archetype(), codegen_cfg.yin)
     } else {
@@ -78,7 +77,7 @@ fn generic_config(
     };
 
     // allow a default, especially for tests
-    let initial_id = request.implementation_id().unwrap_or_else(|| Rc::new(0));
+    let initial_id = request.concept_id().unwrap_or_else(|| Rc::new(0));
     let id = if codegen_cfg.yin {
         format!("{}", initial_id)
     } else {
@@ -195,10 +194,13 @@ fn data_config(base_cfg: &TaoConfig, target: &Archetype) -> DataFormatConfig {
 }
 
 fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype) -> FlagConfig {
+    let doc_string = BuildInfo::from(flag.id())
+        .dual_purpose_documentation()
+        .unwrap();
     FlagConfig {
         public: true,
         property_name: Rc::from(flag.internal_name_str().unwrap().to_snake_case()),
-        doc: BuildInfo::from(flag.id()).dual_documentation().unwrap(),
+        doc: Rc::from(doc_string.as_str()),
         flag: concept_to_struct(flag, codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
         hereditary: !AttributeArchetype::from(flag.id()).is_nonhereditary_attr(),
@@ -218,10 +220,13 @@ fn attr_config(
             value_type
         );
     }
+    let doc_string = BuildInfo::from(attr.id())
+        .dual_purpose_documentation()
+        .unwrap();
     AttributePropertyConfig {
         public: true,
         property_name: Rc::from(attr.internal_name_str().unwrap().to_snake_case()),
-        doc: BuildInfo::from(attr.id()).dual_documentation().unwrap(),
+        doc: Rc::from(doc_string.as_str()),
         attr: concept_to_struct(&(*attr).into(), codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
         value_type: concept_to_struct(&value_type, codegen_cfg.yin),
@@ -266,7 +271,7 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
 
     let mut file = tao_file_fragment(&base_cfg);
 
-    if !target.root_node_logic_activated() {
+    if !KnowledgeGraphNode::from(target.id()).is_root_analogue() {
         add_form_fragment(&base_cfg, &mut file);
     }
 
@@ -310,9 +315,10 @@ mod tests {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name_str("MyAttrType");
-        KnowledgeGraphNode::from(target.id()).mark_newly_defined();
+        let mut target_kgn = KnowledgeGraphNode::from(target.id());
+        target_kgn.mark_newly_defined();
         let mut implement = Implement::new();
-        implement.set_target(target.as_form());
+        implement.set_target(&target.as_form());
         let cfg = generic_config(
             &implement,
             &target,
@@ -320,7 +326,7 @@ mod tests {
             &CodegenConfig::default(),
         );
 
-        assert!(!target.root_node_logic_activated());
+        assert!(!target_kgn.is_root_analogue());
         assert!(!activate_archetype(&target));
         assert!(!activate_data(&target));
 
@@ -334,7 +340,7 @@ mod tests {
         target.set_internal_name_str("MyDataType");
         KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         let mut implement = Implement::new();
-        implement.set_target(target.as_form());
+        implement.set_target(&target.as_form());
         let cfg = generic_config(
             &implement,
             &target,
@@ -355,8 +361,8 @@ mod tests {
         target.set_internal_name_str("MyAttrType");
         KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         let mut implement = Implement::new();
-        implement.set_target(target.as_form());
-        implement.document("One.\n\nTwo.");
+        implement.set_target(&target.as_form());
+        implement.set_documentation("One.\n\nTwo.".to_owned());
         let cfg = generic_config(
             &implement,
             &target,
@@ -380,10 +386,11 @@ mod tests {
         initialize_kb();
         let mut target = Tao::archetype().individuate_as_archetype();
         target.set_internal_name_str("MyRoot");
-        KnowledgeGraphNode::from(target.id()).mark_newly_defined();
-        target.activate_root_node_logic();
+        let mut target_kgn = KnowledgeGraphNode::from(target.id());
+        target_kgn.mark_newly_defined();
+        target_kgn.mark_root_analogue();
 
-        assert!(target.root_node_logic_activated());
+        assert!(target_kgn.is_root_analogue());
         assert!(!activate_archetype(&target));
         assert!(!activate_data(&target));
     }
@@ -401,7 +408,7 @@ mod tests {
         AttributeArchetypeFormTrait::set_owner_archetype(&mut target, Tao::archetype());
         AttributeArchetypeFormTrait::set_value_archetype(&mut target, Form::archetype());
         let mut implement = Implement::new();
-        implement.set_target(target.as_form());
+        implement.set_target(&target.as_form());
         let parent = primary_parent(&target.into());
         let codegen_cfg = CodegenConfig::default();
 
@@ -411,7 +418,7 @@ mod tests {
             &codegen_cfg,
         );
 
-        assert!(!target.root_node_logic_activated());
+        assert!(!kgn.is_root_analogue());
         assert!(activate_archetype(&target.into()));
         assert!(!activate_data(&target.into()));
 
@@ -432,7 +439,7 @@ mod tests {
         kgn.mark_newly_defined();
         kgn.mark_data_analogue();
 
-        assert!(!target.root_node_logic_activated());
+        assert!(!kgn.is_root_analogue());
         assert!(!activate_archetype(&target));
         assert!(activate_data(&target));
     }
@@ -442,10 +449,10 @@ mod tests {
         initialize_kb();
         Crate::current().set_implementation_name("moo");
         let mut my_root = Tao::archetype().individuate_as_archetype();
-        my_root.activate_root_node_logic();
+        KnowledgeGraphNode::from(my_root.id()).mark_root_analogue();
         my_root.set_internal_name_str("my-root");
         let mut i = Implement::new();
-        i.set_target(my_root.as_form());
+        i.set_target(&my_root.as_form());
         let code = code_archetype(i, &CodegenConfig::default());
         assert!(!code.contains("impl FormTrait"));
     }

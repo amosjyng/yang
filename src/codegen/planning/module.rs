@@ -4,7 +4,8 @@ use crate::codegen::template::concept::archetype_module::{
 };
 use crate::tao::form::{Module, ModuleExtension};
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
-use crate::tao::{Implement, ImplementExtension};
+use crate::tao::Implement;
+use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait};
 
@@ -68,8 +69,10 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
         re_exports.push((*re_export).to_owned());
     }
 
+    let doc = request.documentation().map(|rc| Rc::from(rc.as_str()));
+
     code_archetype_module(&ArchetypeModuleConfig {
-        doc: request.documentation(),
+        doc,
         archetype_names,
         private_submodules,
         public_submodules,

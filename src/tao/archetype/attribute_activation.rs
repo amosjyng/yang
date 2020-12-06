@@ -1,7 +1,6 @@
 use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
-use crate::tao::relation::flag::UsesRootNodeLogic;
-use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
-use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
+use zamm_yin::node_wrappers::CommonNodeTrait;
+use zamm_yin::tao::archetype::{Archetype, AttributeArchetype};
 use zamm_yin::tao::form::FormTrait;
 
 /// Archetype code generation flags defined when reading from a Yin.md
@@ -25,16 +24,21 @@ pub trait CodegenFlags: FormTrait + CommonNodeTrait {
     }
 
     /// Activate root-node-specific logic for this concept during code generation.
+    #[deprecated(
+        since = "0.1.8",
+        note = "Please use KnowledgeGraphNode::mark_root_analogue"
+    )]
     fn activate_root_node_logic(&mut self) {
-        self.essence_mut().add_flag(UsesRootNodeLogic::TYPE_ID);
+        KnowledgeGraphNode::from(self.id()).mark_root_analogue();
     }
 
     /// Whether this concept should have root-node-specific logic activated during code generation.
+    #[deprecated(
+        since = "0.1.8",
+        note = "Please use KnowledgeGraphNode::is_root_analogue"
+    )]
     fn root_node_logic_activated(&self) -> bool {
-        self.essence()
-            .inheritance_wrapper()
-            .base_wrapper()
-            .has_flag(UsesRootNodeLogic::TYPE_ID)
+        KnowledgeGraphNode::from(self.id()).is_root_analogue()
     }
 
     /// Activate attribute-specific logic for this concept during code generation.
@@ -88,32 +92,3 @@ pub trait CodegenFlags: FormTrait + CommonNodeTrait {
 
 impl CodegenFlags for Archetype {}
 impl CodegenFlags for AttributeArchetype {}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::tao::initialize_kb;
-    use zamm_yin::tao::archetype::ArchetypeFormTrait;
-    use zamm_yin::tao::Tao;
-
-    #[test]
-    fn test_root_node_logic_activation() {
-        initialize_kb();
-        let mut new_root = Tao::archetype().individuate_as_archetype();
-        assert!(!new_root.root_node_logic_activated());
-
-        new_root.activate_root_node_logic();
-        assert!(new_root.root_node_logic_activated());
-    }
-
-    #[test]
-    fn test_root_node_logic_activation_not_inherited() {
-        initialize_kb();
-        let mut new_root = Tao::archetype().individuate_as_archetype();
-        let non_root = new_root.individuate_as_archetype();
-        assert!(!non_root.root_node_logic_activated());
-
-        new_root.activate_root_node_logic();
-        assert!(!non_root.root_node_logic_activated());
-    }
-}

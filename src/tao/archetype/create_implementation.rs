@@ -1,23 +1,24 @@
-use crate::tao::form::{Module, ModuleExtension};
-use crate::tao::perspective::BuildInfo;
-use crate::tao::{Implement, ImplementExtension};
+use crate::tao::form::Module;
+use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
+use crate::tao::Implement;
+use heck::SnakeCase;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
-use zamm_yin::tao::form::{Form, FormTrait};
+use zamm_yin::tao::form::FormTrait;
 
 /// Convenience trait for creating a new implementation of a concept.
 pub trait CreateImplementation: FormTrait + CommonNodeTrait {
     /// Create a new implementation for a concept.
     fn implement(&self) -> Implement {
         let mut implementation = Implement::new();
-        implementation.set_target(Form::from(self.id()));
+        implementation.set_target(&self.as_form());
         implementation
     }
 
     /// Implement this concept with the given documentation string.
     fn implement_with_doc(&self, doc: &str) -> Implement {
         let mut implementation = self.implement();
-        implementation.document(doc);
+        implementation.set_documentation(doc.to_owned());
         implementation
     }
 
@@ -28,8 +29,11 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
         let mut implementation = Implement::new();
         let mut new_module = Module::new();
         new_module.set_most_prominent_member(&self.as_form());
-        implementation.set_target(new_module.as_form());
-        implementation.document(doc);
+        if let Some(name) = self.internal_name_str() {
+            BuildInfo::from(new_module.id()).set_implementation_name(&name.to_snake_case());
+        }
+        implementation.set_target(&new_module.as_form());
+        implementation.set_documentation(doc.to_owned());
         new_module
     }
 
@@ -40,8 +44,8 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
     )]
     fn implement_with(&self, id: usize, doc: &str) -> Implement {
         let mut implementation = self.implement();
-        implementation.set_implementation_id(id);
-        implementation.document(doc);
+        implementation.set_concept_id(id);
+        implementation.set_documentation(doc.to_owned());
         implementation
     }
 

@@ -1,8 +1,7 @@
 use super::BuildInfo;
 use crate::tao::form::{Crate, CrateExtension, Module};
 use crate::tao::relation::attribute::{
-    DualPurposeDocumentation, HasMember, ImplementationName, ImportPath, MostProminentMember,
-    SupportsMembership,
+    HasMember, ImplementationName, MostProminentMember, SupportsMembership,
 };
 use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::StrongValue;
@@ -42,32 +41,6 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
             .flatten()
     }
 
-    /// Set import path the concept ended up at, relative to the crate.
-    fn set_import_path(&mut self, path: &str) {
-        let mut s = StringConcept::new();
-        // todo: set using StringConcept API once that is correctly generated once more
-        s.essence_mut()
-            .set_value(Rc::new(StrongValue::new(path.to_owned())));
-        self.essence_mut()
-            .add_outgoing(ImportPath::TYPE_ID, s.essence());
-    }
-
-    /// Retrieve import path the concept ended up at, relative to the crate.
-    fn import_path(&self) -> Option<Rc<str>> {
-        // todo: retrieve using StringConcept API once that is correctly generated once more
-        self.essence()
-            .inheritance_wrapper()
-            .base_wrapper()
-            .outgoing_nodes(ImportPath::TYPE_ID)
-            .first()
-            .map(|s| {
-                StringConcept::from(s.id())
-                    .value()
-                    .map(|rc| Rc::from(rc.as_str()))
-            })
-            .flatten()
-    }
-
     /// Set name the concept took on for its actual implementation.
     fn set_implementation_name(&mut self, name: &str) {
         let mut s = StringConcept::new();
@@ -103,29 +76,6 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
             .first()
             .map(|b| Module::from(b.id()))
     }
-
-    /// Set the dual-purpose documentation string for this implementation.
-    fn dual_document(&mut self, document: &str) {
-        let mut s = StringConcept::new();
-        s.set_value(document.to_owned());
-        self.essence_mut()
-            .add_outgoing(DualPurposeDocumentation::TYPE_ID, s.essence());
-    }
-
-    /// Get the dual-purpose documentation string for this implementation.
-    fn dual_documentation(&self) -> Option<Rc<str>> {
-        self.essence()
-            .inheritance_wrapper()
-            .base_wrapper()
-            .outgoing_nodes(DualPurposeDocumentation::TYPE_ID)
-            .first()
-            .map(|v| {
-                StringConcept::from(v.id())
-                    .value()
-                    .map(|rc| Rc::from(rc.as_str()))
-            })
-            .flatten()
-    }
 }
 
 impl BuildInfoExtension for BuildInfo {}
@@ -133,7 +83,6 @@ impl BuildInfoExtension for BuildInfo {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tao::form::ModuleExtension;
     use crate::tao::initialize_kb;
     use zamm_yin::node_wrappers::CommonNodeTrait;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
@@ -145,17 +94,6 @@ mod tests {
         let mut info = BuildInfo::new();
         info.set_crate_name("zamm_yang");
         assert_eq!(info.crate_name(), Some(Rc::from("zamm_yang")));
-    }
-
-    #[test]
-    fn set_and_retrieve_import_path() {
-        initialize_kb();
-        let mut info = BuildInfo::new();
-        info.set_import_path("zamm_yang::import::path");
-        assert_eq!(
-            info.import_path(),
-            Some(Rc::from("zamm_yang::import::path"))
-        );
     }
 
     #[test]
@@ -172,13 +110,13 @@ mod tests {
         initialize_kb();
         let mut info = BuildInfo::new();
         info.set_crate_name("zamm_yang");
-        info.set_import_path("zamm_yang::import::path");
+        info.set_import_path("zamm_yang::import::path".to_owned());
         info.set_implementation_name("Yolo");
 
         assert_eq!(info.crate_name(), Some(Rc::from("zamm_yang")));
         assert_eq!(
             info.import_path(),
-            Some(Rc::from("zamm_yang::import::path"))
+            Some(Rc::new("zamm_yang::import::path".to_owned()))
         );
         assert_eq!(info.implementation_name(), Some(Rc::from("Yolo")));
     }
@@ -190,7 +128,7 @@ mod tests {
         let type1 = Tao::archetype().individuate_as_archetype();
         let mut info = BuildInfo::from(type1.id());
         info.set_crate_name("zamm_yang");
-        info.set_import_path("zamm_yang::import::path");
+        info.set_import_path("zamm_yang::import::path".to_owned());
         info.set_implementation_name("Yolo");
 
         let type2 = type1.individuate_as_archetype();
@@ -228,17 +166,6 @@ mod tests {
         assert_eq!(
             BuildInfo::from(my_subtype.id()).representative_module(),
             Some(child_module)
-        );
-    }
-
-    #[test]
-    fn set_and_retrieve_dual_documentation() {
-        initialize_kb();
-        let mut new_form = BuildInfo::from(Tao::new().id());
-        new_form.dual_document("duels as being outdated.");
-        assert_eq!(
-            new_form.dual_documentation(),
-            Some(Rc::from("duels as being outdated."))
         );
     }
 }
