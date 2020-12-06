@@ -1,7 +1,7 @@
 use super::BuildInfo;
 use crate::tao::form::{Crate, CrateExtension, Module};
 use crate::tao::relation::attribute::{
-    HasMember, ImplementationName, MostProminentMember, SupportsMembership,
+    Member, ImplementationName, MostProminentMember, SupportsMembership,
 };
 use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::StrongValue;
@@ -33,7 +33,7 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
         self.essence()
             .inheritance_wrapper()
             .base_wrapper()
-            .incoming_nodes(HasMember::TYPE_ID)
+            .incoming_nodes(Member::TYPE_ID)
             .iter()
             .map(|n| Form::from(n.id()))
             .find(|f| f.has_ancestor(Crate::archetype()))

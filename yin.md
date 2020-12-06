@@ -180,14 +180,24 @@ define_child!(
 );
 ```
 
-Things that are grouped inside of a module will be considered a member of the module:
+Things that are grouped inside of a module will be considered a member of the module. This is true for things that have memberships in general.
 
 ```rust
 define_child!(
-    has_member,
-    Attribute::archetype(),
-    "Marks the value as being part of the owner. The owner should presumably be a collection of some sort."
+    collection,
+    Form::archetype(),
+    "Anything that has members/sub-components."
 );
+
+add_attr!(
+    member,
+    collection,
+    Tao::archetype(),
+    "Marks the value as being part of the owner. The owner should presumably be a collection of some sort.",
+    "the members of this collection."
+);
+aa(member).mark_multi_valued_attr();
+aa(member).mark_nonhereditary_attr();
 ```
 
 Rust modules sometimes re-export things so that it looks like it's coming from that module.
