@@ -78,7 +78,13 @@ impl Default for AttributePropertyConfig {
 
 fn getter_name(cfg: &AttributePropertyConfig) -> Rc<str> {
     if cfg.multi_valued {
-        Rc::from(format!("{}s", cfg.property_name).as_str())
+        // todo: generate plurals more properly, and add manual override option
+        let plural = if cfg.property_name.ends_with('s') {
+            format!("{}es", cfg.property_name)
+        } else {
+            format!("{}s", cfg.property_name)
+        };
+        Rc::from(plural.as_str())
     } else {
         cfg.property_name.clone()
     }
