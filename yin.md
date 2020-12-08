@@ -290,6 +290,24 @@ define_child!(
 
 It is only natural for the human mind to use the name of the crate as a metonymy for the crate itself, just as humans also tend to use a filename or a file icon as a metonymy for the inode that points to the actual blocks of data on disk. How often do we stop to remind ourselves that the filename is only a symbolic handle for the actual data, or that when we're dragging a file icon from one folder to another, we're not dragging the data but only the visual representation of the data? We don't do so very often, because such details usually don't matter. It does matter here, however, so we will keep them separate and distinct.
 
+#### Backwards compatibility
+
+Humans have imperfect introspection capabilities into their semi-interpretable minds. As such, they often come up with initial ontologies that do not accurately reflect how they actually reason about the world behind the scenes. Accomodating change is important, because otherwise we are stuck in the confines of an imperfect past. Accomodating tradition is also important, however, because there are costs involved in accomodating change, and if one is forced to spend all their time keeping up with the flux of present times, there won't be any more time left for improving on the future.
+
+Accomodating tradition also carries a cost, of course. We will try to automate that cost when it comes to ontologies by providing an alias for moved concepts:
+
+```rust
+add_attr!(
+    alias,
+    build_info,
+    StringConcept::archetype(),
+    "Describes an aliased import path for a concept.",
+    "the alternative import paths for the concept."
+);
+aa(alias).mark_nonhereditary_attr();
+aa(alias).mark_multi_valued_attr();
+```
+
 ### Implementation
 
 Unlike with Yin, we don't actually want to implement *everything* we know, because everything we know about Yin is already implemented inside her physical body. We only want to implement the things that we learned about Yang here. This means implementing the Yang-specific modules:
