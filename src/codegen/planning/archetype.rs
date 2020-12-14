@@ -233,6 +233,7 @@ fn attr_config(
         rust_primitive: value_type.rust_primitive(),
         primitive_test_value: value_type.default_value(),
         hereditary: !attr.is_nonhereditary_attr(),
+        multi_valued: attr.is_multi_valued_attr(),
     }
 }
 

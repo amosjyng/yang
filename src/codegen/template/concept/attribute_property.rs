@@ -10,8 +10,6 @@ use std::rc::Rc;
 
 /// Prefix for attribute setter function name.
 const SETTER_PREFIX: &str = "set_";
-/// Prefix for attribute getter function name.
-const GETTER_PREFIX: &str = "";
 
 struct PrimitiveValueConfig<'a> {
     pub value: String,
@@ -57,6 +55,8 @@ pub struct AttributePropertyConfig {
     /// Whether or not the flag will be passed on to the owner's children via the `Inherits`
     /// attribute.
     pub hereditary: bool,
+    /// Whether or not this attribute can contain multiple values.
+    pub multi_valued: bool,
 }
 
 impl Default for AttributePropertyConfig {
@@ -71,13 +71,36 @@ impl Default for AttributePropertyConfig {
             rust_primitive: None,
             primitive_test_value: None,
             hereditary: true,
+            multi_valued: false,
         }
+    }
+}
+
+fn getter_name(cfg: &AttributePropertyConfig) -> Rc<str> {
+    if cfg.multi_valued {
+        // todo: generate plurals more properly, and add manual override option
+        let plural = if cfg.property_name.ends_with('s') {
+            format!("{}es", cfg.property_name)
+        } else {
+            format!("{}s", cfg.property_name)
+        };
+        Rc::from(plural.as_str())
+    } else {
+        cfg.property_name.clone()
+    }
+}
+
+fn setter_name(cfg: &AttributePropertyConfig) -> String {
+    if cfg.multi_valued {
+        format!("add_{}", cfg.property_name)
+    } else {
+        format!("{}{}", SETTER_PREFIX, cfg.property_name)
     }
 }
 
 /// Get the setter fragment for the attribute property.
 fn setter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
-    let mut f = FunctionFragment::new(format!("{}{}", SETTER_PREFIX, cfg.property_name));
+    let mut f = FunctionFragment::new(setter_name(cfg));
 
     f.add_import(cfg.attr.import.clone());
     f.add_import(cfg.value_type.import.clone());
@@ -89,7 +112,11 @@ fn setter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     if cfg.public {
         f.mark_as_public();
     }
-    f.document(format!("Set {}", cfg.doc));
+    if cfg.multi_valued {
+        f.document(format!("Add one of {}", cfg.doc));
+    } else {
+        f.document(format!("Set {}", cfg.doc));
+    }
     f.set_self_reference(SelfReference::Mutable);
 
     let arg_name = cfg.property_name.to_string();
@@ -125,7 +152,7 @@ fn setter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
 
 /// Get the getter fragment for the attribute property.
 fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
-    let mut f = FunctionFragment::new(format!("{}{}", GETTER_PREFIX, cfg.property_name));
+    let mut f = FunctionFragment::new(getter_name(cfg).to_string());
 
     f.add_import(cfg.attr.import.clone());
     f.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
@@ -147,15 +174,29 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
         }
         None => cfg.value_type.name.clone(),
     };
-    f.set_return(format!("Option<{}>", base_return_type));
+    if cfg.multi_valued {
+        f.set_return(format!("Vec<{}>", base_return_type));
+    } else {
+        f.set_return(format!("Option<{}>", base_return_type));
+    }
 
     let nonhereditary_access = if cfg.hereditary {
         ""
     } else {
-        "\n    .inheritance_wrapper()\n    .base_wrapper()"
+        "\n    .base_wrapper()"
     };
     let primitive_map = if cfg.rust_primitive.is_some() {
         ".value().unwrap()"
+    } else {
+        ""
+    };
+    let collection = if cfg.multi_valued {
+        ".into_iter()"
+    } else {
+        ".first()"
+    };
+    let post_collection = if cfg.multi_valued {
+        "\n    .collect()"
     } else {
         ""
     };
@@ -163,12 +204,14 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
         self.essence(){inheritance}
             .outgoing_nodes({attr}::TYPE_ID)
-            .first()
-            .map(|f| {value_type}::from(f.id()){primitive_map})",
+            {collection}
+            .map(|f| {value_type}::from(f.id()){primitive_map}){post_collection}",
         inheritance = nonhereditary_access,
         attr = cfg.attr.name,
         value_type = cfg.value_type.name,
-        primitive_map = primitive_map
+        primitive_map = primitive_map,
+        collection = collection,
+        post_collection = post_collection
     }))));
 
     f
@@ -176,6 +219,9 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
 
 /// Test that the getter and setter work as intended.
 fn test_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
+    let setter = setter_name(cfg);
+    let getter = getter_name(cfg);
+
     let mut f = kb_test_function(&format!("test_set_and_get_{}", cfg.property_name));
     f.add_import(cfg.owner_type.import.clone());
     if cfg.rust_primitive.is_none() {
@@ -183,29 +229,47 @@ fn test_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
         f.add_import(cfg.value_type.import.clone());
     }
     let value_cfg = primitive_config(cfg);
+    let empty_value = if cfg.multi_valued {
+        "vec![]".to_owned()
+    } else {
+        "None".to_owned()
+    };
+    let final_value_get = if cfg.multi_valued {
+        format!("vec![{}]", value_cfg.value_get)
+    } else {
+        format!("Some({})", value_cfg.value_get)
+    };
     // todo: only clone when it's not a Copy type, to avoid the clone_on_copy warning. The thing
     // is, this is specific to Rust, so it should be Yang-only knowledge.
     f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
         let mut new_instance = {owner}::new();
-        assert_eq!(new_instance.{getter}{property}(), None);
+        assert_eq!(new_instance.{getter}(), {empty});
 
         let value = {value};
         #[allow(clippy::clone_on_copy)]
-        new_instance.{setter}{property}({value_set});
-        assert_eq!(new_instance.{getter}{property}(), Some({value_get}));",
+        new_instance.{setter}({value_set});
+        assert_eq!(new_instance.{getter}(), {value_get});",
         owner = cfg.owner_type.name,
-        getter = GETTER_PREFIX,
-        setter = SETTER_PREFIX,
-        property = cfg.property_name,
+        getter = getter,
+        setter = setter,
+        empty = empty_value,
         value = value_cfg.value,
         value_set = value_cfg.value_set,
-        value_get = value_cfg.value_get,
+        value_get = final_value_get,
     }))));
     f
 }
 
 /// Test that the getter and setter work as intended when inherited.
 fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
+    let setter = setter_name(cfg);
+    let getter = getter_name(cfg);
+
+    let empty_value = if cfg.multi_valued {
+        "vec![]".to_owned()
+    } else {
+        "None".to_owned()
+    };
     let inheritance_name = if cfg.hereditary {
         "inheritance"
     } else {
@@ -218,9 +282,13 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
         value_cfg.value_set
     };
     let inheritance_check = if cfg.hereditary {
-        format!("Some({})", value_cfg.value_get)
+        if cfg.multi_valued {
+            format!("vec![{}]", value_cfg.value_get)
+        } else {
+            format!("Some({})", value_cfg.value_get)
+        }
     } else {
-        "None".to_owned()
+        empty_value.clone()
     };
     let mut f = FunctionFragment::new(format!("test_{}_{}", cfg.property_name, inheritance_name));
     f.mark_as_test();
@@ -232,16 +300,16 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
         initialize_kb();
         let new_type = {owner}::archetype().individuate_as_archetype();
         let new_instance = {owner}::from(new_type.individuate_as_form().id());
-        assert_eq!(new_instance.{getter}{property}(), None);
+        assert_eq!(new_instance.{getter}(), {empty});
 
         let value = {value};
         #[allow(clippy::clone_on_copy)]
-        {owner}::from(new_type.id()).{setter}{property}({value_set});
-        assert_eq!(new_instance.{getter}{property}(), {inheritance});
+        {owner}::from(new_type.id()).{setter}({value_set});
+        assert_eq!(new_instance.{getter}(), {inheritance});
     ", owner = cfg.owner_type.name,
-        getter = GETTER_PREFIX,
-        setter = SETTER_PREFIX,
-        property = cfg.property_name,
+        getter = getter,
+        setter = setter,
+        empty = empty_value,
         inheritance = inheritance_check,
         value = value_cfg.value,
         value_set = value_set,
@@ -287,6 +355,7 @@ mod tests {
             rust_primitive: None,
             primitive_test_value: None,
             hereditary: true,
+            multi_valued: false,
         }
     }
 
@@ -294,6 +363,14 @@ mod tests {
         AttributePropertyConfig {
             rust_primitive: Some(Rc::from("String")),
             primitive_test_value: Some(Rc::from("String::new()")),
+            ..concept_attr_config()
+        }
+    }
+
+    fn multi_valued_config() -> AttributePropertyConfig {
+        AttributePropertyConfig {
+            doc: Rc::from("the crates associated with the struct."),
+            multi_valued: true,
             ..concept_attr_config()
         }
     }
@@ -325,6 +402,21 @@ mod tests {
                     self.essence_mut().add_outgoing(
                         AssociatedCrate::TYPE_ID,
                         value_concept.essence(),
+                    );
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_multi_valued_setter_fragment_body() {
+        assert_eq!(
+            setter_fragment(&multi_valued_config()).body(80),
+            indoc! {"
+                /// Add one of the crates associated with the struct.
+                fn add_associated_crate(&mut self, associated_crate: &Crate) {
+                    self.essence_mut().add_outgoing(
+                        AssociatedCrate::TYPE_ID,
+                        associated_crate.essence(),
                     );
                 }"}
         );
@@ -374,11 +466,26 @@ mod tests {
                 #[allow(clippy::rc_buffer)]
                 fn associated_crate(&self) -> Option<Rc<String>> {
                     self.essence()
-                        .inheritance_wrapper()
                         .base_wrapper()
                         .outgoing_nodes(AssociatedCrate::TYPE_ID)
                         .first()
                         .map(|f| Crate::from(f.id()).value().unwrap())
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_multi_valued_getter_fragment_body() {
+        assert_eq!(
+            getter_fragment(&multi_valued_config()).body(80),
+            indoc! {"
+                /// Get the crates associated with the struct.
+                fn associated_crates(&self) -> Vec<Crate> {
+                    self.essence()
+                        .outgoing_nodes(AssociatedCrate::TYPE_ID)
+                        .into_iter()
+                        .map(|f| Crate::from(f.id()))
+                        .collect()
                 }"}
         );
     }
