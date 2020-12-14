@@ -31,7 +31,7 @@ We need some way of efficiently distinguishing Yin concepts from each other. We 
 add_attr!(
     concept_id,
     implement,
-    Number::archetype(),
+    number,
     "The integer ID associated with a concept.",
     "the concept's ID during code generation time, as opposed to the concept's currently assigned runtime ID."
 );
@@ -43,7 +43,7 @@ When implementing anything in Rust, we should consider documenting it for the us
 add_attr!(
     documentation,
     implement,
-    StringConcept::archetype(),
+    string_concept,
     "The documentation associated with an implementation.",
     "the documentation string associated with this particular Rust implementation."
 );
@@ -164,7 +164,7 @@ Getters and setters in particular have their own dual-purpose documentation stri
 add_attr!(
     dual_purpose_documentation,
     build_info,
-    StringConcept::archetype(),
+    string_concept,
     "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string.",
     "the dual-purpose documentation substring to be used for the implementation of this property as getters and setters in a different concept's class."
 );
@@ -239,20 +239,11 @@ Once built, structs have a certain import path:
 add_attr!(
     import_path,
     build_info,
-    StringConcept::archetype(),
+    string_concept,
     "Describes the import path of a defined struct.",
     "the import path the Rust implementation ended up at."
 );
 aa(import_path).mark_nonhereditary_attr();
-```
-
-Unfortunately, Yin's information about her data attributes didn't survive the code generation process, so here it is again:
-
-```rust
-StringConcept::archetype().set_default_value("String::new()");
-StringConcept::archetype().set_rust_primitive("String");
-Number::archetype().set_default_value("0");
-Number::archetype().set_rust_primitive("usize");
 ```
 
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
@@ -300,7 +291,7 @@ Accomodating tradition also carries a cost, of course. We will try to automate t
 add_attr!(
     alias,
     build_info,
-    StringConcept::archetype(),
+    string_concept,
     "Describes an aliased import path for a concept.",
     "the alternative import paths for the concept."
 );
@@ -382,42 +373,23 @@ Crate::current().set_implementation_name("zamm_yang");
 
 ### Imports
 
-These are the generic imports for general Yang generation:
+Let's import the build for Yin, so that we can differentiate between where concepts are introduced:
 
-```rust
-use zamm_yang::add_flag;
-use zamm_yang::add_attr;
-use zamm_yang::define;
-use zamm_yang::define_child;
-use zamm_yang::module;
-use zamm_yang::tao::initialize_kb;
-use zamm_yang::tao::Tao;
-use zamm_yang::tao::ImplementExtension;
-use zamm_yang::tao::archetype::ArchetypeTrait;
-use zamm_yang::tao::archetype::ArchetypeFormTrait;
-use zamm_yang::tao::archetype::AttributeArchetypeFormTrait;
-use zamm_yang::tao::archetype::ArchetypeFormExtensionTrait;
-use zamm_yang::tao::archetype::CreateImplementation;
-use zamm_yang::tao::form::data::DataExtension;
-use zamm_yang::tao::form::data::Number;
-use zamm_yang::tao::form::data::StringConcept;
-use zamm_yang::tao::form::Crate;
-use zamm_yang::tao::form::CrateExtension;
-use zamm_yang::tao::form::Form;
-use zamm_yang::tao::form::FormTrait;
-use zamm_yang::tao::form::ModuleExtension;
-use zamm_yang::tao::callbacks::handle_all_implementations;
-use zamm_yang::codegen::CodegenConfig;
-use zamm_yang::node_wrappers::CommonNodeTrait;
-use zamm_yang::helper::aa;
+```zamm
+https://api.zamm.dev/v1/books/yin/0.1.6/yin.md
 ```
 
 These are the imports specific to building on top of Yin:
 
 ```rust
+use zamm_yang::add_attr;
+use zamm_yang::add_flag;
+use zamm_yang::tao::ImplementExtension;
+use zamm_yang::tao::form::Form;
 use zamm_yang::tao::form::data::Data;
 use zamm_yang::tao::archetype::Archetype;
 use zamm_yang::tao::relation::Relation;
+use zamm_yang::tao::archetype::ArchetypeFormExtensionTrait;
 use zamm_yang::tao::relation::attribute::Attribute;
 use zamm_yang::tao::relation::attribute::has_property::HasProperty;
 use zamm_yang::tao::relation::flag::Flag;
