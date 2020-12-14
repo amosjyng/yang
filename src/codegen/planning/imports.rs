@@ -102,6 +102,11 @@ pub fn import_path(target: &KnowledgeGraphNode, yin_override: bool) -> String {
             let yin_crate = if build_info.crate_name().is_some() {
                 (*build_info.crate_name().unwrap()).to_owned()
             } else if yin_override || target.is_newly_defined() {
+                assert!(
+                    !target.is_imported(),
+                    "{:?} is both newly defined and imported",
+                    target
+                );
                 "crate".to_owned()
             } else {
                 "zamm_yin".to_owned()
