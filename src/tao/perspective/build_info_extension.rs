@@ -58,7 +58,7 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
             .inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(ImplementationName::TYPE_ID)
-            .first()
+            .last()
             .map(|s| {
                 StringConcept::from(s.id())
                     .value()
