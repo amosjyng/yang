@@ -232,6 +232,7 @@ fn attr_config(
         value_type: concept_to_struct(&value_type, codegen_cfg.yin),
         rust_primitive: value_type.rust_primitive(),
         primitive_test_value: value_type.default_value(),
+        dummy_test_value: value_type.dummy_value(),
         hereditary: !attr.is_nonhereditary_attr(),
         multi_valued: attr.is_multi_valued_attr(),
     }

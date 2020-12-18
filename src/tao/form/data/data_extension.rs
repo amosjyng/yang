@@ -1,4 +1,4 @@
-use crate::tao::relation::attribute::RustPrimitive;
+use crate::tao::relation::attribute::{RustPrimitive, DummyValue};
 use std::rc::Rc;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
@@ -50,6 +50,27 @@ pub trait DataExtension: FormTrait {
             })
             .flatten()
     }
+
+    /// Set the Rust code representation for the dummy test value of this concept.
+    fn set_dummy_value(&mut self, dummy_value_as_code: &str) {
+        let mut code_str = StringConcept::new();
+        code_str.set_value(dummy_value_as_code.to_owned());
+        self.essence_mut()
+            .add_outgoing(DummyValue::TYPE_ID, code_str.essence());
+    }
+
+    /// Get the Rust code representation for the dummy test value of this concept.
+    fn dummy_value(&self) -> Option<Rc<str>> {
+        self.essence()
+            .outgoing_nodes(DummyValue::TYPE_ID)
+            .first()
+            .map(|p| {
+                StringConcept::from(*p)
+                    .value()
+                    .map(|rc| Rc::from(rc.as_str()))
+            })
+            .flatten()
+    }
 }
 
 // technically, this should be limited to Data-specific archetypes, but there's currently no way to
@@ -79,5 +100,15 @@ mod tests {
         let mut new_data = Data::archetype().individuate_as_archetype();
         new_data.set_default_value("0");
         assert_eq!(new_data.default_value(), Some(Rc::from("0")));
+    }
+
+    #[test]
+    fn set_and_get_dummy_value() {
+        initialize_kb();
+        let mut new_data = Data::archetype().individuate_as_archetype();
+        assert_eq!(new_data.dummy_value(), None);
+
+        new_data.set_dummy_value("0");
+        assert_eq!(new_data.dummy_value(), Some(Rc::from("0")));
     }
 }
