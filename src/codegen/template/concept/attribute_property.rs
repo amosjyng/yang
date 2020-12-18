@@ -20,7 +20,7 @@ struct PrimitiveValueConfig {
 fn primitive_config(
     attr_cfg: &AttributePropertyConfig,
     primitive_value: &Option<Rc<str>>,
-    value_var: &str
+    value_var: &str,
 ) -> PrimitiveValueConfig {
     match primitive_value {
         Some(primitive_value) => PrimitiveValueConfig {
@@ -403,7 +403,9 @@ pub fn add_attr_to_impl(
     implementation.append(Rc::new(RefCell::new(setter_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(test_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(test_inheritance_fragment(cfg))));
-    test_multi_set_fragment(cfg).map(|f| file.append_test(Rc::new(RefCell::new(f))));
+    if let Some(f) = test_multi_set_fragment(cfg) {
+        file.append_test(Rc::new(RefCell::new(f)));
+    }
 }
 
 #[cfg(test)]
