@@ -245,6 +245,16 @@ Number::archetype().set_default_value("0");
 Number::archetype().set_rust_primitive("usize");
 ```
 
+To help with testing, we should give these data types dummy values in addition to the default ones -- at least until such time as Yang is capable of generating dummy values himself.
+
+```rust
+define_child!(
+    dummy_value,
+    Attribute::archetype(),
+    "A dummy value for a type of data. This helps with testing."
+);
+```
+
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
 
 ```rust
