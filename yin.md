@@ -376,7 +376,7 @@ Crate::current().set_implementation_name("zamm_yang");
 Let's import the build for Yin, so that we can differentiate between where concepts are introduced:
 
 ```zamm
-https://api.zamm.dev/v1/books/yin/0.1.6/yin.md
+https://api.zamm.dev/v1/books/zamm/yin/0.1.6/yin.md
 ```
 
 These are the imports specific to building on top of Yin:
