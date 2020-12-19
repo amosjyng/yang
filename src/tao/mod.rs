@@ -15,7 +15,7 @@ pub use implement_extension::ImplementExtension;
 pub use implement_form::Implement;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::ArchetypeTrait;
-pub use zamm_yin::tao::*;
+pub use zamm_yin::tao::Tao;
 
 /// Only here for backwards compatibility reasons.
 #[deprecated(

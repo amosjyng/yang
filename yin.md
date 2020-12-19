@@ -17,9 +17,9 @@ Implementations are lower-level concepts that *target* specific higher-level con
 
 ```rust
 add_attr!(
-    target,
+    target <= attribute,
     implement,
-    Tao::archetype(),
+    tao,
     "The target of an implement command.",
     "target concept for this implementation."
 );
@@ -29,7 +29,7 @@ We need some way of efficiently distinguishing Yin concepts from each other. We 
 
 ```rust
 add_attr!(
-    concept_id,
+    concept_id <= attribute,
     implement,
     number,
     "The integer ID associated with a concept.",
@@ -41,7 +41,7 @@ When implementing anything in Rust, we should consider documenting it for the us
 
 ```rust
 add_attr!(
-    documentation,
+    documentation <= attribute,
     implement,
     string_concept,
     "The documentation associated with an implementation.",
@@ -56,7 +56,7 @@ Each data primitive has an associated primitive type in Rust. We should define a
 ```rust
 define_child!(
     rust_primitive,
-    Attribute::archetype(),
+    attribute,
     "The Rust primitive that a Yin data concept is implemented by."
 );
 ```
@@ -100,7 +100,7 @@ As part of this perspective, we should start tracking what has and hasn't gotten
 
 ```rust
 add_flag!(
-    newly_defined,
+    newly_defined <= flag,
     knowledge_graph_node,
     "Marks an archetype and all its descendants as having been newly defined as part of this particular build.",
     "having been newly defined as part of the current build."
@@ -113,7 +113,7 @@ However, this also means that Yin's new attribute node won't be the same `Attrib
 
 ```rust
 add_flag!(
-    attribute_analogue,
+    attribute_analogue <= flag,
     knowledge_graph_node,
     "Marks an archetype and all its descendants as requiring attribute-specific logic during generation.",
     "logically analogous to an attribute node."
@@ -124,14 +124,14 @@ The same is true of Tao and Data:
 
 ```rust
 add_flag!(
-    root_analogue,
+    root_analogue <= flag,
     knowledge_graph_node,
     "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this.",
     "logically analogous to the root node."
 );
 
 add_flag!(
-    data_analogue,
+    data_analogue <= flag,
     knowledge_graph_node,
     "Marks an archetype and all its descendants as requiring data-specific logic during generation.",
     "logically analogous to a data node."
@@ -162,7 +162,7 @@ Getters and setters in particular have their own dual-purpose documentation stri
 
 ```rust
 add_attr!(
-    dual_purpose_documentation,
+    dual_purpose_documentation <= attribute,
     build_info,
     string_concept,
     "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string.",
@@ -175,7 +175,7 @@ Rust groups things by modules.
 ```rust
 define_child!(
     module,
-    Form::archetype(),
+    form,
     "Concept representing a Rust module."
 );
 ```
@@ -185,14 +185,14 @@ Things that are grouped inside of a module will be considered a member of the mo
 ```rust
 define_child!(
     collection,
-    Form::archetype(),
+    form,
     "Anything that has members/sub-components."
 );
 
 add_attr!(
-    member,
+    member <= attribute,
     collection,
-    Tao::archetype(),
+    tao,
     "Marks the value as being part of the owner. The owner should presumably be a collection of some sort.",
     "the members of this collection."
 );
@@ -205,7 +205,7 @@ Rust modules sometimes re-export things so that it looks like it's coming from t
 ```rust
 define_child!(
     re_exports,
-    Attribute::archetype(),
+    attribute,
     "Marks the owner module as re-exporting the value symbol."
 );
 ```
@@ -214,9 +214,9 @@ It seems to make sense to group a concept and its descendants inside the same mo
 
 ```rust
 add_attr!(
-    most_prominent_member,
+    most_prominent_member <= attribute,
     module,
-    Tao::archetype(),
+    tao,
     "The most prominent member of a Rust module. The module will take its name after this member.",
     "the most prominent member of the module. By default, the name of the module will be the same as the name of this member."
 );
@@ -226,7 +226,7 @@ During implementation, we should be able to force a new attribute to live inside
 
 ```rust
 add_flag!(
-    own_module,
+    own_module <= flag,
     build_info,
     "Marks an archetype as living inside its own module, even if it doesn't have any defined child archetypes yet.",
     "residing in its own Rust module."
@@ -237,7 +237,7 @@ Once built, structs have a certain import path:
 
 ```rust
 add_attr!(
-    import_path,
+    import_path <= attribute,
     build_info,
     string_concept,
     "Describes the import path of a defined struct.",
@@ -251,7 +251,7 @@ So to finish up with build information that applies to any implemented concept, 
 ```rust
 define_child!(
     crate_concept,
-    Form::archetype(),
+    form,
     "Crate that a concept was built as a part of."
 );
 crate_concept.set_internal_name_str("crate");
@@ -264,7 +264,7 @@ Crates are versioned:
 ```rust
 define_child!(
     version,
-    Attribute::archetype(),
+    attribute,
     "Version number for a versioned object."
 );
 ```
@@ -274,7 +274,7 @@ Concepts and crates alike might also have their own implementation name:
 ```rust
 define_child!(
     implementation_name,
-    Attribute::archetype(),
+    attribute,
     "Name the concept actually took on when implemented."
 );
 ```
@@ -289,7 +289,7 @@ Accomodating tradition also carries a cost, of course. We will try to automate t
 
 ```rust
 add_attr!(
-    alias,
+    alias <= attribute,
     build_info,
     string_concept,
     "Describes an aliased import path for a concept.",
@@ -312,7 +312,7 @@ This also means redefining the modules for concepts that were first introduced i
 
 ```rust
 module!(
-    Form::archetype(),
+    form,
     "All things that can be interacted with have form.",
     [
         "crate_extension::CrateExtension",
@@ -321,7 +321,7 @@ module!(
     ]
 );
 module!(
-    Archetype::archetype(),
+    archetype,
     "Types of forms, as opposed to the forms themselves.",
     [
         "attribute_activation::CodegenFlags",
@@ -329,19 +329,19 @@ module!(
     ]
 );
 module!(
-    Data::archetype(),
+    data,
     "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea.",
     ["data_extension::DataExtension"]
 );
-module!(Relation::archetype(), "Relations between the forms.");
-module!(Flag::archetype(), "Relations involving only one form.");
+module!(relation, "Relations between the forms.");
+module!(flag, "Relations involving only one form.");
 module!(
-    Attribute::archetype(),
+    attribute,
     "Relations between two forms.",
     ["supports_membership::SupportsMembership"]
 );
 module!(
-    HasProperty::archetype(),
+    has_property,
     "Meta-attributes around what attributes instances of an archetype have."
 );
 ```
@@ -355,14 +355,14 @@ We should really save the build info, so that one day we will no longer need to 
 This is the version of Yang used to make this build happen:
 
 ```toml
-zamm_yang = "0.1.8"
+zamm_yang = {path = "C:/Users/Amos Ng/Documents/projects/zamm/yang"}
 ```
 
 Yang does his best to be backwards-compatible, so we should let old Yang know that this is new Yang speaking:
 
 ```rust
 Crate::yin().set_version("0.1.4");
-Crate::yang().set_version("0.1.7");
+Crate::yang().set_version("0.1.8");
 ```
 
 We should also let him know what our current crate name is. There is as of yet no way to let him know that this is the same crate as the `Crate::yang()` in the knowledge base, or that this crate is a newer version of himself. Unfortunately, there is no self-awareness yet, only instinct.
@@ -385,12 +385,5 @@ These are the imports specific to building on top of Yin:
 use zamm_yang::add_attr;
 use zamm_yang::add_flag;
 use zamm_yang::tao::ImplementExtension;
-use zamm_yang::tao::form::Form;
-use zamm_yang::tao::form::data::Data;
-use zamm_yang::tao::archetype::Archetype;
-use zamm_yang::tao::relation::Relation;
 use zamm_yang::tao::archetype::ArchetypeFormExtensionTrait;
-use zamm_yang::tao::relation::attribute::Attribute;
-use zamm_yang::tao::relation::attribute::has_property::HasProperty;
-use zamm_yang::tao::relation::flag::Flag;
 ```
