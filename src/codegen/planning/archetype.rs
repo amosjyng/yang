@@ -273,7 +273,9 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
 
     let mut file = tao_file_fragment(&base_cfg);
 
-    if !KnowledgeGraphNode::from(target.id()).is_root_analogue() {
+    let kgn = KnowledgeGraphNode::from(target.id());
+    assert!(!kgn.is_imported(), "Coding an imported archetype {:?}", kgn);
+    if !kgn.is_root_analogue() {
         add_form_fragment(&base_cfg, &mut file);
     }
 

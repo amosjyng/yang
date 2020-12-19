@@ -105,6 +105,19 @@ add_flag!(
     "Marks an archetype and all its descendants as having been newly defined as part of this particular build.",
     "having been newly defined as part of the current build."
 );
+aa(newly_defined).mark_nonhereditary_attr();
+```
+
+We should have a similar flag for imported concepts. Note that some concepts are neither imported nor newly defined. These are the concepts that are initialized as part of the existing Yang build.
+
+```rust
+add_flag!(
+    imported,
+    knowledge_graph_node,
+    "Marks a concept as being defined in an imported file.",
+    "imported from another build."
+);
+aa(imported).mark_nonhereditary_attr();
 ```
 
 When Yin tells us about herself, we must forget all preconceptions we have about the world and listen to what she has to say. That means when she speaks of what an attribute is, we *listen* instead of shoehorning her description into what we already think of as an attribute.

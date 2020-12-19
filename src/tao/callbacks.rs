@@ -5,27 +5,33 @@ use crate::codegen::planning::{
 use crate::codegen::track_autogen::save_autogen;
 use crate::codegen::{output_code, CodegenConfig};
 use crate::tao::form::{Crate, CrateExtension, Module};
+use crate::tao::perspective::KnowledgeGraphNode;
 use colored::*;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 
+/// Retrieve all non-imported implement actions.
+pub fn implements() -> Box<dyn Iterator<Item = Implement>> {
+    Box::new(
+        Implement::archetype()
+            .individuals()
+            .into_iter()
+            .filter(|i| !KnowledgeGraphNode::from(i.id()).is_imported())
+            .map(|i| Implement::from(i.id())),
+    )
+}
+
 /// Retrieve implementation requests that pertain to archetypes.
 fn archetypes_to_implement() -> Vec<Implement> {
-    Implement::archetype()
-        .individuals()
-        .into_iter()
-        .map(|i| Implement::from(i.id()))
+    implements()
         .filter(|i| !i.target().unwrap().has_ancestor(Module::archetype()))
         .collect()
 }
 
 /// Retrieve implementation requests that pertain to modules.
 fn modules_to_implement() -> Vec<Implement> {
-    Implement::archetype()
-        .individuals()
-        .into_iter()
-        .map(|i| Implement::from(i.id()))
+    implements()
         .filter(|i| i.target().unwrap().has_ancestor(Module::archetype()))
         .collect()
 }
