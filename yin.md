@@ -383,7 +383,4 @@ These are the imports specific to building on top of Yin:
 
 ```rust
 use zamm_yang::add_attr;
-use zamm_yang::add_flag;
-use zamm_yang::tao::ImplementExtension;
-use zamm_yang::tao::archetype::ArchetypeFormExtensionTrait;
 ```
