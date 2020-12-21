@@ -18,9 +18,7 @@ pub fn in_own_submodule(target: &Archetype) -> bool {
     // todo: filter by type, once Yin has that functionality
     BuildInfo::from(target.id()).is_own_module()
         || root_node_or_equivalent(target)
-        // todo: this is a hack to check if the children are archetypes or not
-        || target.child_archetypes().iter().any(|c|
-            c.internal_name_str().is_some() && !c.internal_name_str().unwrap().contains("DUMMY"))
+        || !target.child_archetypes().is_empty()
 }
 
 /// The import path for concepts, starting from Tao and leading to the given archetype.
