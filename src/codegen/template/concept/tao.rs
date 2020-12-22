@@ -79,8 +79,8 @@ pub struct TaoConfig {
     pub parent_name: String,
     /// Import path for the parent class.
     pub parent_import: String,
-    /// Name of the archetype used to represent this.
-    pub archetype_name: String,
+    /// The archetype used to represent the meta-object for this struct.
+    pub archetype: StructConfig,
     /// List of attributes this class has.
     pub all_attributes: Vec<String>,
     /// Imports for above list of introduced attributes.
@@ -105,7 +105,7 @@ impl Default for TaoConfig {
             form: StructConfig::default(),
             parent_name: "Tao".to_owned(),
             parent_import: "tao::Tao".to_owned(),
-            archetype_name: "Archetype".to_owned(),
+            archetype: StructConfig::new("crate::tao::archetype::Archetype".to_owned()),
             all_attributes: vec![],
             all_attribute_imports: vec![],
             introduced_attributes: vec![],
@@ -126,7 +126,7 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
         cfg.form.import.clone(),
         cfg.parent_import.to_owned(),
         "zamm_yin::tao::archetype::ArchetypeTrait".to_owned(),
-        format!("zamm_yin::tao::archetype::{}", cfg.archetype_name),
+        cfg.archetype.import.clone(),
         "zamm_yin::node_wrappers::debug_wrapper".to_owned(),
         "zamm_yin::Wrapper".to_owned(),
         "zamm_yin::node_wrappers::FinalNode".to_owned(),
@@ -200,7 +200,7 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
             form = cfg.form.name,
             internal_name = cfg.internal_name,
             parent = cfg.parent_name,
-            archetype = cfg.archetype_name,
+            archetype = cfg.archetype.name,
             id = cfg.id,
         },
     }

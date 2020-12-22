@@ -119,10 +119,15 @@ fn generic_config(
         .map(|s| s.import.clone())
         .collect();
 
-    let archetype_name = if activate_archetype(target) {
-        "AttributeArchetype".to_owned()
+    let archetype = if Crate::yang().version_at_least(0, 1, 8) {
+        concept_to_struct(&target.meta_archetype(), codegen_cfg.yin)
     } else {
-        "Archetype".to_owned()
+        // legacy logic
+        if activate_archetype(target) {
+            concept_to_struct(&AttributeArchetype::archetype(), codegen_cfg.yin)
+        } else {
+            concept_to_struct(&Archetype::archetype(), codegen_cfg.yin)
+        }
     };
 
     TaoConfig {
@@ -137,7 +142,7 @@ fn generic_config(
         all_attribute_imports,
         introduced_attributes,
         introduced_attribute_imports,
-        archetype_name,
+        archetype,
         doc,
         id,
     }
@@ -429,9 +434,52 @@ mod tests {
         assert_eq!(attr_cfg.owner_type.name, "Tao".to_owned());
         assert_eq!(attr_cfg.value_type.name, "Form".to_owned());
         assert_eq!(
-            attr_cfg.tao_cfg.archetype_name,
+            attr_cfg.tao_cfg.archetype.name,
             "AttributeArchetype".to_owned()
         );
+    }
+
+    #[test]
+    fn default_meta() {
+        initialize_kb();
+        let mut target = Tao::archetype().individuate_as_archetype();
+        target.set_internal_name_str("MyDataType");
+        let mut kgn = KnowledgeGraphNode::from(target.id());
+        kgn.mark_newly_defined();
+        let mut implement = Implement::new();
+        implement.set_target(&target.as_form());
+        let parent = primary_parent(&target.into());
+        let codegen_cfg = CodegenConfig::default();
+        // todo: this line is only needed because Yin doesn't set a default meta archetype
+        Tao::archetype().set_meta_archetype(&Archetype::archetype());
+        Crate::yang().set_version("0.1.8");
+
+        let cfg = generic_config(&implement, &target.into(), &parent, &codegen_cfg);
+        assert_eq!(cfg.archetype.name, "Archetype");
+    }
+
+    #[test]
+    fn specific_meta() {
+        initialize_kb();
+        let mut target = Tao::archetype().individuate_as_archetype();
+        target.set_internal_name_str("MyDataType");
+        let mut kgn = KnowledgeGraphNode::from(target.id());
+        kgn.mark_newly_defined();
+        let mut implement = Implement::new();
+        implement.set_target(&target.as_form());
+        let parent = primary_parent(&target.into());
+        let codegen_cfg = CodegenConfig::default();
+        // todo: this line is only needed because Yin doesn't set a default meta archetype
+        Tao::archetype().set_meta_archetype(&Archetype::archetype());
+        Crate::yang().set_version("0.1.8");
+
+        // the only difference from the above test
+        target
+            .specific_meta()
+            .set_internal_name_str("my-data-type-archetype");
+
+        let cfg = generic_config(&implement, &target.into(), &parent, &codegen_cfg);
+        assert_eq!(cfg.archetype.name, "MyDataTypeArchetype");
     }
 
     #[test]

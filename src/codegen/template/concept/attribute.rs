@@ -134,7 +134,7 @@ mod tests {
                         ..StructConfig::default()
                     },
                     parent_name: "MyAttr".to_owned(),
-                    archetype_name: "AttributeArchetype".to_owned(),
+                    archetype: StructConfig::new("crate::AttributeArchetype".to_owned()),
                     ..TaoConfig::default()
                 },
                 owner_type: StructConfig {
