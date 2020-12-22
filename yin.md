@@ -51,18 +51,6 @@ add_attr!(
 
 Now we finally understand why there's a documentation string with each introduced concept.
 
-Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
-
-```rust
-define_child!(
-    rust_primitive,
-    attribute,
-    "The Rust primitive that a Yin data concept is implemented by."
-);
-```
-
-This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
-
 ### Perspective
 
 All this can apply to any concept at all that's being implemented. However, these attributes are only meaningful within the context of code generation. As such, they should live inside a build config lens -- a way of viewing concepts through a different perspective than usual.
@@ -377,10 +365,4 @@ Let's import the build for Yin, so that we can differentiate between where conce
 
 ```zamm
 https://api.zamm.dev/v1/books/zamm/yin/0.1.6/yin.md
-```
-
-These are the imports specific to building on top of Yin:
-
-```rust
-use zamm_yang::add_attr;
 ```
