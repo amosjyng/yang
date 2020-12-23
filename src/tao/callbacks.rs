@@ -66,10 +66,13 @@ pub fn handle_all_implementations(codegen_cfg: &CodegenConfig) {
         }
     }
 
-    let mut archetype_requests = archetypes_to_implement();
-    // handle initialization first to ensure all concepts land with the right concept IDs
-    handle_init(&mut archetype_requests, codegen_cfg);
-    for implement_command in archetype_requests {
+    let mut initial_archetype_requests = archetypes_to_implement();
+    // handle initialization first to ensure all concepts land with the right concept IDs, and to
+    // make sure all implement commands get created, even the ones that are implicitly defined
+    handle_init(&mut initial_archetype_requests, codegen_cfg);
+    // handle_init might create new implement commands
+    let final_archetype_requests = archetypes_to_implement();
+    for implement_command in final_archetype_requests {
         handle_archetype_implementation(implement_command, codegen_cfg);
     }
     for implement_command in modules_to_implement() {

@@ -1,8 +1,9 @@
 use crate::tao::form::Module;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
+use crate::tao::relation::attribute::Target;
 use crate::tao::Implement;
 use heck::SnakeCase;
-use zamm_yin::node_wrappers::CommonNodeTrait;
+use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::FormTrait;
 
@@ -53,7 +54,34 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
     fn build_info(&self) -> BuildInfo {
         BuildInfo::from(self.id())
     }
+
+    /// Grab all implementations for this current node.
+    fn implementations(&self) -> Vec<Implement> {
+        self.essence()
+            .base_wrapper()
+            .incoming_nodes(Target::TYPE_ID)
+            .into_iter()
+            .map(|f| Implement::from(f.id()))
+            .collect()
+    }
 }
 
 impl CreateImplementation for Archetype {}
 impl CreateImplementation for AttributeArchetype {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tao::initialize_kb;
+    use crate::tao::form::Form;
+    use zamm_yin::tao::archetype::ArchetypeFormTrait;
+
+    #[test]
+    fn retrieve_implementations() {
+        initialize_kb();
+        let form_subtype = Form::archetype().individuate_as_archetype();
+        let implement = form_subtype.implement();
+        assert_eq!(implement.target(), Some(form_subtype.as_form()));
+        assert_eq!(form_subtype.implementations(), vec![implement]);
+    }
+}
