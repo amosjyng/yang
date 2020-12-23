@@ -8,7 +8,7 @@ use crate::codegen::template::concept::attribute_property::{
 };
 use crate::codegen::template::concept::data::{add_data_fragments, DataFormatConfig};
 use crate::codegen::template::concept::flag::{add_flag_to_impl, FlagConfig};
-use crate::codegen::template::concept::form::add_form_fragment;
+use crate::codegen::template::concept::form::{add_form_fragment, FormFormatConfig};
 use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
 use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
@@ -37,7 +37,7 @@ fn or_form_default(archetype: Archetype) -> Archetype {
     }
 }
 
-fn activate_archetype(target: &Archetype) -> bool {
+fn activate_attribute(target: &Archetype) -> bool {
     target == &Attribute::archetype().into()
         || target.has_ancestor(Attribute::archetype().into())
         || KnowledgeGraphNode::from(target.id()).is_attribute_analogue()
@@ -123,7 +123,7 @@ fn generic_config(
         concept_to_struct(&target.meta_archetype(), codegen_cfg.yin)
     } else {
         // legacy logic
-        if activate_archetype(target) {
+        if activate_attribute(target) {
             concept_to_struct(&AttributeArchetype::archetype(), codegen_cfg.yin)
         } else {
             concept_to_struct(&Archetype::archetype(), codegen_cfg.yin)
@@ -150,13 +150,38 @@ fn generic_config(
 
 fn into_archetype_fn(yin: &Crate, archetype: &Archetype) -> String {
     if yin.version_at_least(0, 1, 4) {
-        if activate_archetype(archetype) {
+        if !KnowledgeGraphNode::from(archetype.id()).is_root_archetype_analogue() {
             ".into()".to_owned()
         } else {
             String::new()
         }
     } else {
         ".as_archetype()".to_owned()
+    }
+}
+
+fn form_config(
+    base_cfg: &TaoConfig,
+    target: &Archetype,
+    codegen_cfg: &CodegenConfig,
+) -> FormFormatConfig {
+    let mut initial_ancestors = target.ancestry();
+    let root_node_override = initial_ancestors
+        .iter()
+        .map(|a| KnowledgeGraphNode::from(a.id()))
+        .any(|k| k.is_root_analogue());
+    if root_node_override {
+        // then we pretend that our current runtime Tao does not exist, and the root node analogue
+        // is the real Tao
+        initial_ancestors.remove(0);
+    }
+    let ancestors = initial_ancestors
+        .into_iter()
+        .map(|a| concept_to_struct(&a, codegen_cfg.yin))
+        .collect();
+    FormFormatConfig {
+        tao_cfg: base_cfg.clone(),
+        ancestors,
     }
 }
 
@@ -281,10 +306,10 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
     let kgn = KnowledgeGraphNode::from(target.id());
     assert!(!kgn.is_imported(), "Coding an imported archetype {:?}", kgn);
     if !kgn.is_root_analogue() {
-        add_form_fragment(&base_cfg, &mut file);
+        add_form_fragment(&form_config(&base_cfg, &target, &codegen_cfg), &mut file);
     }
 
-    if activate_archetype(&target) {
+    if activate_attribute(&target) {
         add_attr_fragments(
             &attribute_config(&base_cfg, &target, codegen_cfg),
             &mut file,
@@ -336,7 +361,7 @@ mod tests {
         );
 
         assert!(!target_kgn.is_root_analogue());
-        assert!(!activate_archetype(&target));
+        assert!(!activate_attribute(&target));
         assert!(!activate_data(&target));
 
         assert!(cfg.id.contains("YIN_MAX_ID"));
@@ -400,7 +425,7 @@ mod tests {
         target_kgn.mark_root_analogue();
 
         assert!(target_kgn.is_root_analogue());
-        assert!(!activate_archetype(&target));
+        assert!(!activate_attribute(&target));
         assert!(!activate_data(&target));
     }
 
@@ -428,7 +453,7 @@ mod tests {
         );
 
         assert!(!kgn.is_root_analogue());
-        assert!(activate_archetype(&target.into()));
+        assert!(activate_attribute(&target.into()));
         assert!(!activate_data(&target.into()));
 
         assert_eq!(attr_cfg.owner_type.name, "Tao".to_owned());
@@ -492,7 +517,7 @@ mod tests {
         kgn.mark_data_analogue();
 
         assert!(!kgn.is_root_analogue());
-        assert!(!activate_archetype(&target));
+        assert!(!activate_attribute(&target));
         assert!(activate_data(&target));
     }
 
