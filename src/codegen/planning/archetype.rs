@@ -520,13 +520,13 @@ mod tests {
         kgn.mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(&target.as_form());
-        let parent = primary_parent(&target.into());
+        let parent = primary_parent(&target);
         let codegen_cfg = CodegenConfig::default();
         // todo: this line is only needed because Yin doesn't set a default meta archetype
         Tao::archetype().set_meta_archetype(&Archetype::archetype());
         Crate::yang().set_version("0.1.8");
 
-        let cfg = generic_config(&implement, &target.into(), &parent, &codegen_cfg);
+        let cfg = generic_config(&implement, &target, &parent, &codegen_cfg);
         assert_eq!(cfg.archetype.name, "Archetype");
     }
 
@@ -539,7 +539,7 @@ mod tests {
         kgn.mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(&target.as_form());
-        let parent = primary_parent(&target.into());
+        let parent = primary_parent(&target);
         let codegen_cfg = CodegenConfig::default();
         // todo: this line is only needed because Yin doesn't set a default meta archetype
         Tao::archetype().set_meta_archetype(&Archetype::archetype());
@@ -550,7 +550,7 @@ mod tests {
             .specific_meta()
             .set_internal_name_str("my-data-type-archetype");
 
-        let cfg = generic_config(&implement, &target.into(), &parent, &codegen_cfg);
+        let cfg = generic_config(&implement, &target, &parent, &codegen_cfg);
         assert_eq!(cfg.archetype.name, "MyDataTypeArchetype");
     }
 

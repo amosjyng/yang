@@ -22,12 +22,12 @@ fn setup_archetype_init(
     concepts_to_initialize: &mut Vec<StructConfig>,
     attributes: &mut Vec<Link>,
     add_attributes: bool,
-    has_attr: &StructConfig,
-    has_flag: &StructConfig,
     codegen_cfg: &CodegenConfig,
 ) {
+    let has_attr = concept_to_struct(&HasAttribute::archetype().into(), codegen_cfg.yin);
+    let has_flag = concept_to_struct(&HasFlag::archetype().into(), codegen_cfg.yin);
     let target_struct = concept_to_struct(&target_type, codegen_cfg.yin);
-    concepts_to_initialize.push(target_struct.clone());
+    concepts_to_initialize.push(target_struct);
 
     // only set ID for user if user hasn't already set it
     if implement.concept_id().is_none() {
@@ -81,9 +81,6 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
     let mut attributes = Vec::<Link>::new();
     let add_attributes = Crate::yang().version_at_least(0, 1, 7);
 
-    let has_attr = concept_to_struct(&HasAttribute::archetype().into(), codegen_cfg.yin);
-    let has_flag = concept_to_struct(&HasFlag::archetype().into(), codegen_cfg.yin);
-
     for implement in archetype_requests {
         let mut target_type = Archetype::from(implement.target().unwrap().id());
         setup_archetype_init(
@@ -92,8 +89,6 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
             &mut concepts_to_initialize,
             &mut attributes,
             add_attributes,
-            &has_attr,
-            &has_flag,
             codegen_cfg,
         );
 
@@ -119,8 +114,6 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
                     &mut concepts_to_initialize,
                     &mut attributes,
                     add_attributes,
-                    &has_attr,
-                    &has_flag,
                     codegen_cfg,
                 );
 
