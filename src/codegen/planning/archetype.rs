@@ -2,6 +2,7 @@ use super::concept_to_struct;
 use super::imports::{in_own_submodule, root_node_or_equivalent};
 use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::{FileFragment, ImplementationFragment};
+use crate::codegen::template::concept::archetype::{add_archetype_fragment, ArchetypeFormatConfig};
 use crate::codegen::template::concept::attribute::{add_attr_fragments, AttributeFormatConfig};
 use crate::codegen::template::concept::attribute_property::{
     add_attr_to_impl, AttributePropertyConfig,
@@ -20,14 +21,15 @@ use heck::{KebabCase, SnakeCase};
 use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::rc::Rc;
-use zamm_yin::node_wrappers::CommonNodeTrait;
+use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{
     Archetype, ArchetypeFormExtensionTrait, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype,
     AttributeArchetypeFormTrait,
 };
 use zamm_yin::tao::form::data::Data;
 use zamm_yin::tao::form::{Form, FormTrait};
-use zamm_yin::tao::relation::attribute::Attribute;
+use zamm_yin::tao::relation::attribute::{Attribute, MetaForm};
+use zamm_yin::Wrapper;
 
 fn or_form_default(archetype: Archetype) -> Archetype {
     if root_node_or_equivalent(&archetype) {
@@ -35,6 +37,11 @@ fn or_form_default(archetype: Archetype) -> Archetype {
     } else {
         archetype
     }
+}
+
+fn activate_archetype(target: &Archetype) -> bool {
+    target.has_ancestor(Archetype::archetype())
+        || KnowledgeGraphNode::from(target.id()).is_archetype_analogue()
 }
 
 fn activate_attribute(target: &Archetype) -> bool {
@@ -48,6 +55,15 @@ fn activate_data(target: &Archetype) -> bool {
         || KnowledgeGraphNode::from(target.id()).is_data_analogue()
 }
 
+fn form_for(target: &Archetype, codegen_cfg: &CodegenConfig) -> StructConfig {
+    if KnowledgeGraphNode::from(target.id()).is_root_analogue() {
+        // technically we should allow the user to customize this as well
+        concept_to_struct(&Form::archetype(), codegen_cfg.yin)
+    } else {
+        concept_to_struct(target, codegen_cfg.yin)
+    }
+}
+
 fn generic_config(
     request: &Implement,
     target: &Archetype,
@@ -56,12 +72,7 @@ fn generic_config(
 ) -> TaoConfig {
     let this = concept_to_struct(&target, codegen_cfg.yin);
     let internal_name = this.name.to_kebab_case();
-    let form = if KnowledgeGraphNode::from(target.id()).is_root_analogue() {
-        // technically we should allow the user to customize this as well
-        concept_to_struct(&Form::archetype(), codegen_cfg.yin)
-    } else {
-        this.clone()
-    };
+    let form = form_for(target, codegen_cfg);
 
     let internal_name_cfg = if Crate::yin().version_at_least(0, 1, 4) {
         InternalNameConfig::YIN_AT_LEAST_0_1_4
@@ -162,9 +173,15 @@ fn into_archetype_fn(yin: &Crate, archetype: &Archetype) -> String {
 
 fn form_config(
     base_cfg: &TaoConfig,
-    target: &Archetype,
+    target: &mut Archetype,
     codegen_cfg: &CodegenConfig,
 ) -> FormFormatConfig {
+    let meta_archetype = if target.has_specific_meta() {
+        Some(concept_to_struct(&target.specific_meta(), codegen_cfg.yin))
+    } else {
+        None
+    };
+
     let mut initial_ancestors = target.ancestry();
     let root_node_override = initial_ancestors
         .iter()
@@ -179,8 +196,10 @@ fn form_config(
         .into_iter()
         .map(|a| concept_to_struct(&a, codegen_cfg.yin))
         .collect();
+
     FormFormatConfig {
         tao_cfg: base_cfg.clone(),
+        meta_archetype,
         ancestors,
     }
 }
@@ -212,6 +231,26 @@ fn attribute_config(
         value_form,
         owner_into_archetype,
         value_into_archetype,
+    }
+}
+
+fn archetype_config(
+    base_cfg: &TaoConfig,
+    target: &Archetype,
+    codegen_cfg: &CodegenConfig,
+) -> ArchetypeFormatConfig {
+    // todo: use Yin's ArchetypeFromTrait::infra_archetype function once that's available
+    let infra = Archetype::from(
+        target
+            .essence()
+            .incoming_nodes(MetaForm::TYPE_ID)
+            .last()
+            .unwrap()
+            .id(),
+    );
+    ArchetypeFormatConfig {
+        tao_cfg: base_cfg.clone(),
+        infra_archetype: form_for(&infra, codegen_cfg),
     }
 }
 
@@ -296,7 +335,7 @@ fn add_struct_attr_fragments(
 
 /// Generate code for a given concept. Post-processing still needed.
 pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String {
-    let target = Archetype::from(request.target().unwrap().id());
+    let mut target = Archetype::from(request.target().unwrap().id());
     let parent = primary_parent(&target);
 
     let base_cfg = generic_config(&request, &target, &parent, codegen_cfg);
@@ -306,10 +345,18 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
     let kgn = KnowledgeGraphNode::from(target.id());
     assert!(!kgn.is_imported(), "Coding an imported archetype {:?}", kgn);
     if !kgn.is_root_analogue() {
-        add_form_fragment(&form_config(&base_cfg, &target, &codegen_cfg), &mut file);
+        add_form_fragment(
+            &form_config(&base_cfg, &mut target, &codegen_cfg),
+            &mut file,
+        );
     }
 
-    if activate_attribute(&target) {
+    if activate_archetype(&target) {
+        add_archetype_fragment(
+            &archetype_config(&base_cfg, &target, &codegen_cfg),
+            &mut file,
+        );
+    } else if activate_attribute(&target) {
         add_attr_fragments(
             &attribute_config(&base_cfg, &target, codegen_cfg),
             &mut file,

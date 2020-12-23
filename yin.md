@@ -142,12 +142,21 @@ add_flag!(
     "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this.",
     "logically analogous to the root node."
 );
+aa(root_analogue).mark_nonhereditary_attr();
 
 add_flag!(
     root_archetype_analogue,
     knowledge_graph_node,
     "Marks an archetype as requiring root-archetype-specific logic during generation. None of its descendants will inherit this.\n\nThe root archetype node is different from the root node. All nodes descend from the root node, including the root archetype node; all archetypes descend from the root archetype node.",
     "logically analogous to the root archetype node."
+);
+aa(root_archetype_analogue).mark_nonhereditary_attr();
+
+add_flag!(
+    archetype_analogue,
+    knowledge_graph_node,
+    "Marks an archetype and all its descendants as requiring archetype-specific logic during generation.",
+    "logically analogous to an archetype node."
 );
 
 add_flag!(
@@ -159,10 +168,6 @@ add_flag!(
 ```
 
 Unlike the markers for data and attribute logic, the root and root archetype node markers do not get inherited because, well, the children of the root node won't really be the root node anymore.
-
-```rust
-aa(root_analogue).mark_nonhereditary_attr();
-```
 
 #### The build information perspective
 

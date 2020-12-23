@@ -1,10 +1,13 @@
 use super::{AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI};
 use crate::codegen::StructConfig;
+use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Fragment for a struct implementation. Optional whether this is implementing a trait or not.
 pub struct ImplementationFragment {
+    /// Lifetime variables used for defining the lifetime of a Rust object.
+    pub lifetime_variables: Vec<char>,
     /// Config for the trait being implemented, if any.
     pub trait_cfg: Option<StructConfig>,
     /// Config for the struct this implementation is a part of.
@@ -51,6 +54,11 @@ impl ImplementationFragment {
         self.same_file_as_struct = true;
     }
 
+    /// Add a new lifetime variable to this implementation.
+    pub fn add_lifetime(&mut self, lifetime: char) {
+        self.lifetime_variables.push(lifetime);
+    }
+
     /// Add a fragment to the internals of this implementation.
     pub fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
         self.content.borrow_mut().append(fragment);
@@ -63,6 +71,7 @@ impl Default for ImplementationFragment {
         let content = Rc::new(RefCell::new(AppendedFragment::default()));
         declaration.set_body(content.clone());
         Self {
+            lifetime_variables: vec![],
             trait_cfg: None,
             struct_cfg: StructConfig::default(),
             same_file_as_trait: false,
@@ -107,9 +116,22 @@ impl CodeFragment for ImplementationFragment {
     fn body(&self, line_width: usize) -> String {
         let mut declaration = self.declaration.clone();
         declaration.mark_for_full_implementation();
+        let lifetimes = if self.lifetime_variables.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "<{}>",
+                self.lifetime_variables
+                    .iter()
+                    .map(|v| format!("'{}", v))
+                    .format(", ")
+                    .to_string()
+            )
+        };
         let definition = match &self.trait_cfg {
             Some(trait_cfg) => format!(
-                "impl {trait_name} for {struct_name}",
+                "impl{lifetimes} {trait_name} for {struct_name}",
+                lifetimes = lifetimes,
                 trait_name = trait_cfg.name,
                 struct_name = self.struct_cfg.name
             ),
@@ -163,6 +185,24 @@ mod tests {
         );
 
         assert_eq!(f.body(80), "impl Foo for Bar {}");
+    }
+
+    #[test]
+    fn test_trait_impl_with_lifetimes() {
+        let mut f = ImplementationFragment::new_trait_impl(
+            StructConfig {
+                name: "Foo<'a, 'b>".to_owned(),
+                import: "crate::Foo".to_owned(),
+            },
+            StructConfig {
+                name: "Bar".to_owned(),
+                import: "crate::Bar".to_owned(),
+            },
+        );
+        f.add_lifetime('a');
+        f.add_lifetime('b');
+
+        assert_eq!(f.body(80), "impl<'a, 'b> Foo<'a, 'b> for Bar {}");
     }
 
     #[test]
