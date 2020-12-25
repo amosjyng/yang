@@ -233,6 +233,7 @@ fn test_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     let getter = getter_name(cfg);
 
     let mut f = kb_test_function(&format!("test_set_and_get_{}", cfg.property_name));
+    f.add_attribute("allow(clippy::clone_double_ref)".to_owned());
     f.add_import(cfg.owner_type.import.clone());
     if cfg.rust_primitive.is_none() {
         // if some, will use that directly instead of the concept
@@ -302,6 +303,7 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
     };
     let mut f = FunctionFragment::new(format!("test_{}_{}", cfg.property_name, inheritance_name));
     f.mark_as_test();
+    f.add_attribute("allow(clippy::clone_double_ref)".to_owned());
     f.add_import("crate::tao::initialize_kb".to_owned());
     f.add_import(cfg.owner_type.import.clone());
     // todo: only clone when it's not a Copy type, to avoid the clone_on_copy warning. The thing
@@ -338,6 +340,7 @@ fn test_multi_set_fragment(cfg: &AttributePropertyConfig) -> Option<FunctionFrag
     let getter = getter_name(cfg);
 
     let mut f = kb_test_function(&format!("test_set_{}_multiple_times", cfg.property_name));
+    f.add_attribute("allow(clippy::clone_double_ref)".to_owned());
     f.add_import(cfg.owner_type.import.clone());
     if cfg.rust_primitive.is_none() {
         // if some, will use that directly instead of the concept
@@ -577,6 +580,7 @@ mod tests {
             test_fragment(&concept_attr_config()).body(80),
             indoc! {"
                 #[test]
+                #[allow(clippy::clone_double_ref)]
                 fn test_set_and_get_associated_crate() {
                     initialize_kb();
                     let mut new_instance = Form::new();
@@ -596,6 +600,7 @@ mod tests {
             test_fragment(&primitive_attr_config()).body(80),
             indoc! {r#"
                 #[test]
+                #[allow(clippy::clone_double_ref)]
                 fn test_set_and_get_associated_crate() {
                     initialize_kb();
                     let mut new_instance = Form::new();
@@ -615,6 +620,7 @@ mod tests {
             test_inheritance_fragment(&concept_attr_config()).body(80),
             indoc! {"
                 #[test]
+                #[allow(clippy::clone_double_ref)]
                 fn test_associated_crate_inheritance() {
                     initialize_kb();
                     let new_type = Form::archetype().individuate_as_archetype();
@@ -635,6 +641,7 @@ mod tests {
             test_inheritance_fragment(&primitive_attr_config()).body(80),
             indoc! {r#"
                 #[test]
+                #[allow(clippy::clone_double_ref)]
                 fn test_associated_crate_inheritance() {
                     initialize_kb();
                     let new_type = Form::archetype().individuate_as_archetype();
@@ -657,6 +664,7 @@ mod tests {
                 .body(80),
             indoc! {r#"
                 #[test]
+                #[allow(clippy::clone_double_ref)]
                 fn test_set_associated_crate_multiple_times() {
                     initialize_kb();
                     let mut new_instance = Form::new();
