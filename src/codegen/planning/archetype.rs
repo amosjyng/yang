@@ -289,13 +289,18 @@ fn attr_config(
     attr: &AttributeArchetype,
 ) -> AttributePropertyConfig {
     let value_type = or_form_default(attr.value_archetype());
+    let rust_primitive = value_type.rust_primitive();
     if activate_data(&value_type) {
         assert!(
-            value_type.rust_primitive().is_some(),
+            rust_primitive.is_some(),
             "Data type {:?} has no defined Rust primitive.",
             value_type
         );
     }
+    let rust_primitive_unboxed = match value_type.unboxed_representation() {
+        Some(unboxed) => Some(unboxed),
+        None => rust_primitive.clone(),
+    };
     let doc_string = BuildInfo::from(attr.id())
         .dual_purpose_documentation()
         .unwrap();
@@ -306,7 +311,8 @@ fn attr_config(
         attr: concept_to_struct(&(*attr).into(), codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
         value_type: concept_to_struct(&value_type, codegen_cfg.yin),
-        rust_primitive: value_type.rust_primitive(),
+        rust_primitive,
+        rust_primitive_unboxed,
         primitive_test_value: value_type.default_value(),
         dummy_test_value: value_type.dummy_value(),
         hereditary: !attr.is_nonhereditary_attr(),
