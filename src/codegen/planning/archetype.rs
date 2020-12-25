@@ -44,7 +44,7 @@ fn activate_archetype(target: &Archetype) -> bool {
 }
 
 fn activate_data(target: &Archetype) -> bool {
-    target.has_ancestor(Data::archetype())
+    target.has_ancestor(Data::archetype().into())
         || KnowledgeGraphNode::from(target.id()).is_data_analogue()
 }
 
