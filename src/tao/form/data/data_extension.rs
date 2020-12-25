@@ -1,4 +1,4 @@
-use crate::tao::relation::attribute::{RustPrimitive, DummyValue};
+use crate::tao::relation::attribute::{RustPrimitive, DummyValue, UnboxedRepresentation};
 use std::rc::Rc;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
@@ -21,6 +21,27 @@ pub trait DataExtension: FormTrait {
     fn rust_primitive(&self) -> Option<Rc<str>> {
         self.essence()
             .outgoing_nodes(RustPrimitive::TYPE_ID)
+            .first()
+            .map(|p| {
+                StringConcept::from(*p)
+                    .value()
+                    .map(|rc| Rc::from(rc.as_str()))
+            })
+            .flatten()
+    }
+
+    /// Set the unboxed version of this primitive.
+    fn set_unboxed_representation(&mut self, primitive_name: &str) {
+        let mut name_str = StringConcept::new();
+        name_str.set_value(primitive_name.to_owned());
+        self.essence_mut()
+            .add_outgoing(UnboxedRepresentation::TYPE_ID, name_str.essence());
+    }
+
+    /// Get the unboxed version of this primitive.
+    fn unboxed_representation(&self) -> Option<Rc<str>> {
+        self.essence()
+            .outgoing_nodes(UnboxedRepresentation::TYPE_ID)
             .first()
             .map(|p| {
                 StringConcept::from(*p)
@@ -91,6 +112,15 @@ mod tests {
         let mut new_data = Data::archetype().individuate_as_archetype();
         new_data.set_rust_primitive("u64");
         assert_eq!(new_data.rust_primitive(), Some(Rc::from("u64")));
+    }
+
+    #[test]
+    fn set_and_get_unboxed_representation() {
+        initialize_kb();
+
+        let mut new_data = Data::archetype().individuate_as_archetype();
+        new_data.set_unboxed_representation("&str");
+        assert_eq!(new_data.unboxed_representation(), Some(Rc::from("&str")));
     }
 
     #[test]
