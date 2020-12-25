@@ -16,7 +16,7 @@ pub fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
         return code.to_owned(); // no post-processing for releases
     }
 
-    let formatted = if options.add_rustfmt_attributes {
+    let formatted = if options.comment_autogen && options.add_rustfmt_attributes {
         add_fmt_skips(&code)
     } else {
         code.to_owned()
