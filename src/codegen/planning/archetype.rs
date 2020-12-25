@@ -12,7 +12,6 @@ use crate::codegen::template::concept::form::add_form_fragment;
 use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
 use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
-use crate::tao::form::data::DataExtension;
 use crate::tao::form::{Crate, CrateExtension};
 use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
 use crate::tao::Implement;
@@ -23,7 +22,7 @@ use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{
     Archetype, ArchetypeFormExtensionTrait, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype,
-    AttributeArchetypeFormTrait,
+    AttributeArchetypeFormTrait, DataArchetype,
 };
 use zamm_yin::tao::form::data::Data;
 use zamm_yin::tao::form::{Form, FormTrait};
@@ -185,7 +184,7 @@ fn attribute_config(
     }
 }
 
-fn data_config(base_cfg: &TaoConfig, target: &Archetype) -> DataFormatConfig {
+fn data_config(base_cfg: &TaoConfig, target: &DataArchetype) -> DataFormatConfig {
     DataFormatConfig {
         tao_cfg: base_cfg.clone(),
         rust_primitive_name: target.rust_primitive().unwrap(),
@@ -213,9 +212,10 @@ fn attr_config(
     attr: &AttributeArchetype,
 ) -> AttributePropertyConfig {
     let value_type = or_form_default(attr.value_archetype());
+    let value_as_data = DataArchetype::from(value_type.id());
     if activate_data(&value_type) {
         assert!(
-            value_type.rust_primitive().is_some(),
+            value_as_data.rust_primitive().is_some(),
             "Data type {:?} has no defined Rust primitive.",
             value_type
         );
@@ -230,8 +230,8 @@ fn attr_config(
         attr: concept_to_struct(&(*attr).into(), codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
         value_type: concept_to_struct(&value_type, codegen_cfg.yin),
-        rust_primitive: value_type.rust_primitive(),
-        primitive_test_value: value_type.default_value(),
+        rust_primitive: value_as_data.rust_primitive(),
+        primitive_test_value: value_as_data.default_value(),
         hereditary: !attr.is_nonhereditary_attr(),
         multi_valued: attr.is_multi_valued_attr(),
     }
@@ -282,7 +282,10 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
             &mut file,
         );
     } else if activate_data(&target) {
-        add_data_fragments(&data_config(&base_cfg, &target), &mut file);
+        add_data_fragments(
+            &data_config(&base_cfg, &DataArchetype::from(target.id())),
+            &mut file,
+        );
     }
 
     if !in_own_submodule(&target) {

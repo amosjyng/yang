@@ -10,6 +10,7 @@ use zamm_yin::Wrapper;
 /// Trait to extend Data functionality that has not been auto-generated.
 pub trait DataExtension: FormTrait {
     /// Set the name of the Rust primitive that this concept represents.
+    #[deprecated(since = "0.1.9", note = "Please use DataArchetype::set_rust_primitive")]
     fn set_rust_primitive(&mut self, primitive_name: &str) {
         let mut name_str = StringConcept::new();
         name_str.set_value(primitive_name.to_owned());
@@ -18,6 +19,7 @@ pub trait DataExtension: FormTrait {
     }
 
     /// Get the name of the Rust primitive that this concept represents.
+    #[deprecated(since = "0.1.9", note = "Please use DataArchetype::rust_primitive")]
     fn rust_primitive(&self) -> Option<Rc<str>> {
         self.essence()
             .outgoing_nodes(RustPrimitive::TYPE_ID)
@@ -31,6 +33,7 @@ pub trait DataExtension: FormTrait {
     }
 
     /// Set the Rust code representation for the default value of this concept.
+    #[deprecated(since = "0.1.9", note = "Please use DataArchetype::set_default_value")]
     fn set_default_value(&mut self, default_value_as_code: &str) {
         let mut code_str = StringConcept::new();
         code_str.set_value(default_value_as_code.to_owned());
@@ -39,6 +42,7 @@ pub trait DataExtension: FormTrait {
     }
 
     /// Get the Rust code representation for the default value of this concept.
+    #[deprecated(since = "0.1.9", note = "Please use DataArchetype::default_value")]
     fn default_value(&self) -> Option<Rc<str>> {
         self.essence()
             .outgoing_nodes(DefaultValue::TYPE_ID)
