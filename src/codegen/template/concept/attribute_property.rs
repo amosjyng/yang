@@ -26,7 +26,7 @@ fn primitive_config(
         Some(primitive_value) => PrimitiveValueConfig {
             value: primitive_value.to_string(),
             value_set: format!("{}.clone()", value_var),
-            value_get: format!("Rc::new({})", value_var),
+            value_get: format!("Rc::from({})", value_var),
         },
         None => PrimitiveValueConfig {
             value: format!("{}::new()", attr_cfg.value_type.name),
@@ -54,6 +54,8 @@ pub struct AttributePropertyConfig {
     pub value_type: StructConfig,
     /// The Rust primitive that this represents.
     pub rust_primitive: Option<Rc<str>>,
+    /// Code for the Rust primitive when in an unboxed representation.
+    pub rust_primitive_unboxed: Option<Rc<str>>,
     /// Dummy default test value to set the primitive to.
     pub primitive_test_value: Option<Rc<str>>,
     /// Dummy override test value to set the primitive to.
@@ -75,6 +77,7 @@ impl Default for AttributePropertyConfig {
             owner_type: StructConfig::default(),
             value_type: StructConfig::default(),
             rust_primitive: None,
+            rust_primitive_unboxed: None,
             primitive_test_value: None,
             dummy_test_value: None,
             hereditary: true,
@@ -127,9 +130,9 @@ fn setter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     f.set_self_reference(SelfReference::Mutable);
 
     let arg_name = cfg.property_name.to_string();
-    match &cfg.rust_primitive {
-        Some(primitive) => {
-            f.add_arg(arg_name, primitive.to_string());
+    match &cfg.rust_primitive_unboxed {
+        Some(unboxed_primitive) => {
+            f.add_arg(arg_name, unboxed_primitive.to_string());
             f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
                 let mut value_concept = {value_concept}::new();
                 value_concept.set_value({value});",
@@ -230,6 +233,7 @@ fn test_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     let getter = getter_name(cfg);
 
     let mut f = kb_test_function(&format!("test_set_and_get_{}", cfg.property_name));
+    f.add_attribute("allow(clippy::clone_double_ref)".to_owned());
     f.add_import(cfg.owner_type.import.clone());
     if cfg.rust_primitive.is_none() {
         // if some, will use that directly instead of the concept
@@ -299,6 +303,7 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
     };
     let mut f = FunctionFragment::new(format!("test_{}_{}", cfg.property_name, inheritance_name));
     f.mark_as_test();
+    f.add_attribute("allow(clippy::clone_double_ref)".to_owned());
     f.add_import("crate::tao::initialize_kb".to_owned());
     f.add_import(cfg.owner_type.import.clone());
     // todo: only clone when it's not a Copy type, to avoid the clone_on_copy warning. The thing
@@ -335,6 +340,7 @@ fn test_multi_set_fragment(cfg: &AttributePropertyConfig) -> Option<FunctionFrag
     let getter = getter_name(cfg);
 
     let mut f = kb_test_function(&format!("test_set_{}_multiple_times", cfg.property_name));
+    f.add_attribute("allow(clippy::clone_double_ref)".to_owned());
     f.add_import(cfg.owner_type.import.clone());
     if cfg.rust_primitive.is_none() {
         // if some, will use that directly instead of the concept
@@ -345,7 +351,7 @@ fn test_multi_set_fragment(cfg: &AttributePropertyConfig) -> Option<FunctionFrag
     let default_value_get = if cfg.multi_valued {
         if cfg.rust_primitive.is_some() {
             // clone here, because if it's multi-valued, then it will get used again later
-            "vec![Rc::new(default.clone())]".to_owned()
+            "vec![Rc::from(default.clone())]".to_owned()
         } else {
             "vec![default]".to_owned()
         }
@@ -437,9 +443,10 @@ mod tests {
 
     fn primitive_attr_config() -> AttributePropertyConfig {
         AttributePropertyConfig {
-            rust_primitive: Some(Rc::from("String")),
-            primitive_test_value: Some(Rc::from("String::new()")),
-            dummy_test_value: Some(Rc::from("\"a\".to_string()")),
+            rust_primitive: Some(Rc::from("str")),
+            rust_primitive_unboxed: Some(Rc::from("&str")),
+            primitive_test_value: Some(Rc::from("\"\"")),
+            dummy_test_value: Some(Rc::from("\"a\"")),
             ..concept_attr_config()
         }
     }
@@ -473,7 +480,7 @@ mod tests {
             setter_fragment(&primitive_attr_config()).body(80),
             indoc! {"
                 /// Set the crate associated with the struct.
-                fn set_associated_crate(&mut self, associated_crate: String) {
+                fn set_associated_crate(&mut self, associated_crate: &str) {
                     let mut value_concept = Crate::new();
                     value_concept.set_value(associated_crate);
                     self.essence_mut().add_outgoing(
@@ -521,7 +528,7 @@ mod tests {
             indoc! {"
                 /// Get the crate associated with the struct.
                 #[allow(clippy::rc_buffer)]
-                fn associated_crate(&self) -> Option<Rc<String>> {
+                fn associated_crate(&self) -> Option<Rc<str>> {
                     self.essence()
                         .outgoing_nodes(AssociatedCrate::TYPE_ID)
                         .last()
@@ -541,7 +548,7 @@ mod tests {
             indoc! {"
                 /// Get the crate associated with the struct.
                 #[allow(clippy::rc_buffer)]
-                fn associated_crate(&self) -> Option<Rc<String>> {
+                fn associated_crate(&self) -> Option<Rc<str>> {
                     self.essence()
                         .base_wrapper()
                         .outgoing_nodes(AssociatedCrate::TYPE_ID)
@@ -573,6 +580,7 @@ mod tests {
             test_fragment(&concept_attr_config()).body(80),
             indoc! {"
                 #[test]
+                #[allow(clippy::clone_double_ref)]
                 fn test_set_and_get_associated_crate() {
                     initialize_kb();
                     let mut new_instance = Form::new();
@@ -590,18 +598,19 @@ mod tests {
     fn test_primitive_test_fragment_body() {
         assert_eq!(
             test_fragment(&primitive_attr_config()).body(80),
-            indoc! {"
+            indoc! {r#"
                 #[test]
+                #[allow(clippy::clone_double_ref)]
                 fn test_set_and_get_associated_crate() {
                     initialize_kb();
                     let mut new_instance = Form::new();
                     assert_eq!(new_instance.associated_crate(), None);
 
-                    let value = String::new();
+                    let value = "";
                     #[allow(clippy::clone_on_copy)]
                     new_instance.set_associated_crate(value.clone());
-                    assert_eq!(new_instance.associated_crate(), Some(Rc::new(value)));
-                }"}
+                    assert_eq!(new_instance.associated_crate(), Some(Rc::from(value)));
+                }"#}
         );
     }
 
@@ -611,6 +620,7 @@ mod tests {
             test_inheritance_fragment(&concept_attr_config()).body(80),
             indoc! {"
                 #[test]
+                #[allow(clippy::clone_double_ref)]
                 fn test_associated_crate_inheritance() {
                     initialize_kb();
                     let new_type = Form::archetype().individuate_as_archetype();
@@ -629,19 +639,20 @@ mod tests {
     fn test_primitive_test_inheritance_fragment_body() {
         assert_eq!(
             test_inheritance_fragment(&primitive_attr_config()).body(80),
-            indoc! {"
+            indoc! {r#"
                 #[test]
+                #[allow(clippy::clone_double_ref)]
                 fn test_associated_crate_inheritance() {
                     initialize_kb();
                     let new_type = Form::archetype().individuate_as_archetype();
                     let new_instance = Form::from(new_type.individuate_as_form().id());
                     assert_eq!(new_instance.associated_crate(), None);
 
-                    let value = String::new();
+                    let value = "";
                     #[allow(clippy::clone_on_copy)]
                     Form::from(new_type.id()).set_associated_crate(value.clone());
-                    assert_eq!(new_instance.associated_crate(), Some(Rc::new(value)));
-                }"}
+                    assert_eq!(new_instance.associated_crate(), Some(Rc::from(value)));
+                }"#}
         );
     }
 
@@ -653,19 +664,20 @@ mod tests {
                 .body(80),
             indoc! {r#"
                 #[test]
+                #[allow(clippy::clone_double_ref)]
                 fn test_set_associated_crate_multiple_times() {
                     initialize_kb();
                     let mut new_instance = Form::new();
-                    let default = String::new();
+                    let default = "";
                     #[allow(clippy::clone_on_copy)]
                     new_instance.set_associated_crate(default.clone());
                     #[allow(clippy::clone_on_copy)]
-                    assert_eq!(new_instance.associated_crate(), Some(Rc::new(default)));
+                    assert_eq!(new_instance.associated_crate(), Some(Rc::from(default)));
 
-                    let new_value = "a".to_string();
+                    let new_value = "a";
                     #[allow(clippy::clone_on_copy)]
                     new_instance.set_associated_crate(new_value.clone());
-                    assert_eq!(new_instance.associated_crate(), Some(Rc::new(new_value)));
+                    assert_eq!(new_instance.associated_crate(), Some(Rc::from(new_value)));
                 }"#}
         );
     }
