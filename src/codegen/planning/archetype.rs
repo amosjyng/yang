@@ -255,10 +255,17 @@ fn archetype_config(
 }
 
 fn data_config(base_cfg: &TaoConfig, target: &Archetype) -> DataFormatConfig {
+    let rust_primitive_boxed_name = target.rust_primitive().unwrap();
+    let rust_primitive_unboxed_name = match target.unboxed_representation() {
+        Some(custom_name) => custom_name,
+        None => rust_primitive_boxed_name.clone(),
+    };
     DataFormatConfig {
         tao_cfg: base_cfg.clone(),
-        rust_primitive_name: target.rust_primitive().unwrap(),
+        rust_primitive_unboxed_name,
+        rust_primitive_boxed_name,
         default_value: target.default_value().unwrap(),
+        explicit_rc: Crate::yang().version_at_least(0, 1, 8),
     }
 }
 
