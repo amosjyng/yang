@@ -1,4 +1,4 @@
-/// Marker for getting rustfmt to skip over this file. The second `allow(unused_attributes)` is to 
+/// Marker for getting rustfmt to skip over this file. The second `allow(unused_attributes)` is to
 /// avoid warnings generated because there was no need for `rustfmt::skip` in a particular file.
 pub const FMT_SKIP_MARKER: &str = "#![rustfmt::skip]\n#![allow(unused_attributes)]";
 
