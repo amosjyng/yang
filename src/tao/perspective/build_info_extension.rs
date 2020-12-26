@@ -110,13 +110,13 @@ mod tests {
         initialize_kb();
         let mut info = BuildInfo::new();
         info.set_crate_name("zamm_yang");
-        info.set_import_path("zamm_yang::import::path".to_owned());
+        info.set_import_path("zamm_yang::import::path");
         info.set_implementation_name("Yolo");
 
         assert_eq!(info.crate_name(), Some(Rc::from("zamm_yang")));
         assert_eq!(
             info.import_path(),
-            Some(Rc::new("zamm_yang::import::path".to_owned()))
+            Some(Rc::from("zamm_yang::import::path"))
         );
         assert_eq!(info.implementation_name(), Some(Rc::from("Yolo")));
     }
@@ -128,7 +128,7 @@ mod tests {
         let type1 = Tao::archetype().individuate_as_archetype();
         let mut info = BuildInfo::from(type1.id());
         info.set_crate_name("zamm_yang");
-        info.set_import_path("zamm_yang::import::path".to_owned());
+        info.set_import_path("zamm_yang::import::path");
         info.set_implementation_name("Yolo");
 
         let type2 = type1.individuate_as_archetype();

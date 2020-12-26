@@ -224,7 +224,7 @@ mod tests {
     fn folder_path_custom_module() {
         initialize_kb();
         BuildInfo::from(Attribute::TYPE_ID)
-            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute".to_owned());
+            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
         let owner = Owner::archetype();
         BuildInfo::from(owner.id()).mark_own_module();
         assert_eq!(
@@ -311,7 +311,7 @@ mod tests {
     fn import_path_custom_module() {
         initialize_kb();
         BuildInfo::from(Attribute::TYPE_ID)
-            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute".to_owned());
+            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
         let mut owner = KnowledgeGraphNode::from(Owner::TYPE_ID);
         BuildInfo::from(Owner::TYPE_ID).mark_own_module();
         owner.mark_newly_defined();
@@ -325,7 +325,7 @@ mod tests {
     fn import_path_custom_crate() {
         initialize_kb();
         BuildInfo::from(Attribute::TYPE_ID)
-            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute".to_owned());
+            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
         let mut owner = KnowledgeGraphNode::from(Owner::TYPE_ID);
         BuildInfo::from(Owner::TYPE_ID).mark_own_module();
         owner.mark_newly_defined();
@@ -435,7 +435,7 @@ mod tests {
         initialize_kb();
         let mut tao_build = BuildInfo::from(Tao::TYPE_ID);
         tao_build.set_implementation_name("TaoStruct");
-        tao_build.set_import_path("crate::TaoStruct".to_owned());
+        tao_build.set_import_path("crate::TaoStruct");
         assert_eq!(
             concept_to_struct(&Tao::archetype(), false),
             StructConfig {

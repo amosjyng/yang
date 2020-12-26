@@ -193,13 +193,13 @@ fn data_config(base_cfg: &TaoConfig, target: &DataArchetype) -> DataFormatConfig
 }
 
 fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype) -> FlagConfig {
-    let doc_string = BuildInfo::from(flag.id())
+    let doc = BuildInfo::from(flag.id())
         .dual_purpose_documentation()
         .unwrap();
     FlagConfig {
         public: true,
         property_name: Rc::from(flag.internal_name_str().unwrap().to_snake_case()),
-        doc: Rc::from(doc_string.as_str()),
+        doc,
         flag: concept_to_struct(flag, codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
         hereditary: !AttributeArchetype::from(flag.id()).is_nonhereditary_attr(),
@@ -220,13 +220,13 @@ fn attr_config(
             value_type
         );
     }
-    let doc_string = BuildInfo::from(attr.id())
+    let doc = BuildInfo::from(attr.id())
         .dual_purpose_documentation()
         .unwrap();
     AttributePropertyConfig {
         public: true,
         property_name: Rc::from(attr.internal_name_str().unwrap().to_snake_case()),
-        doc: Rc::from(doc_string.as_str()),
+        doc,
         attr: concept_to_struct(&(*attr).into(), codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
         value_type: concept_to_struct(&value_type, codegen_cfg.yin),
@@ -366,7 +366,7 @@ mod tests {
         KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(&target.as_form());
-        implement.set_documentation("One.\n\nTwo.".to_owned());
+        implement.set_documentation("One.\n\nTwo.");
         let cfg = generic_config(
             &implement,
             &target,

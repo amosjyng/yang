@@ -18,7 +18,7 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
     /// Implement this concept with the given documentation string.
     fn implement_with_doc(&self, doc: &str) -> Implement {
         let mut implementation = self.implement();
-        implementation.set_documentation(doc.to_owned());
+        implementation.set_documentation(doc);
         implementation
     }
 
@@ -33,7 +33,7 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
             BuildInfo::from(new_module.id()).set_implementation_name(&name.to_snake_case());
         }
         implementation.set_target(&new_module.as_form());
-        implementation.set_documentation(doc.to_owned());
+        implementation.set_documentation(doc);
         new_module
     }
 
@@ -45,7 +45,7 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
     fn implement_with(&self, id: usize, doc: &str) -> Implement {
         let mut implementation = self.implement();
         implementation.set_concept_id(id);
-        implementation.set_documentation(doc.to_owned());
+        implementation.set_documentation(doc);
         implementation
     }
 

@@ -43,7 +43,7 @@ When implementing anything in Rust, we should consider documenting it for the us
 add_attr!(
     documentation <= attribute,
     implement,
-    string_concept,
+    str_concept,
     "The documentation associated with an implementation.",
     "the documentation string associated with this particular Rust implementation."
 );
@@ -152,7 +152,7 @@ Getters and setters in particular have their own dual-purpose documentation stri
 add_attr!(
     dual_purpose_documentation <= attribute,
     build_info,
-    string_concept,
+    str_concept,
     "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string.",
     "the dual-purpose documentation substring to be used for the implementation of this property as getters and setters in a different concept's class."
 );
@@ -227,7 +227,7 @@ Once built, structs have a certain import path:
 add_attr!(
     import_path <= attribute,
     build_info,
-    string_concept,
+    str_concept,
     "Describes the import path of a defined struct.",
     "the import path the Rust implementation ended up at."
 );
@@ -279,7 +279,7 @@ Accomodating tradition also carries a cost, of course. We will try to automate t
 add_attr!(
     alias <= attribute,
     build_info,
-    string_concept,
+    str_concept,
     "Describes an aliased import path for a concept.",
     "the alternative import paths for the concept."
 );

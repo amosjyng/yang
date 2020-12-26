@@ -11,8 +11,7 @@ pub trait ImplementExtension: FormTrait + CommonNodeTrait {
         // already defined in Implement, it's just that Implement isn't a trait so we can't rely on
         // it here
         let implement = Implement::from(self.id());
-        BuildInfo::from(implement.target().unwrap().id())
-            .set_dual_purpose_documentation(document.to_owned());
+        BuildInfo::from(implement.target().unwrap().id()).set_dual_purpose_documentation(document);
     }
 
     /// Get the dual-purpose documentation string for this implementation.
@@ -20,9 +19,7 @@ pub trait ImplementExtension: FormTrait + CommonNodeTrait {
         // already defined in Implement, it's just that Implement isn't a trait so we can't rely on
         // it here
         let implement = Implement::from(self.id());
-        BuildInfo::from(implement.target().unwrap().id())
-            .dual_purpose_documentation()
-            .map(|rc| Rc::from(rc.as_str()))
+        BuildInfo::from(implement.target().unwrap().id()).dual_purpose_documentation()
     }
 }
 
@@ -60,12 +57,9 @@ mod tests {
         initialize_kb();
         let mut implement = Implement::new();
         implement.set_target(&implement.as_form());
-        implement.set_documentation("Some new thing.".to_owned());
+        implement.set_documentation("Some new thing.");
         implement.dual_document("duels as being outdated.");
-        assert_eq!(
-            implement.documentation(),
-            Some(Rc::from("Some new thing.".to_owned()))
-        );
+        assert_eq!(implement.documentation(), Some(Rc::from("Some new thing.")));
         assert_eq!(
             implement.dual_documentation(),
             Some(Rc::from("duels as being outdated."))
