@@ -1,4 +1,4 @@
-use crate::tao::relation::attribute::{RustPrimitive, DummyValue, UnboxedRepresentation};
+use crate::tao::relation::attribute::{DummyValue, RustPrimitive, UnboxedRepresentation};
 use std::rc::Rc;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
