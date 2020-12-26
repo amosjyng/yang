@@ -5,7 +5,7 @@ mod init;
 mod module;
 
 use id::grab_new_implementation_id;
-use imports::{ancestor_path, concept_to_struct, in_own_submodule};
+use imports::{concept_to_struct, in_own_submodule};
 
 pub use archetype::code_archetype;
 pub use imports::{archetype_file_path, module_file_path};

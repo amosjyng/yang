@@ -46,7 +46,7 @@ pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
         // no need to worry about inheritance because crates don't inherit from each other.
         self.essence()
             .outgoing_nodes(Version::TYPE_ID)
-            .first()
+            .last()
             .map(|f| Rc::from(StringConcept::from(*f).value().unwrap().as_str()))
     }
 
@@ -111,6 +111,17 @@ mod tests {
     }
 
     #[test]
+    fn test_override_implementation_name() {
+        initialize_kb();
+        let mut c = Crate::new();
+        c.set_implementation_name("Yolo");
+        assert_eq!(c.implementation_name(), Some(Rc::from("Yolo")));
+
+        c.set_implementation_name("Bolo");
+        assert_eq!(c.implementation_name(), Some(Rc::from("Bolo")));
+    }
+
+    #[test]
     fn test_lookup_crate() {
         initialize_kb();
         let mut c1 = Crate::new();
@@ -129,6 +140,17 @@ mod tests {
         let mut c = Crate::new();
         c.set_version("0.1.0");
         assert_eq!(c.version(), Some(Rc::from("0.1.0")));
+    }
+
+    #[test]
+    fn test_override_version() {
+        initialize_kb();
+        let mut c = Crate::new();
+        c.set_version("0.1.0");
+        assert_eq!(c.version(), Some(Rc::from("0.1.0")));
+
+        c.set_version("0.2.0");
+        assert_eq!(c.version(), Some(Rc::from("0.2.0")));
     }
 
     #[test]

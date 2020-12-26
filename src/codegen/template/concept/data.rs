@@ -8,24 +8,39 @@ use std::rc::Rc;
 pub struct DataFormatConfig {
     /// Regular concept config.
     pub tao_cfg: TaoConfig,
-    /// Rust primitive that this concept represents.
-    pub rust_primitive_name: Rc<str>,
+    /// Rust primitive that this concept represents, when referenced in an unboxed way.
+    pub rust_primitive_unboxed_name: Rc<str>,
+    /// Rust primitive that this concept represents, when referenced in a boxed way (e.g. inside an
+    /// `Rc` or `Box`).
+    pub rust_primitive_boxed_name: Rc<str>,
     /// Rust code representation of the default value of this concept.
     pub default_value: Rc<str>,
+    /// Whether we should initialize the Rc explicitly. For backwards compatibility purposes.
+    pub explicit_rc: bool,
 }
 
 impl Default for DataFormatConfig {
     fn default() -> Self {
         Self {
             tao_cfg: TaoConfig::default(),
-            rust_primitive_name: Rc::from(""),
+            rust_primitive_unboxed_name: Rc::from(""),
+            rust_primitive_boxed_name: Rc::from(""),
             default_value: Rc::from(""),
+            explicit_rc: true,
         }
     }
 }
 
 /// Get the body fragment for a data concept.
 fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
+    let strongvalue_init = if cfg.explicit_rc {
+        format!(
+            "StrongValue::new_rc(Rc::<{}>::from(value))",
+            cfg.rust_primitive_boxed_name
+        )
+    } else {
+        "StrongValue::new(value)".to_owned()
+    };
     AtomicFragment {
         imports: vec![
             "zamm_yin::node_wrappers::BaseNodeTrait".to_owned(),
@@ -39,19 +54,21 @@ fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
         // the future
         atom: formatdoc! {r#"
             impl {name} {{
-                /// Set {primitive} value for this concept.
-                pub fn set_value(&mut self, value: {primitive}) {{
+                /// Set {boxed_primitive} value for this concept.
+                pub fn set_value(&mut self, value: {unboxed_primitive}) {{
                     self.essence_mut()
-                        .set_value(Rc::new(StrongValue::new(value)));
+                        .set_value(Rc::new({strongvalue_init}));
                 }}
 
-                /// Retrieve {primitive}-valued StrongValue.
+                /// Retrieve {boxed_primitive}-valued StrongValue.
                 #[allow(clippy::rc_buffer)]
-                pub fn value(&self) -> Option<Rc<{primitive}>> {{
-                    unwrap_value::<{primitive}>(self.essence().value())
+                pub fn value(&self) -> Option<Rc<{boxed_primitive}>> {{
+                    unwrap_value::<{boxed_primitive}>(self.essence().value())
                 }}
             }}"#, name = cfg.tao_cfg.this.name,
-            primitive = cfg.rust_primitive_name,
+            unboxed_primitive = cfg.rust_primitive_unboxed_name,
+            boxed_primitive = cfg.rust_primitive_boxed_name,
+            strongvalue_init = strongvalue_init,
         },
     }
 }
@@ -73,7 +90,7 @@ fn data_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 initialize_kb();
                 let mut concept = {name}::new();
                 concept.set_value({sample_value});
-                assert_eq!(concept.value(), Some(Rc::new({sample_value})));
+                assert_eq!(concept.value(), Some(Rc::from({sample_value})));
             }}"#, name = cfg.tao_cfg.this.name,
                 // todo: create a better sample value than the default. This will require an
                 // understanding of what the types actually are and how to construct them.
@@ -98,7 +115,8 @@ mod tests {
         let mut f = FileFragment::new();
         add_data_fragments(
             &DataFormatConfig {
-                rust_primitive_name: Rc::from("String"),
+                rust_primitive_unboxed_name: Rc::from("String"),
+                rust_primitive_boxed_name: Rc::from("String"),
                 ..DataFormatConfig::default()
             },
             &mut f,
@@ -114,7 +132,8 @@ mod tests {
         let mut f = FileFragment::new();
         add_data_fragments(
             &DataFormatConfig {
-                rust_primitive_name: Rc::from("i64"),
+                rust_primitive_unboxed_name: Rc::from("i64"),
+                rust_primitive_boxed_name: Rc::from("i64"),
                 ..DataFormatConfig::default()
             },
             &mut f,

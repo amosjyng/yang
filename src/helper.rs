@@ -1,8 +1,23 @@
+use crate::tao::callbacks::implements;
 use crate::tao::perspective::KnowledgeGraphNode;
+use std::cell::Cell;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::*;
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::relation::attribute::Attribute;
+
+thread_local! {
+    static IMPORT_IN_PROGRESS: Cell<bool> = Cell::new(false);
+}
+
+/// Returns whether or not we're currently in the process of importing another file.
+pub fn import_in_progress() -> bool {
+    IMPORT_IN_PROGRESS.with(|i| i.get())
+}
+
+fn mark_import(status: bool) {
+    IMPORT_IN_PROGRESS.with(|i| i.set(status));
+}
 
 /// Defines a new concept with the given name.
 #[macro_export]
@@ -10,7 +25,14 @@ macro_rules! define {
     ($name:ident) => {
         let mut $name = Tao::archetype().individuate_as_archetype();
         $name.set_internal_name_str(stringify!($name));
-        zamm_yang::tao::perspective::KnowledgeGraphNode::from($name.id()).mark_newly_defined();
+        {
+            let mut kgn = zamm_yang::tao::perspective::KnowledgeGraphNode::from($name.id());
+            if zamm_yang::helper::import_in_progress() {
+                kgn.mark_imported();
+            } else {
+                kgn.mark_newly_defined();
+            }
+        }
     };
     ($name:ident, $doc:expr) => {
         define!($name);
@@ -112,6 +134,21 @@ pub fn aa(archetype: Archetype) -> AttributeArchetype {
         println!("Warning: {:?} is not known to be an attribute.", archetype);
     }
     AttributeArchetype::from(archetype.id())
+}
+
+/// Start interpreting new information as imported. New concepts will not be marked as new, but
+/// instead as imported.
+pub fn start_imports() {
+    mark_import(true);
+}
+
+/// Mark all concepts introduced thus far as imported ones. Imports are informational-only and will
+/// not be acted on.
+pub fn end_imports() {
+    mark_import(false);
+    for i in implements() {
+        KnowledgeGraphNode::from(i.id()).mark_imported();
+    }
 }
 
 /// Backwards compatibility trait to handle API changes for this yang-0.x.* branch.

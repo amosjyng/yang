@@ -2,13 +2,14 @@ use super::concept_to_struct;
 use super::imports::{in_own_submodule, root_node_or_equivalent};
 use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::{FileFragment, ImplementationFragment};
+use crate::codegen::template::concept::archetype::{add_archetype_fragment, ArchetypeFormatConfig};
 use crate::codegen::template::concept::attribute::{add_attr_fragments, AttributeFormatConfig};
 use crate::codegen::template::concept::attribute_property::{
     add_attr_to_impl, AttributePropertyConfig,
 };
 use crate::codegen::template::concept::data::{add_data_fragments, DataFormatConfig};
 use crate::codegen::template::concept::flag::{add_flag_to_impl, FlagConfig};
-use crate::codegen::template::concept::form::add_form_fragment;
+use crate::codegen::template::concept::form::{add_form_fragment, FormFormatConfig};
 use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
 use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
@@ -19,14 +20,15 @@ use heck::{KebabCase, SnakeCase};
 use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::rc::Rc;
-use zamm_yin::node_wrappers::CommonNodeTrait;
+use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{
     Archetype, ArchetypeFormExtensionTrait, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype,
     AttributeArchetypeFormTrait, DataArchetype,
 };
 use zamm_yin::tao::form::data::Data;
 use zamm_yin::tao::form::{Form, FormTrait};
-use zamm_yin::tao::relation::attribute::Attribute;
+use zamm_yin::tao::relation::attribute::{Attribute, MetaForm};
+use zamm_yin::Wrapper;
 
 fn or_form_default(archetype: Archetype) -> Archetype {
     if root_node_or_equivalent(&archetype) {
@@ -37,6 +39,11 @@ fn or_form_default(archetype: Archetype) -> Archetype {
 }
 
 fn activate_archetype(target: &Archetype) -> bool {
+    target.has_ancestor(Archetype::archetype())
+        || KnowledgeGraphNode::from(target.id()).is_archetype_analogue()
+}
+
+fn activate_attribute(target: &Archetype) -> bool {
     target == &Attribute::archetype().into()
         || target.has_ancestor(Attribute::archetype().into())
         || KnowledgeGraphNode::from(target.id()).is_attribute_analogue()
@@ -47,6 +54,15 @@ fn activate_data(target: &Archetype) -> bool {
         || KnowledgeGraphNode::from(target.id()).is_data_analogue()
 }
 
+fn form_for(target: &Archetype, codegen_cfg: &CodegenConfig) -> StructConfig {
+    if KnowledgeGraphNode::from(target.id()).is_root_analogue() {
+        // technically we should allow the user to customize this as well
+        concept_to_struct(&Form::archetype(), codegen_cfg.yin)
+    } else {
+        concept_to_struct(target, codegen_cfg.yin)
+    }
+}
+
 fn generic_config(
     request: &Implement,
     target: &Archetype,
@@ -55,12 +71,7 @@ fn generic_config(
 ) -> TaoConfig {
     let this = concept_to_struct(&target, codegen_cfg.yin);
     let internal_name = this.name.to_kebab_case();
-    let form = if KnowledgeGraphNode::from(target.id()).is_root_analogue() {
-        // technically we should allow the user to customize this as well
-        concept_to_struct(&Form::archetype(), codegen_cfg.yin)
-    } else {
-        this.clone()
-    };
+    let form = form_for(target, codegen_cfg);
 
     let internal_name_cfg = if Crate::yin().version_at_least(0, 1, 4) {
         InternalNameConfig::YIN_AT_LEAST_0_1_4
@@ -118,10 +129,15 @@ fn generic_config(
         .map(|s| s.import.clone())
         .collect();
 
-    let archetype_name = if activate_archetype(target) {
-        "AttributeArchetype".to_owned()
+    let archetype = if Crate::yang().version_at_least(0, 1, 8) {
+        concept_to_struct(&target.meta_archetype(), codegen_cfg.yin)
     } else {
-        "Archetype".to_owned()
+        // legacy logic
+        if activate_attribute(target) {
+            concept_to_struct(&AttributeArchetype::archetype(), codegen_cfg.yin)
+        } else {
+            concept_to_struct(&Archetype::archetype(), codegen_cfg.yin)
+        }
     };
 
     TaoConfig {
@@ -136,7 +152,7 @@ fn generic_config(
         all_attribute_imports,
         introduced_attributes,
         introduced_attribute_imports,
-        archetype_name,
+        archetype,
         doc,
         id,
     }
@@ -144,13 +160,46 @@ fn generic_config(
 
 fn into_archetype_fn(yin: &Crate, archetype: &Archetype) -> String {
     if yin.version_at_least(0, 1, 4) {
-        if activate_archetype(archetype) {
+        if !KnowledgeGraphNode::from(archetype.id()).is_root_archetype_analogue() {
             ".into()".to_owned()
         } else {
             String::new()
         }
     } else {
         ".as_archetype()".to_owned()
+    }
+}
+
+fn form_config(
+    base_cfg: &TaoConfig,
+    target: &mut Archetype,
+    codegen_cfg: &CodegenConfig,
+) -> FormFormatConfig {
+    let meta_archetype = if target.has_specific_meta() {
+        Some(concept_to_struct(&target.specific_meta(), codegen_cfg.yin))
+    } else {
+        None
+    };
+
+    let mut initial_ancestors = target.ancestry();
+    let root_node_override = initial_ancestors
+        .iter()
+        .map(|a| KnowledgeGraphNode::from(a.id()))
+        .any(|k| k.is_root_analogue());
+    if root_node_override {
+        // then we pretend that our current runtime Tao does not exist, and the root node analogue
+        // is the real Tao
+        initial_ancestors.remove(0);
+    }
+    let ancestors = initial_ancestors
+        .into_iter()
+        .map(|a| concept_to_struct(&a, codegen_cfg.yin))
+        .collect();
+
+    FormFormatConfig {
+        tao_cfg: base_cfg.clone(),
+        meta_archetype,
+        ancestors,
     }
 }
 
@@ -184,11 +233,38 @@ fn attribute_config(
     }
 }
 
+fn archetype_config(
+    base_cfg: &TaoConfig,
+    target: &Archetype,
+    codegen_cfg: &CodegenConfig,
+) -> ArchetypeFormatConfig {
+    // todo: use Yin's ArchetypeFromTrait::infra_archetype function once that's available
+    let infra = Archetype::from(
+        target
+            .essence()
+            .incoming_nodes(MetaForm::TYPE_ID)
+            .last()
+            .unwrap()
+            .id(),
+    );
+    ArchetypeFormatConfig {
+        tao_cfg: base_cfg.clone(),
+        infra_archetype: form_for(&infra, codegen_cfg),
+    }
+}
+
 fn data_config(base_cfg: &TaoConfig, target: &DataArchetype) -> DataFormatConfig {
+    let rust_primitive_boxed_name = target.rust_primitive().unwrap();
+    let rust_primitive_unboxed_name = match target.unboxed_representation() {
+        Some(custom_name) => custom_name,
+        None => rust_primitive_boxed_name.clone(),
+    };
     DataFormatConfig {
         tao_cfg: base_cfg.clone(),
-        rust_primitive_name: target.rust_primitive().unwrap(),
+        rust_primitive_unboxed_name,
+        rust_primitive_boxed_name,
         default_value: target.default_value().unwrap(),
+        explicit_rc: Crate::yang().version_at_least(0, 1, 8),
     }
 }
 
@@ -213,16 +289,22 @@ fn attr_config(
 ) -> AttributePropertyConfig {
     let value_type = or_form_default(attr.value_archetype());
     let value_as_data = DataArchetype::from(value_type.id());
+    let rust_primitive = value_as_data.rust_primitive();
     if activate_data(&value_type) {
         assert!(
-            value_as_data.rust_primitive().is_some(),
+            rust_primitive().is_some(),
             "Data type {:?} has no defined Rust primitive.",
             value_type
         );
     }
+    let rust_primitive_unboxed = match value_type.unboxed_representation() {
+        Some(unboxed) => Some(unboxed),
+        None => rust_primitive.clone(),
+    };
     let doc = BuildInfo::from(attr.id())
         .dual_purpose_documentation()
         .unwrap();
+        
     AttributePropertyConfig {
         public: true,
         property_name: Rc::from(attr.internal_name_str().unwrap().to_snake_case()),
@@ -230,8 +312,10 @@ fn attr_config(
         attr: concept_to_struct(&(*attr).into(), codegen_cfg.yin),
         owner_type: concept_to_struct(target, codegen_cfg.yin),
         value_type: concept_to_struct(&value_type, codegen_cfg.yin),
-        rust_primitive: value_as_data.rust_primitive(),
+        rust_primitive,
+        rust_primitive_unboxed,
         primitive_test_value: value_as_data.default_value(),
+        dummy_test_value: value_as_data.dummy_value(),
         hereditary: !attr.is_nonhereditary_attr(),
         multi_valued: attr.is_multi_valued_attr(),
     }
@@ -265,18 +349,28 @@ fn add_struct_attr_fragments(
 
 /// Generate code for a given concept. Post-processing still needed.
 pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String {
-    let target = Archetype::from(request.target().unwrap().id());
+    let mut target = Archetype::from(request.target().unwrap().id());
     let parent = primary_parent(&target);
 
     let base_cfg = generic_config(&request, &target, &parent, codegen_cfg);
 
     let mut file = tao_file_fragment(&base_cfg);
 
-    if !KnowledgeGraphNode::from(target.id()).is_root_analogue() {
-        add_form_fragment(&base_cfg, &mut file);
+    let kgn = KnowledgeGraphNode::from(target.id());
+    assert!(!kgn.is_imported(), "Coding an imported archetype {:?}", kgn);
+    if !kgn.is_root_analogue() {
+        add_form_fragment(
+            &form_config(&base_cfg, &mut target, &codegen_cfg),
+            &mut file,
+        );
     }
 
     if activate_archetype(&target) {
+        add_archetype_fragment(
+            &archetype_config(&base_cfg, &target, &codegen_cfg),
+            &mut file,
+        );
+    } else if activate_attribute(&target) {
         add_attr_fragments(
             &attribute_config(&base_cfg, &target, codegen_cfg),
             &mut file,
@@ -331,7 +425,7 @@ mod tests {
         );
 
         assert!(!target_kgn.is_root_analogue());
-        assert!(!activate_archetype(&target));
+        assert!(!activate_attribute(&target));
         assert!(!activate_data(&target));
 
         assert!(cfg.id.contains("YIN_MAX_ID"));
@@ -395,7 +489,7 @@ mod tests {
         target_kgn.mark_root_analogue();
 
         assert!(target_kgn.is_root_analogue());
-        assert!(!activate_archetype(&target));
+        assert!(!activate_attribute(&target));
         assert!(!activate_data(&target));
     }
 
@@ -423,15 +517,58 @@ mod tests {
         );
 
         assert!(!kgn.is_root_analogue());
-        assert!(activate_archetype(&target.into()));
+        assert!(activate_attribute(&target.into()));
         assert!(!activate_data(&target.into()));
 
         assert_eq!(attr_cfg.owner_type.name, "Tao".to_owned());
         assert_eq!(attr_cfg.value_type.name, "Form".to_owned());
         assert_eq!(
-            attr_cfg.tao_cfg.archetype_name,
+            attr_cfg.tao_cfg.archetype.name,
             "AttributeArchetype".to_owned()
         );
+    }
+
+    #[test]
+    fn default_meta() {
+        initialize_kb();
+        let mut target = Tao::archetype().individuate_as_archetype();
+        target.set_internal_name_str("MyDataType");
+        let mut kgn = KnowledgeGraphNode::from(target.id());
+        kgn.mark_newly_defined();
+        let mut implement = Implement::new();
+        implement.set_target(&target.as_form());
+        let parent = primary_parent(&target);
+        let codegen_cfg = CodegenConfig::default();
+        // todo: this line is only needed because Yin doesn't set a default meta archetype
+        Tao::archetype().set_meta_archetype(&Archetype::archetype());
+        Crate::yang().set_version("0.1.8");
+
+        let cfg = generic_config(&implement, &target, &parent, &codegen_cfg);
+        assert_eq!(cfg.archetype.name, "Archetype");
+    }
+
+    #[test]
+    fn specific_meta() {
+        initialize_kb();
+        let mut target = Tao::archetype().individuate_as_archetype();
+        target.set_internal_name_str("MyDataType");
+        let mut kgn = KnowledgeGraphNode::from(target.id());
+        kgn.mark_newly_defined();
+        let mut implement = Implement::new();
+        implement.set_target(&target.as_form());
+        let parent = primary_parent(&target);
+        let codegen_cfg = CodegenConfig::default();
+        // todo: this line is only needed because Yin doesn't set a default meta archetype
+        Tao::archetype().set_meta_archetype(&Archetype::archetype());
+        Crate::yang().set_version("0.1.8");
+
+        // the only difference from the above test
+        target
+            .specific_meta()
+            .set_internal_name_str("my-data-type-archetype");
+
+        let cfg = generic_config(&implement, &target, &parent, &codegen_cfg);
+        assert_eq!(cfg.archetype.name, "MyDataTypeArchetype");
     }
 
     #[test]
@@ -444,7 +581,7 @@ mod tests {
         kgn.mark_data_analogue();
 
         assert!(!kgn.is_root_analogue());
-        assert!(!activate_archetype(&target));
+        assert!(!activate_attribute(&target));
         assert!(activate_data(&target));
     }
 

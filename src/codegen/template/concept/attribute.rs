@@ -1,6 +1,8 @@
 use super::tao::TaoConfig;
 use super::util::{add_assert, new_kb_test};
-use crate::codegen::template::basic::{AppendedFragment, AtomicFragment, FileFragment};
+use crate::codegen::template::basic::{
+    AppendedFragment, AtomicFragment, FileFragment, ItemDeclarationAPI,
+};
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -64,6 +66,9 @@ fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AppendedFragment {
     let mut test_frag = AppendedFragment::default();
     let name = &cfg.tao_cfg.this.name;
     let check_attribute_constraints = new_kb_test(&mut test_frag, "check_attribute_constraints");
+    check_attribute_constraints
+        .borrow_mut()
+        .add_attribute("allow(clippy::useless_conversion)".to_owned());
     add_assert(
         &check_attribute_constraints,
         format!("{}::archetype().owner_archetype()", name),
@@ -134,7 +139,7 @@ mod tests {
                         ..StructConfig::default()
                     },
                     parent_name: "MyAttr".to_owned(),
-                    archetype_name: "AttributeArchetype".to_owned(),
+                    archetype: StructConfig::new("crate::AttributeArchetype".to_owned()),
                     ..TaoConfig::default()
                 },
                 owner_type: StructConfig {

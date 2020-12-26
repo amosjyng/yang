@@ -93,6 +93,19 @@ add_flag!(
     "Marks an archetype and all its descendants as having been newly defined as part of this particular build.",
     "having been newly defined as part of the current build."
 );
+aa(newly_defined).mark_nonhereditary_attr();
+```
+
+We should have a similar flag for imported concepts. Note that some concepts are neither imported nor newly defined. These are the concepts that are initialized as part of the existing Yang build.
+
+```rust
+add_flag!(
+    imported,
+    knowledge_graph_node,
+    "Marks a concept as being defined in an imported file.",
+    "imported from another build."
+);
+aa(imported).mark_nonhereditary_attr();
 ```
 
 When Yin tells us about herself, we must forget all preconceptions we have about the world and listen to what she has to say. That means when she speaks of what an attribute is, we *listen* instead of shoehorning her description into what we already think of as an attribute.
@@ -108,7 +121,7 @@ add_flag!(
 );
 ```
 
-The same is true of Tao and Data:
+The same is true of Tao, Data, and Archetype:
 
 ```rust
 add_flag!(
@@ -116,6 +129,22 @@ add_flag!(
     knowledge_graph_node,
     "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this.",
     "logically analogous to the root node."
+);
+aa(root_analogue).mark_nonhereditary_attr();
+
+add_flag!(
+    root_archetype_analogue,
+    knowledge_graph_node,
+    "Marks an archetype as requiring root-archetype-specific logic during generation. None of its descendants will inherit this.\n\nThe root archetype node is different from the root node. All nodes descend from the root node, including the root archetype node; all archetypes descend from the root archetype node.",
+    "logically analogous to the root archetype node."
+);
+aa(root_archetype_analogue).mark_nonhereditary_attr();
+
+add_flag!(
+    archetype_analogue,
+    knowledge_graph_node,
+    "Marks an archetype and all its descendants as requiring archetype-specific logic during generation.",
+    "logically analogous to an archetype node."
 );
 
 add_flag!(
@@ -126,11 +155,7 @@ add_flag!(
 );
 ```
 
-Unlike the markers for data and attribute logic, the root node marker does not get inherited because, well, the children of the root node won't really be the root node anymore.
-
-```rust
-aa(root_analogue).mark_nonhereditary_attr();
-```
+Unlike the markers for data and attribute logic, the root and root archetype node markers do not get inherited because, well, the children of the root node won't really be the root node anymore.
 
 #### The build information perspective
 
@@ -232,6 +257,25 @@ add_attr!(
     "the import path the Rust implementation ended up at."
 );
 aa(import_path).mark_nonhereditary_attr();
+```
+
+Unfortunately, Yin's information about her data attributes didn't survive the code generation process, so here it is again:
+
+```rust
+StringConcept::archetype().set_default_value("String::new()");
+StringConcept::archetype().set_rust_primitive("String");
+Number::archetype().set_default_value("0");
+Number::archetype().set_rust_primitive("usize");
+```
+
+To help with testing, we should give these data types dummy values in addition to the default ones -- at least until such time as Yang is capable of generating dummy values himself.
+
+```rust
+define_child!(
+    dummy_value,
+    Attribute::archetype(),
+    "A dummy value for a type of data. This helps with testing."
+);
 ```
 
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.

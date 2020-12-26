@@ -16,7 +16,7 @@ pub fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
         return code.to_owned(); // no post-processing for releases
     }
 
-    let formatted = if options.add_rustfmt_attributes {
+    let formatted = if options.comment_autogen && options.add_rustfmt_attributes {
         add_fmt_skips(&code)
     } else {
         code.to_owned()
@@ -31,15 +31,13 @@ pub fn post_process_generation(code: &str, options: &CodegenConfig) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codegen::template::concept::form::add_form_fragment;
     use crate::codegen::template::concept::tao::{tao_file_fragment, TaoConfig};
     use crate::codegen::StructConfig;
     use mark_autogen::AUTOGENERATION_MARKER;
     use mark_fmt::FMT_SKIP_MARKER;
 
     fn code_form(cfg: &TaoConfig) -> String {
-        let mut f = tao_file_fragment(cfg);
-        add_form_fragment(&cfg, &mut f);
+        let f = tao_file_fragment(cfg);
         f.generate_code()
     }
 

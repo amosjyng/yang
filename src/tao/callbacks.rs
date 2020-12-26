@@ -5,27 +5,33 @@ use crate::codegen::planning::{
 use crate::codegen::track_autogen::save_autogen;
 use crate::codegen::{output_code, CodegenConfig};
 use crate::tao::form::{Crate, CrateExtension, Module};
+use crate::tao::perspective::KnowledgeGraphNode;
 use colored::*;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 
+/// Retrieve all non-imported implement actions.
+pub fn implements() -> Box<dyn Iterator<Item = Implement>> {
+    Box::new(
+        Implement::archetype()
+            .individuals()
+            .into_iter()
+            .filter(|i| !KnowledgeGraphNode::from(i.id()).is_imported())
+            .map(|i| Implement::from(i.id())),
+    )
+}
+
 /// Retrieve implementation requests that pertain to archetypes.
 fn archetypes_to_implement() -> Vec<Implement> {
-    Implement::archetype()
-        .individuals()
-        .into_iter()
-        .map(|i| Implement::from(i.id()))
+    implements()
         .filter(|i| !i.target().unwrap().has_ancestor(Module::archetype()))
         .collect()
 }
 
 /// Retrieve implementation requests that pertain to modules.
 fn modules_to_implement() -> Vec<Implement> {
-    Implement::archetype()
-        .individuals()
-        .into_iter()
-        .map(|i| Implement::from(i.id()))
+    implements()
         .filter(|i| i.target().unwrap().has_ancestor(Module::archetype()))
         .collect()
 }
@@ -60,10 +66,13 @@ pub fn handle_all_implementations(codegen_cfg: &CodegenConfig) {
         }
     }
 
-    let mut archetype_requests = archetypes_to_implement();
-    // handle initialization first to ensure all concepts land with the right concept IDs
-    handle_init(&mut archetype_requests, codegen_cfg);
-    for implement_command in archetype_requests {
+    let mut initial_archetype_requests = archetypes_to_implement();
+    // handle initialization first to ensure all concepts land with the right concept IDs, and to
+    // make sure all implement commands get created, even the ones that are implicitly defined
+    handle_init(&mut initial_archetype_requests, codegen_cfg);
+    // handle_init might create new implement commands
+    let final_archetype_requests = archetypes_to_implement();
+    for implement_command in final_archetype_requests {
         handle_archetype_implementation(implement_command, codegen_cfg);
     }
     for implement_command in modules_to_implement() {
