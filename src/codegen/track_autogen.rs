@@ -1,8 +1,8 @@
 use path_abs::PathAbs;
 use std::cell::RefCell;
+use std::collections::HashSet;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, Result, Write};
-use std::collections::HashSet;
 
 thread_local! {
     static AUTOGEN_FILES: RefCell<HashSet<String>> = RefCell::new(HashSet::new());
@@ -28,7 +28,10 @@ pub fn save_autogen() {
     // add AUTOGEN_TRACKER to project-level .gitignore
     add_to_file(&PathAbs::new(".gitignore").unwrap(), AUTOGEN_TRACKER)
         .expect("Cannot ignore autogen tracker in top-level .gitignore");
-    println!("Generated {} files in total.", AUTOGEN_FILES.with(|f| f.borrow().len()));
+    println!(
+        "Generated {} files in total.",
+        AUTOGEN_FILES.with(|f| f.borrow().len())
+    );
 }
 
 /// Ensures that the given line will be in the file.
