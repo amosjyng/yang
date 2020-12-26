@@ -1,7 +1,7 @@
 use super::BuildInfo;
 use crate::tao::form::{Crate, CrateExtension, Module};
 use crate::tao::relation::attribute::{
-    Member, ImplementationName, MostProminentMember, SupportsMembership,
+    ImplementationName, Member, MostProminentMember, SupportsMembership,
 };
 use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::StrongValue;

@@ -8,7 +8,6 @@ mod implement_form;
 pub mod perspective;
 pub mod relation;
 
-use crate::tao::form::data::DataExtension;
 use crate::tao::form::{Crate, CrateExtension};
 use auto_init::initialize_types;
 pub use auto_init::YIN_MAX_ID;
@@ -16,8 +15,8 @@ pub use implement_extension::ImplementExtension;
 pub use implement_form::Implement;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::ArchetypeTrait;
-pub use zamm_yin::tao::Tao;
 use zamm_yin::tao::form::data::{Number, StringConcept};
+pub use zamm_yin::tao::Tao;
 
 /// Only here for backwards compatibility reasons.
 #[deprecated(

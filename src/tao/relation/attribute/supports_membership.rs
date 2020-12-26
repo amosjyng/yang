@@ -1,6 +1,6 @@
+use crate::tao::form::Collection;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::form::{Form, FormTrait};
-use crate::tao::form::Collection;
 
 /// Trait to add and retrieve members for anything capable of being the owner of a HasMember
 /// attribute.

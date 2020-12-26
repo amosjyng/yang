@@ -100,7 +100,7 @@ We should have a similar flag for imported concepts. Note that some concepts are
 
 ```rust
 add_flag!(
-    imported,
+    imported <= flag,
     knowledge_graph_node,
     "Marks a concept as being defined in an imported file.",
     "imported from another build."
@@ -133,7 +133,7 @@ add_flag!(
 aa(root_analogue).mark_nonhereditary_attr();
 
 add_flag!(
-    root_archetype_analogue,
+    root_archetype_analogue <= flag,
     knowledge_graph_node,
     "Marks an archetype as requiring root-archetype-specific logic during generation. None of its descendants will inherit this.\n\nThe root archetype node is different from the root node. All nodes descend from the root node, including the root archetype node; all archetypes descend from the root archetype node.",
     "logically analogous to the root archetype node."
@@ -141,7 +141,7 @@ add_flag!(
 aa(root_archetype_analogue).mark_nonhereditary_attr();
 
 add_flag!(
-    archetype_analogue,
+    archetype_analogue <= flag,
     knowledge_graph_node,
     "Marks an archetype and all its descendants as requiring archetype-specific logic during generation.",
     "logically analogous to an archetype node."
@@ -257,25 +257,6 @@ add_attr!(
     "the import path the Rust implementation ended up at."
 );
 aa(import_path).mark_nonhereditary_attr();
-```
-
-Unfortunately, Yin's information about her data attributes didn't survive the code generation process, so here it is again:
-
-```rust
-StringConcept::archetype().set_default_value("String::new()");
-StringConcept::archetype().set_rust_primitive("String");
-Number::archetype().set_default_value("0");
-Number::archetype().set_rust_primitive("usize");
-```
-
-To help with testing, we should give these data types dummy values in addition to the default ones -- at least until such time as Yang is capable of generating dummy values himself.
-
-```rust
-define_child!(
-    dummy_value,
-    Attribute::archetype(),
-    "A dummy value for a type of data. This helps with testing."
-);
 ```
 
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.

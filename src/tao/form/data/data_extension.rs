@@ -1,4 +1,3 @@
-use zamm_yin::tao::relation::attribute::{DummyValue, RustPrimitive, UnboxedRepresentation};
 use std::rc::Rc;
 use zamm_yin::tao::archetype::{Archetype, DataArchetype};
 use zamm_yin::tao::form::FormTrait;
@@ -18,24 +17,21 @@ pub trait DataExtension: FormTrait {
     }
 
     /// Set the unboxed version of this primitive.
+    #[deprecated(
+        since = "0.1.9",
+        note = "Please use DataArchetype::set_unboxed_representation"
+    )]
     fn set_unboxed_representation(&mut self, primitive_name: &str) {
-        let mut name_str = StringConcept::new();
-        name_str.set_value(primitive_name.to_owned());
-        self.essence_mut()
-            .add_outgoing(UnboxedRepresentation::TYPE_ID, name_str.essence());
+        DataArchetype::from(*self.essence()).set_unboxed_representation(primitive_name)
     }
 
     /// Get the unboxed version of this primitive.
+    #[deprecated(
+        since = "0.1.9",
+        note = "Please use DataArchetype::unboxed_representation"
+    )]
     fn unboxed_representation(&self) -> Option<Rc<str>> {
-        self.essence()
-            .outgoing_nodes(UnboxedRepresentation::TYPE_ID)
-            .first()
-            .map(|p| {
-                StringConcept::from(*p)
-                    .value()
-                    .map(|rc| Rc::from(rc.as_str()))
-            })
-            .flatten()
+        DataArchetype::from(*self.essence()).unboxed_representation()
     }
 
     /// Set the Rust code representation for the default value of this concept.
@@ -51,24 +47,15 @@ pub trait DataExtension: FormTrait {
     }
 
     /// Set the Rust code representation for the dummy test value of this concept.
+    #[deprecated(since = "0.1.9", note = "Please use DataArchetype::set_dummy_value")]
     fn set_dummy_value(&mut self, dummy_value_as_code: &str) {
-        let mut code_str = StringConcept::new();
-        code_str.set_value(dummy_value_as_code.to_owned());
-        self.essence_mut()
-            .add_outgoing(DummyValue::TYPE_ID, code_str.essence());
+        DataArchetype::from(*self.essence()).set_dummy_value(dummy_value_as_code)
     }
 
     /// Get the Rust code representation for the dummy test value of this concept.
+    #[deprecated(since = "0.1.9", note = "Please use DataArchetype::dummy_value")]
     fn dummy_value(&self) -> Option<Rc<str>> {
-        self.essence()
-            .outgoing_nodes(DummyValue::TYPE_ID)
-            .first()
-            .map(|p| {
-                StringConcept::from(*p)
-                    .value()
-                    .map(|rc| Rc::from(rc.as_str()))
-            })
-            .flatten()
+        DataArchetype::from(*self.essence()).dummy_value()
     }
 }
 
@@ -80,7 +67,7 @@ impl DataExtension for Archetype {}
 mod tests {
     use super::*;
     use crate::tao::initialize_kb;
-    use zamm_yin::tao::archetype::{ArchetypeTrait, ArchetypeFormTrait};
+    use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
     use zamm_yin::tao::form::data::Data;
 
     #[test]

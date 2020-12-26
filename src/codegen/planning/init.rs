@@ -104,7 +104,7 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
                 let target_name = target_type.internal_name_str().unwrap();
                 let meta_name = format!("{}-archetype", target_name);
                 target_meta.set_internal_name_str(&meta_name);
-                meta_impl.set_documentation(format!(
+                meta_impl.set_documentation(&format!(
                     "Meta-object for {} meta-attributes.",
                     target_name.to_camel_case()
                 ));

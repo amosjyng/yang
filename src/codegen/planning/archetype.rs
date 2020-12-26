@@ -292,19 +292,19 @@ fn attr_config(
     let rust_primitive = value_as_data.rust_primitive();
     if activate_data(&value_type) {
         assert!(
-            rust_primitive().is_some(),
+            rust_primitive.is_some(),
             "Data type {:?} has no defined Rust primitive.",
             value_type
         );
     }
-    let rust_primitive_unboxed = match value_type.unboxed_representation() {
+    let rust_primitive_unboxed = match value_as_data.unboxed_representation() {
         Some(unboxed) => Some(unboxed),
         None => rust_primitive.clone(),
     };
     let doc = BuildInfo::from(attr.id())
         .dual_purpose_documentation()
         .unwrap();
-        
+
     AttributePropertyConfig {
         public: true,
         property_name: Rc::from(attr.internal_name_str().unwrap().to_snake_case()),
