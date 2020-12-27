@@ -74,7 +74,9 @@ fn generic_config(
     let internal_name = this.name.to_kebab_case();
     let form = form_for(target, codegen_cfg);
 
-    let internal_name_cfg = if Crate::yin().version_at_least(0, 1, 4) {
+    let internal_name_cfg = if Crate::yin().version_at_least(0, 2, 0) {
+        InternalNameConfig::YIN_AT_LEAST_0_2_0
+    } else if Crate::yin().version_at_least(0, 1, 4) {
         InternalNameConfig::YIN_AT_LEAST_0_1_4
     } else if Crate::yin().version_at_least(0, 1, 1) {
         InternalNameConfig::YIN_AT_LEAST_0_1_1

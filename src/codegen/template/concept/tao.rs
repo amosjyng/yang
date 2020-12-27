@@ -54,6 +54,16 @@ impl InternalNameConfig {
         all_attributes: "attributes",
         attr_import: None,
     };
+
+    /// Internal API config for Yin versions >= 0.2.0.
+    pub const YIN_AT_LEAST_0_2_0: Self = Self {
+        getter: "internal_name",
+        setter: "set_internal_name",
+        suffix: "",
+        added_attributes: "added_attributes",
+        all_attributes: "attributes",
+        attr_import: None,
+    };
 }
 
 impl Default for InternalNameConfig {
