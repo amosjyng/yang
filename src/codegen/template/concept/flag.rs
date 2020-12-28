@@ -57,7 +57,7 @@ fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.add_import("zamm_yin::tao::form::FormTrait".to_owned());
     f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
     f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
-        "self.essence_mut().add_flag({}::TYPE_ID);",
+        "self.add_flag({}::TYPE_ID);",
         cfg.flag.name
     )))));
     f
@@ -78,18 +78,16 @@ fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
     if cfg.hereditary {
         f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
-            "self.essence().has_flag({}::TYPE_ID)",
+            "self.has_flag({}::TYPE_ID)",
             cfg.flag.name
         )))));
     } else {
-        f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc!(
-            "
-            self.essence()
-                .inheritance_wrapper()
+        f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
+            self.inheritance_wrapper()
                 .base_wrapper()
                 .has_flag({}::TYPE_ID)",
             cfg.flag.name
-        )))));
+        }))));
     }
     f
 }
@@ -186,7 +184,7 @@ mod tests {
             indoc! {"
                 /// Mark this as newly defined as part of the current build.
                 fn mark_newly_defined(&mut self) {
-                    self.essence_mut().add_flag(NewlyDefined::TYPE_ID);
+                    self.add_flag(NewlyDefined::TYPE_ID);
                 }"}
         );
     }
@@ -198,7 +196,7 @@ mod tests {
             indoc! {"
                 /// Whether this is marked as newly defined as part of the current build.
                 fn is_newly_defined(&self) -> bool {
-                    self.essence().has_flag(NewlyDefined::TYPE_ID)
+                    self.has_flag(NewlyDefined::TYPE_ID)
                 }"}
         );
     }

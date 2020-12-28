@@ -144,13 +144,12 @@ fn setter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     };
 
     let final_value = if cfg.rust_primitive.is_some() {
-        "value_concept.essence()".to_owned()
+        "&value_concept".to_owned()
     } else {
-        format!("{}.essence()", cfg.property_name)
+        format!("&{}", cfg.property_name)
     };
-    let mut add_outgoing = FunctionCallFragment::new(AtomicFragment::new(
-        "self.essence_mut().add_outgoing".to_owned(),
-    ));
+    let mut add_outgoing =
+        FunctionCallFragment::new(AtomicFragment::new("self.add_outgoing".to_owned()));
     add_outgoing.add_argument(Rc::new(RefCell::new(AtomicFragment::new(format!(
         "{}::TYPE_ID",
         cfg.attr.name
@@ -193,7 +192,7 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     let nonhereditary_access = if cfg.hereditary {
         ""
     } else {
-        "\n    .base_wrapper()"
+        ".base_wrapper()\n    "
     };
     let primitive_map = if cfg.rust_primitive.is_some() {
         ".value().unwrap()"
@@ -212,8 +211,7 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     };
 
     f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
-        self.essence(){inheritance}
-            .outgoing_nodes({attr}::TYPE_ID)
+        self{inheritance}.outgoing_nodes({attr}::TYPE_ID)
             {collection}
             .map(|f| {value_type}::from(f.id()){primitive_map}){post_collection}",
         inheritance = nonhereditary_access,
@@ -466,10 +464,7 @@ mod tests {
             indoc! {"
                 /// Set the crate associated with the struct.
                 fn set_associated_crate(&mut self, associated_crate: &Crate) {
-                    self.essence_mut().add_outgoing(
-                        AssociatedCrate::TYPE_ID,
-                        associated_crate.essence(),
-                    );
+                    self.add_outgoing(AssociatedCrate::TYPE_ID, &associated_crate);
                 }"}
         );
     }
@@ -483,10 +478,7 @@ mod tests {
                 fn set_associated_crate(&mut self, associated_crate: &str) {
                     let mut value_concept = Crate::new();
                     value_concept.set_value(associated_crate);
-                    self.essence_mut().add_outgoing(
-                        AssociatedCrate::TYPE_ID,
-                        value_concept.essence(),
-                    );
+                    self.add_outgoing(AssociatedCrate::TYPE_ID, &value_concept);
                 }"}
         );
     }
@@ -498,10 +490,7 @@ mod tests {
             indoc! {"
                 /// Add one of the crates associated with the struct.
                 fn add_associated_crate(&mut self, associated_crate: &Crate) {
-                    self.essence_mut().add_outgoing(
-                        AssociatedCrate::TYPE_ID,
-                        associated_crate.essence(),
-                    );
+                    self.add_outgoing(AssociatedCrate::TYPE_ID, &associated_crate);
                 }"}
         );
     }
@@ -513,8 +502,7 @@ mod tests {
             indoc! {"
                 /// Get the crate associated with the struct.
                 fn associated_crate(&self) -> Option<Crate> {
-                    self.essence()
-                        .outgoing_nodes(AssociatedCrate::TYPE_ID)
+                    self.outgoing_nodes(AssociatedCrate::TYPE_ID)
                         .last()
                         .map(|f| Crate::from(f.id()))
                 }"}
@@ -529,8 +517,7 @@ mod tests {
                 /// Get the crate associated with the struct.
                 #[allow(clippy::rc_buffer)]
                 fn associated_crate(&self) -> Option<Rc<str>> {
-                    self.essence()
-                        .outgoing_nodes(AssociatedCrate::TYPE_ID)
+                    self.outgoing_nodes(AssociatedCrate::TYPE_ID)
                         .last()
                         .map(|f| Crate::from(f.id()).value().unwrap())
                 }"}
@@ -549,8 +536,7 @@ mod tests {
                 /// Get the crate associated with the struct.
                 #[allow(clippy::rc_buffer)]
                 fn associated_crate(&self) -> Option<Rc<str>> {
-                    self.essence()
-                        .base_wrapper()
+                    self.base_wrapper()
                         .outgoing_nodes(AssociatedCrate::TYPE_ID)
                         .last()
                         .map(|f| Crate::from(f.id()).value().unwrap())
@@ -565,8 +551,7 @@ mod tests {
             indoc! {"
                 /// Get the crates associated with the struct.
                 fn associated_crates(&self) -> Vec<Crate> {
-                    self.essence()
-                        .outgoing_nodes(AssociatedCrate::TYPE_ID)
+                    self.outgoing_nodes(AssociatedCrate::TYPE_ID)
                         .into_iter()
                         .map(|f| Crate::from(f.id()))
                         .collect()
