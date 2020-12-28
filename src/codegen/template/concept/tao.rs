@@ -207,6 +207,7 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
 fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
     let mut imports = vec![
         "std::rc::Rc".to_owned(),
+        "crate::node_wrappers::CommonNodeTrait".to_owned(),
         "zamm_yin::tao::archetype::ArchetypeFormTrait".to_owned(),
     ];
     for attr_import in &cfg.all_attribute_imports {
