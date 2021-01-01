@@ -343,8 +343,7 @@ module!(
 );
 module!(
     data,
-    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea.",
-    ["data_extension::DataExtension"]
+    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
 );
 module!(relation, "Relations between the forms.");
 module!(flag, "Relations involving only one form.");
@@ -374,7 +373,7 @@ zamm_yang = {path = "C:/Users/Amos Ng/Documents/projects/zamm/yang"}
 Yang does his best to be backwards-compatible, so we should let old Yang know that this is new Yang speaking:
 
 ```rust
-Crate::yin().set_version("0.1.4");
+Crate::yin().set_version("0.2.0");
 Crate::yang().set_version("0.1.8");
 ```
 

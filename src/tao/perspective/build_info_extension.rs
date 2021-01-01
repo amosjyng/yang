@@ -9,7 +9,7 @@ use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::{Form, FormTrait};
-use zamm_yin::Wrapper;
+use std::ops::DerefMut;
 
 /// Trait to extend BuildInfo functionality that has not been auto-generated.
 pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
@@ -30,8 +30,7 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
     /// of just `crate` because `crate` is a reserved keyword in Rust.
     fn crate_name(&self) -> Option<Rc<str>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
-        self.essence()
-            .inheritance_wrapper()
+        self.inheritance_wrapper()
             .base_wrapper()
             .incoming_nodes(Member::TYPE_ID)
             .iter()
@@ -45,17 +44,14 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
     fn set_implementation_name(&mut self, name: &str) {
         let mut s = StringConcept::new();
         // todo: set using StringConcept API once that is correctly generated once more
-        s.essence_mut()
-            .set_value(Rc::new(StrongValue::new(name.to_owned())));
-        self.essence_mut()
-            .add_outgoing(ImplementationName::TYPE_ID, s.essence());
+        s.deref_mut().set_value(Rc::new(StrongValue::new(name.to_owned())));
+        self.add_outgoing(ImplementationName::TYPE_ID, &s);
     }
 
     /// Retrieve name the concept took on for its actual implementation.
     fn implementation_name(&self) -> Option<Rc<str>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
-        self.essence()
-            .inheritance_wrapper()
+        self.inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(ImplementationName::TYPE_ID)
             .last()
@@ -69,8 +65,7 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
 
     /// Get the module that represents this archetype as its primary concept.
     fn representative_module(&self) -> Option<Module> {
-        self.essence()
-            .inheritance_wrapper()
+        self.inheritance_wrapper()
             .base_wrapper()
             .incoming_nodes(MostProminentMember::TYPE_ID)
             .first()

@@ -39,5 +39,5 @@ pub fn initialize_kb() {
     let mut yang = Crate::new();
     yang.set_implementation_name(Crate::YANG_CRATE_NAME);
     let mut current = Crate::new();
-    current.set_internal_name_str(Crate::CURRENT_CRATE_INTERNAL_NAME);
+    current.set_internal_name(Crate::CURRENT_CRATE_INTERNAL_NAME);
 }

@@ -30,7 +30,7 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
         let mut implementation = Implement::new();
         let mut new_module = Module::new();
         new_module.set_most_prominent_member(&self.as_form());
-        if let Some(name) = self.internal_name_str() {
+        if let Some(name) = self.internal_name() {
             BuildInfo::from(new_module.id()).set_implementation_name(&name.to_snake_case());
         }
         implementation.set_target(&new_module.as_form());
@@ -57,8 +57,7 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
 
     /// Grab all implementations for this current node.
     fn implementations(&self) -> Vec<Implement> {
-        self.essence()
-            .base_wrapper()
+        self.base_wrapper()
             .incoming_nodes(Target::TYPE_ID)
             .into_iter()
             .map(|f| Implement::from(f.id()))

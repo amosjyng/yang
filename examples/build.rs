@@ -15,7 +15,7 @@ fn main() {
 
     define!(target);
     target.add_parent(Attribute::archetype().into());
-    target.set_internal_name_str("Target");
+    target.set_internal_name("Target");
     target.implement_with_doc("The target of an implement command.");
 
     handle_all_implementations(&CodegenConfig::default());

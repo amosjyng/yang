@@ -18,7 +18,7 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
 
     let parent_node = KnowledgeGraphNode::from(parent.id());
     if parent_node.is_newly_defined() {
-        archetype_names.push(parent.internal_name_str().unwrap());
+        archetype_names.push(parent.internal_name().unwrap());
     } else if parent_node.is_imported() {
         // Parent is already defined as part of a dependency, we're only creating this crate so
         // that we can access the children as well. In which case, we should also re-export the
@@ -69,7 +69,7 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
                 (*ModuleExtension::implementation_name(&child_submodule).unwrap()).to_owned(),
             );
         } else if KnowledgeGraphNode::from(child.id()).is_newly_defined() {
-            archetype_names.push(child.internal_name_str().unwrap());
+            archetype_names.push(child.internal_name().unwrap());
         } // else, if this child doesn't have their own module, and has also been already defined,
           // then we will have already set them for re-export earlier
     }

@@ -24,7 +24,7 @@ fn mark_import(status: bool) {
 macro_rules! define {
     ($name:ident) => {
         let mut $name = Tao::archetype().individuate_as_archetype();
-        $name.set_internal_name_str(stringify!($name));
+        $name.set_internal_name(stringify!($name));
         {
             let mut kgn = zamm_yang::tao::perspective::KnowledgeGraphNode::from($name.id());
             if zamm_yang::helper::import_in_progress() {
