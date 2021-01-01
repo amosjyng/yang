@@ -38,18 +38,6 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
         new_module
     }
 
-    /// Create a new implementation with the specified ID and documentation string.
-    #[deprecated(
-        since = "0.1.1",
-        note = "Please use implement_with_doc instead, and leave the ID up to the program."
-    )]
-    fn implement_with(&self, id: usize, doc: &str) -> Implement {
-        let mut implementation = self.implement();
-        implementation.set_concept_id(id);
-        implementation.set_documentation(doc);
-        implementation
-    }
-
     /// Look at this concept through the BuildInfo lens.
     fn build_info(&self) -> BuildInfo {
         BuildInfo::from(self.id())

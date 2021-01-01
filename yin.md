@@ -329,17 +329,13 @@ module!(
     "All things that can be interacted with have form.",
     [
         "crate_extension::CrateExtension",
-        "defined_marker::DefinedMarker",
         "module_extension::ModuleExtension"
     ]
 );
 module!(
     archetype,
     "Types of forms, as opposed to the forms themselves.",
-    [
-        "attribute_activation::CodegenFlags",
-        "create_implementation::CreateImplementation"
-    ]
+    ["create_implementation::CreateImplementation"]
 );
 module!(
     data,

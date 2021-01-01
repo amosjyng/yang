@@ -18,14 +18,6 @@ use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::form::data::{Number, StringConcept};
 pub use zamm_yin::tao::Tao;
 
-/// Only here for backwards compatibility reasons.
-#[deprecated(
-    since = "0.1.1",
-    note = "Please use the Implement.document and Implement.set_implementation_id functions \
-    instead."
-)]
-pub struct ImplementConfig;
-
 /// Initialize Yin, including with Yang-specific concepts.
 pub fn initialize_kb() {
     zamm_yin::tao::initialize_kb();
