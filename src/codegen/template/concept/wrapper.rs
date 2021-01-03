@@ -1,4 +1,5 @@
-/// Config for wrapper functions.
+/// Config for wrapper functions, for backwards compatibility with a deprecated Yin 0.1.x API.
+#[derive(Clone, Eq, PartialEq)]
 pub struct WrapperConfig {
     /// Immutable deref accessor.
     pub deref: &'static str,

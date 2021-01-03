@@ -145,6 +145,12 @@ fn generic_config(
         }
     };
 
+    let wrapper_cfg = if Crate::yin().version_at_least(0, 2, 0) {
+        wrapper::YIN_0_2_X
+    } else {
+        wrapper::YIN_0_1_X
+    };
+
     TaoConfig {
         imports,
         this,
@@ -158,16 +164,9 @@ fn generic_config(
         introduced_attributes,
         introduced_attribute_imports,
         archetype,
+        wrapper_cfg,
         doc,
         id,
-    }
-}
-
-fn wrapper_config() -> WrapperConfig {
-    if Crate::yin().version_at_least(0, 2, 0) {
-        wrapper::YIN_0_2_X
-    } else {
-        wrapper::YIN_0_1_X
     }
 }
 
@@ -281,12 +280,17 @@ fn data_config(base_cfg: &TaoConfig, target: &Archetype) -> DataFormatConfig {
     }
 }
 
-fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype) -> FlagConfig {
+fn flag_config(
+    codegen_cfg: &CodegenConfig,
+    target: &Archetype,
+    flag: &Archetype,
+    wrapper_cfg: &WrapperConfig,
+) -> FlagConfig {
     let doc_string = BuildInfo::from(flag.id())
         .dual_purpose_documentation()
         .unwrap();
     FlagConfig {
-        wrapper_cfg: wrapper_config(),
+        wrapper_cfg: wrapper_cfg.clone(),
         public: true,
         property_name: Rc::from(flag.internal_name_str().unwrap().to_snake_case()),
         doc: Rc::from(doc_string.as_str()),
@@ -300,6 +304,7 @@ fn attr_config(
     codegen_cfg: &CodegenConfig,
     target: &Archetype,
     attr: &AttributeArchetype,
+    wrapper_cfg: &WrapperConfig,
 ) -> AttributePropertyConfig {
     let value_type = or_form_default(attr.value_archetype());
     let rust_primitive = value_type.rust_primitive();
@@ -318,6 +323,7 @@ fn attr_config(
         .dual_purpose_documentation()
         .unwrap();
     AttributePropertyConfig {
+        wrapper_cfg: wrapper_cfg.clone(),
         public: true,
         property_name: Rc::from(attr.internal_name_str().unwrap().to_snake_case()),
         doc: Rc::from(doc_string.as_str()),
@@ -340,22 +346,32 @@ fn primary_parent(target: &Archetype) -> Archetype {
 fn add_struct_flag_fragments(
     target: &Archetype,
     cfg: &CodegenConfig,
+    wrapper_cfg: &WrapperConfig,
     implementation: &mut ImplementationFragment,
     file: &mut FileFragment,
 ) {
     for flag in target.added_flags() {
-        add_flag_to_impl(&flag_config(cfg, &target, &flag), implementation, file);
+        add_flag_to_impl(
+            &flag_config(cfg, &target, &flag, wrapper_cfg),
+            implementation,
+            file,
+        );
     }
 }
 
 fn add_struct_attr_fragments(
     target: &Archetype,
     cfg: &CodegenConfig,
+    wrapper_cfg: &WrapperConfig,
     implementation: &mut ImplementationFragment,
     file: &mut FileFragment,
 ) {
     for attr in target.added_attributes() {
-        add_attr_to_impl(&attr_config(cfg, &target, &attr), implementation, file);
+        add_attr_to_impl(
+            &attr_config(cfg, &target, &attr, wrapper_cfg),
+            implementation,
+            file,
+        );
     }
 }
 
@@ -395,10 +411,22 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
         let mut implementation =
             ImplementationFragment::new_struct_impl(concept_to_struct(&target, codegen_cfg.yin));
         if !target.added_flags().is_empty() {
-            add_struct_flag_fragments(&target, codegen_cfg, &mut implementation, &mut file);
+            add_struct_flag_fragments(
+                &target,
+                codegen_cfg,
+                &base_cfg.wrapper_cfg,
+                &mut implementation,
+                &mut file,
+            );
         }
         if !target.added_attributes().is_empty() {
-            add_struct_attr_fragments(&target, codegen_cfg, &mut implementation, &mut file);
+            add_struct_attr_fragments(
+                &target,
+                codegen_cfg,
+                &base_cfg.wrapper_cfg,
+                &mut implementation,
+                &mut file,
+            );
         }
         if !implementation.content.borrow().appendages.is_empty() {
             file.append(Rc::new(RefCell::new(implementation)));
