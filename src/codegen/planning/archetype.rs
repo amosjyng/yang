@@ -24,7 +24,7 @@ use std::convert::TryFrom;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{
-    Archetype, ArchetypeFormExtensionTrait, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype,
+    Archetype, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype,
     AttributeArchetypeFormTrait,
 };
 use zamm_yin::tao::form::{Form, FormTrait};
