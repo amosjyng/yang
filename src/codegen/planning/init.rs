@@ -60,10 +60,7 @@ fn setup_archetype_init(
             let attr_struct = concept_to_struct(&Archetype::from(attr.id()), codegen_cfg.yin);
             // use base wrapper because we want to see if the flag is set with this node, not
             // with an ancestor
-            for outgoing in target_type
-                .base_wrapper()
-                .outgoing_nodes(attr.id())
-            {
+            for outgoing in target_type.base_wrapper().outgoing_nodes(attr.id()) {
                 attributes.push(Link {
                     from: target_struct.clone(),
                     link_type: attr_struct.clone(),

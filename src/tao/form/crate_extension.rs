@@ -1,3 +1,4 @@
+use crate::tao::form::data::StringConcept;
 use crate::tao::form::Crate;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::{SupportsMembership, Version};
@@ -5,7 +6,6 @@ use std::convert::TryFrom;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
-use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::FormTrait;
 
 /// Trait to extend Crate functionality that has not been auto-generated.

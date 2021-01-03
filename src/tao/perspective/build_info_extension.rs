@@ -1,15 +1,15 @@
 use super::BuildInfo;
+use crate::tao::form::data::StringConcept;
 use crate::tao::form::{Crate, CrateExtension, Module};
 use crate::tao::relation::attribute::{
     ImplementationName, Member, MostProminentMember, SupportsMembership,
 };
+use std::ops::DerefMut;
 use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::StrongValue;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::ArchetypeTrait;
-use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::{Form, FormTrait};
-use std::ops::DerefMut;
 
 /// Trait to extend BuildInfo functionality that has not been auto-generated.
 pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
@@ -44,7 +44,8 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
     fn set_implementation_name(&mut self, name: &str) {
         let mut s = StringConcept::new();
         // todo: set using StringConcept API once that is correctly generated once more
-        s.deref_mut().set_value(Rc::new(StrongValue::new(name.to_owned())));
+        s.deref_mut()
+            .set_value(Rc::new(StrongValue::new(name.to_owned())));
         self.add_outgoing(ImplementationName::TYPE_ID, &s);
     }
 

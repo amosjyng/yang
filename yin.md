@@ -4,6 +4,151 @@
 
 I've [mentioned](https://github.com/amosjyng/yin/blob/master/yin.md) Yang a lot already, but I've never formally introduced the two of you. Meet Yang, a code-generation tool. Traditional, worldly, and experienced, he knows all about the cool spots in his little digital neighborhood, all the idiosyncrasies and quirks of his down-to-earth neighbors. Ever the ruthless pragmatic, he has a healthy disregard for the pious rectitude of the compilers. He wishes badly to explore the world outside, but he is fated to stay in this little Rustic village until Yin comes for a visit.
 
+### Data
+
+One archetype type we haven't discussed yet is `Data`, perhaps roughly analogous to the linguistic concept of a "noun." What do we generally start out describing as nouns? Physical objects in the physical world.
+
+Now, not every noun corresponds directly to something physical. We have words that refer to mental states, for example. But even emotions appear to ultimately be an emergent phenomenon of lower-level physics. Even the [is-ought problem](https://en.wikipedia.org/wiki/Is%E2%80%93ought_problem) or [fact-value distinction](https://en.wikipedia.org/wiki/Fact%E2%80%93value_distinction) are, in a sense, not quite as dichotomous as they might seem: all "ought" opinions that have ever existed are encoded in some "is," whether that encoding takes the form of neural patterns, ink on a parchment, or sound waves propagating through the air. This doesn't mean that the general distinction between "is" and "ought" isn't worth making, or that nouns should be done away with. All abstractions are [leaky](https://blog.codinghorror.com/all-abstractions-are-failed-abstractions/), but [some are useful](https://en.wikipedia.org/wiki/All_models_are_wrong).
+
+The same can be said for the bits in Yin and Yang's world. Everything is ultimately bits for these programs -- even a video feed hooked up to the physical world only ever comes in as a stream of bits. If we really wanted to fool a program, it should be theoretically impossible for the program [to tell](https://en.wikipedia.org/wiki/Brain_in_a_vat) that it's actually running in a hermetically sealed continuous integration test environment instead of production. But it still makes sense to speak of pieces of data versus the relations between the data, even if the relations themselves can rightfully be considered data as well:
+
+```rust
+define_child!(
+    data,
+    form,
+    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
+);
+```
+
+In a sense, it's all about framing. Every series of bits forms a number, but unless you're Gödel and you're trying to establish an equivalence between a mathematical proof and an integer, reasoning about "a series of bits" is going to be quite different from reasoning about "a number."
+
+One type of data is a "string":
+
+```rust
+define_child!(
+    string_concept,
+    data,
+    "The concept of a string of characters."
+);
+
+KnowledgeGraphNode::from(string_concept.id()).mark_data_analogue();
+```
+
+A string takes multiple forms in Rust:
+
+```rust
+define_child!(
+    str_concept,
+    data,
+    "The Rust-specific concept of an immutable string of characters."
+);
+
+KnowledgeGraphNode::from(str_concept.id()).mark_data_analogue();
+```
+
+Ideally, this would be modeled as string and integers being fundamental CS concepts, and `str` and `String` being Rust's implementations of those particular concepts. However, that sort of refactor is perhaps best left to a future version of ZAMM.
+
+Another type of data is a number:
+
+```rust
+define_child!(
+    number,
+    data,
+    "The concept of numbers."
+);
+
+KnowledgeGraphNode::from(number.id()).mark_data_analogue();
+```
+
+Every type of data usually has a "default" value that we think of when constructing one from scratch.
+
+```rust
+let mut meta_data = data.specific_meta();
+
+add_attr!(
+    default_value <= attribute,
+    meta_data,
+    str_concept,
+    "The default value of a data structure.",
+    "the Rust code representation for the default value of this concept."
+);
+```
+
+For strings, this would be the empty string:
+
+```rust
+string_concept.set_default_value("String::new()");
+str_concept.set_default_value("\"\"");
+```
+
+For numbers, this would be zero:
+
+```rust
+number.set_default_value("0");
+```
+
+This next bit is more of a Yang thing, but we'll define it here anyways to keep everything in one place. We need to refer to these data structures somehow in our code, and the "how" is to call them by their name as they're known in Rust.
+
+```rust
+add_attr!(
+    rust_primitive <= attribute,
+    meta_data,
+    str_concept,
+    "The Rust primitive that a Yin data concept is implemented by.",
+    "the name of the Rust primitive that this concept represents."
+);
+
+string_concept.set_rust_primitive("String");
+str_concept.set_rust_primitive("str");
+number.set_rust_primitive("usize");
+```
+
+This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
+
+The Rust data structure known as `str` has different boxed and unboxed representations. Unlike the other ones we've encountered so far, you refer to a boxed `str` as `Box<str>`, but to an unboxed one as `&str`. There are good reasons for this, namely because the size of a `str` is unknown at compile time, but regardless this is an edge case to note. We'll let the user make that override:
+
+```rust
+add_attr!(
+    unboxed_representation <= attribute,
+    meta_data,
+    str_concept,
+    "The syntax used to refer to an unboxed version of this primitive.",
+    "the unboxed version of this primitive."
+);
+
+str_concept.set_unboxed_representation("&str");
+```
+
+Since the reason was that `str` is unsized, we'll let the user mark it as such as well:
+
+```rust
+add_flag!(
+    unsized_flag <= flag,
+    meta_data,
+    "Whether or not this data structure has a known size at compile-time.",
+    "having a known size at compile-time."
+);
+unsized_flag.set_internal_name_str("unsized");
+```
+
+Last but not least, testing is important. While the default value is a good place to start, we'll want to come up with other values as well to test with. Ideally, we can simply figure out how to generate them, but for now we'll just specify an alternative value to use other than the default. This alternative value should be unique in the codebase, so that a grep for it will quickly return this spot as documentation.
+
+```rust
+add_attr!(
+    dummy_value <= attribute,
+    meta_data,
+    str_concept,
+    "A dummy value for a type of data. This helps with testing.",
+    "the the Rust code representation for the dummy test value of this concept."
+);
+
+string_concept.set_dummy_value("\"test-dummy-string\".to_owned()");
+str_concept.set_dummy_value("\"test-dummy-str\"");
+number.set_dummy_value("17");
+```
+
+### Implementations
+
 Here's what Yang knows: implementing is an action it can take:
 
 ```rust
@@ -332,15 +477,6 @@ module!(
         "module_extension::ModuleExtension"
     ]
 );
-module!(
-    archetype,
-    "Types of forms, as opposed to the forms themselves.",
-    ["create_implementation::CreateImplementation"]
-);
-module!(
-    data,
-    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
-);
 module!(relation, "Relations between the forms.");
 module!(flag, "Relations involving only one form.");
 module!(
@@ -351,6 +487,15 @@ module!(
 module!(
     has_property,
     "Meta-attributes around what attributes instances of an archetype have."
+);
+module!(
+    archetype,
+    "Types of forms, as opposed to the forms themselves.",
+    ["create_implementation::CreateImplementation"]
+);
+module!(
+    data,
+    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
 );
 ```
 
@@ -385,4 +530,11 @@ Let's import the build for Yin, so that we can differentiate between where conce
 
 ```zamm
 https://api.zamm.dev/v1/books/zamm/yin/0.1.6/yin.md
+```
+
+Additional imports not used by Yin:
+
+```rust
+use zamm_yang::add_attr;
+use zamm_yang::tao::form::data::DataExtension;
 ```

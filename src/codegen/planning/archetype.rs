@@ -13,6 +13,8 @@ use crate::codegen::template::concept::form::{add_form_fragment, FormFormatConfi
 use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
 use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
+use crate::tao::archetype::DataArchetype;
+use crate::tao::form::data::Data;
 use crate::tao::form::{Crate, CrateExtension};
 use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
 use crate::tao::Implement;
@@ -23,9 +25,8 @@ use std::rc::Rc;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{
     Archetype, ArchetypeFormExtensionTrait, ArchetypeFormTrait, ArchetypeTrait, AttributeArchetype,
-    AttributeArchetypeFormTrait, DataArchetype,
+    AttributeArchetypeFormTrait,
 };
-use zamm_yin::tao::form::data::Data;
 use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::tao::relation::attribute::{Attribute, MetaForm};
 
@@ -239,7 +240,8 @@ fn archetype_config(
 ) -> ArchetypeFormatConfig {
     // todo: use Yin's ArchetypeFromTrait::infra_archetype function once that's available
     let infra = Archetype::from(
-        target.incoming_nodes(MetaForm::TYPE_ID)
+        target
+            .incoming_nodes(MetaForm::TYPE_ID)
             .last()
             .unwrap()
             .id(),
