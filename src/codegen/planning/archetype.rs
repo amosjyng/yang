@@ -501,8 +501,8 @@ mod tests {
         kgn.mark_attribute_analogue();
         // todo: reset after set_owner_archetype and set_value_archetype moved to
         // BackwardsCompatibility
-        AttributeArchetypeFormTrait::set_owner_archetype(&mut target, Tao::archetype());
-        AttributeArchetypeFormTrait::set_value_archetype(&mut target, Form::archetype());
+        AttributeArchetypeFormTrait::set_owner_archetype(&mut target, &Tao::archetype());
+        AttributeArchetypeFormTrait::set_value_archetype(&mut target, &Form::archetype());
         let mut implement = Implement::new();
         implement.set_target(&target.as_form());
         let parent = primary_parent(&target.into());

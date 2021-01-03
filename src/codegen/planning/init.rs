@@ -172,9 +172,9 @@ mod tests {
         owner.set_internal_name("Bobby");
         let mut value = Form::archetype().individuate_as_archetype();
         value.set_internal_name("Word");
-        owner.add_attribute(new_attr);
-        new_attr.set_owner_archetype(owner);
-        new_attr.set_value_archetype(value);
+        owner.add_attribute(&new_attr);
+        new_attr.set_owner_archetype(&owner);
+        new_attr.set_value_archetype(&value);
 
         let mut implement_attr = Implement::new();
         implement_attr.set_target(&new_attr.as_form());
