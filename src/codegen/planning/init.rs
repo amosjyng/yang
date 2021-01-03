@@ -8,9 +8,7 @@ use crate::tao::Implement;
 use heck::CamelCase;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{
-    Archetype, ArchetypeFormTrait, ArchetypeTrait,
-};
+use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::relation::attribute::has_property::{HasAttribute, HasFlag};
 use zamm_yin::tao::relation::attribute::{OwnerArchetype, ValueArchetype};
