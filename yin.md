@@ -256,6 +256,7 @@ add_flag!(
     "Marks an archetype as living inside its own module, even if it doesn't have any defined child archetypes yet.",
     "residing in its own Rust module."
 );
+aa(own_module).mark_nonhereditary_attr();
 ```
 
 Once built, structs have a certain import path:
