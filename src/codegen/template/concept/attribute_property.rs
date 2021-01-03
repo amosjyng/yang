@@ -202,6 +202,11 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     let collection = if cfg.multi_valued {
         ".into_iter()"
     } else {
+        // outgoing nodes are sorted by ID, and more specific nodes are created later, resulting in
+        // higher IDs. This is how overrides happen.
+        //
+        // todo: implement this properly, because this forces things to be defined in a certain
+        // order in yin.md
         ".last()"
     };
     let post_collection = if cfg.multi_valued {
