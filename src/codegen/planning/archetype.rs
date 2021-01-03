@@ -11,6 +11,8 @@ use crate::codegen::template::concept::data::{add_data_fragments, DataFormatConf
 use crate::codegen::template::concept::flag::{add_flag_to_impl, FlagConfig};
 use crate::codegen::template::concept::form::{add_form_fragment, FormFormatConfig};
 use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
+use crate::codegen::template::concept::wrapper;
+use crate::codegen::template::concept::wrapper::WrapperConfig;
 use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::form::data::DataExtension;
@@ -161,6 +163,14 @@ fn generic_config(
     }
 }
 
+fn wrapper_config() -> WrapperConfig {
+    if Crate::yin().version_at_least(0, 2, 0) {
+        wrapper::YIN_0_2_X
+    } else {
+        wrapper::YIN_0_1_X
+    }
+}
+
 fn into_archetype_fn(yin: &Crate, archetype: &Archetype) -> String {
     if yin.version_at_least(0, 1, 4) {
         if !KnowledgeGraphNode::from(archetype.id()).is_root_archetype_analogue() {
@@ -276,6 +286,7 @@ fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype
         .dual_purpose_documentation()
         .unwrap();
     FlagConfig {
+        wrapper_cfg: wrapper_config(),
         public: true,
         property_name: Rc::from(flag.internal_name_str().unwrap().to_snake_case()),
         doc: Rc::from(doc_string.as_str()),
