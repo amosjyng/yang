@@ -2,6 +2,7 @@ use crate::codegen::template::basic::{
     AtomicFragment, FileFragment, FunctionFragment, ImplementationFragment, ItemDeclarationAPI,
     SelfReference,
 };
+use crate::codegen::template::concept::wrapper::WrapperConfig;
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -14,6 +15,8 @@ const GETTER_PREFIX: &str = "is_";
 
 /// Config values at the time of Flag getter/setter code generation.
 pub struct FlagConfig {
+    /// Wrapper API to use when generating accessors for this flag.
+    pub wrapper_cfg: WrapperConfig,
     /// The public name to serve as a basis for the getter/setter function names.
     pub property_name: Rc<str>,
     /// Whether or not the getters and setters should be marked public. False if this is to be
@@ -34,6 +37,7 @@ pub struct FlagConfig {
 impl Default for FlagConfig {
     fn default() -> Self {
         Self {
+            wrapper_cfg: WrapperConfig::default(),
             property_name: Rc::from(""),
             public: false,
             doc: Rc::from(""),
@@ -57,8 +61,9 @@ fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.add_import("zamm_yin::tao::form::FormTrait".to_owned());
     f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
     f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
-        "self.essence_mut().add_flag({}::TYPE_ID);",
-        cfg.flag.name
+        "self.{deref_mut}().add_flag({flag_name}::TYPE_ID);",
+        deref_mut = cfg.wrapper_cfg.deref_mut,
+        flag_name = cfg.flag.name
     )))));
     f
 }
@@ -78,18 +83,17 @@ fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
     if cfg.hereditary {
         f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
-            "self.essence().has_flag({}::TYPE_ID)",
-            cfg.flag.name
+            "self.{deref}().has_flag({flag_name}::TYPE_ID)",
+            deref = cfg.wrapper_cfg.deref,
+            flag_name = cfg.flag.name,
         )))));
     } else {
-        f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc!(
-            "
-            self.essence()
-                .inheritance_wrapper()
+        f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
+            self.inheritance_wrapper()
                 .base_wrapper()
                 .has_flag({}::TYPE_ID)",
             cfg.flag.name
-        )))));
+        }))));
     }
     f
 }
@@ -176,6 +180,7 @@ mod tests {
                 import: "zamm_yin::tao::Tao".to_owned(),
             },
             hereditary: true,
+            ..FlagConfig::default()
         }
     }
 

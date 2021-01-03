@@ -3,6 +3,7 @@ use crate::codegen::template::basic::{
     AtomicFragment, FileFragment, FunctionCallFragment, FunctionFragment, ImplementationFragment,
     ItemDeclarationAPI, SelfReference,
 };
+use crate::codegen::template::concept::wrapper::WrapperConfig;
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -38,6 +39,8 @@ fn primitive_config(
 
 /// Config values at the time of Attribute getter/setter code generation.
 pub struct AttributePropertyConfig {
+    /// Wrapper API to use when generating accessors for this flag.
+    pub wrapper_cfg: WrapperConfig,
     /// The public name to serve as a basis for the getter/setter function names.
     pub property_name: Rc<str>,
     /// Whether or not the getters and setters should be marked public. False if this is to be
@@ -70,6 +73,7 @@ pub struct AttributePropertyConfig {
 impl Default for AttributePropertyConfig {
     fn default() -> Self {
         Self {
+            wrapper_cfg: WrapperConfig::default(),
             property_name: Rc::from(""),
             public: false,
             doc: Rc::from(""),
@@ -144,13 +148,14 @@ fn setter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     };
 
     let final_value = if cfg.rust_primitive.is_some() {
-        "value_concept.essence()".to_owned()
+        format!("value_concept.{}()", cfg.wrapper_cfg.deref)
     } else {
-        format!("{}.essence()", cfg.property_name)
+        format!("{}.{}()", cfg.property_name, cfg.wrapper_cfg.deref)
     };
-    let mut add_outgoing = FunctionCallFragment::new(AtomicFragment::new(
-        "self.essence_mut().add_outgoing".to_owned(),
-    ));
+    let mut add_outgoing = FunctionCallFragment::new(AtomicFragment::new(format!(
+        "self.{}().add_outgoing",
+        cfg.wrapper_cfg.deref_mut
+    )));
     add_outgoing.add_argument(Rc::new(RefCell::new(AtomicFragment::new(format!(
         "{}::TYPE_ID",
         cfg.attr.name
@@ -203,6 +208,11 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     let collection = if cfg.multi_valued {
         ".into_iter()"
     } else {
+        // outgoing nodes are sorted by ID, and more specific nodes are created later, resulting in
+        // higher IDs. This is how overrides happen.
+        //
+        // todo: implement this properly, because this forces things to be defined in a certain
+        // order in yin.md
         ".last()"
     };
     let post_collection = if cfg.multi_valued {
@@ -212,10 +222,11 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     };
 
     f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
-        self.essence(){inheritance}
+        self.{deref}(){inheritance}
             .outgoing_nodes({attr}::TYPE_ID)
             {collection}
             .map(|f| {value_type}::from(f.id()){primitive_map}){post_collection}",
+        deref = cfg.wrapper_cfg.deref,
         inheritance = nonhereditary_access,
         attr = cfg.attr.name,
         value_type = cfg.value_type.name,
