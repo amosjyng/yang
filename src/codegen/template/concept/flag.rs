@@ -89,10 +89,11 @@ fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
         )))));
     } else {
         f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
-            self.inheritance_wrapper()
+            self.{deref}()
                 .base_wrapper()
-                .has_flag({}::TYPE_ID)",
-            cfg.flag.name
+                .has_flag({flag_name}::TYPE_ID)",
+            deref = cfg.wrapper_cfg.deref,
+            flag_name = cfg.flag.name
         }))));
     }
     f
@@ -204,6 +205,24 @@ mod tests {
                 /// Whether this is marked as newly defined as part of the current build.
                 fn is_newly_defined(&self) -> bool {
                     self.essence().has_flag(NewlyDefined::TYPE_ID)
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_nonhereditary_getter_fragment_body() {
+        assert_eq!(
+            getter_fragment(&FlagConfig {
+                hereditary: false,
+                ..test_config()
+            })
+            .body(80),
+            indoc! {"
+                /// Whether this is marked as newly defined as part of the current build.
+                fn is_newly_defined(&self) -> bool {
+                    self.essence()
+                        .base_wrapper()
+                        .has_flag(NewlyDefined::TYPE_ID)
                 }"}
         );
     }
