@@ -103,6 +103,8 @@ pub struct TaoConfig {
     pub introduced_attribute_imports: Vec<String>,
     /// Which wrapper API to use.
     pub wrapper_cfg: WrapperConfig,
+    /// Whether or not to specify a lifetime for the Archetype trait implementation.
+    pub archetype_trait_lifetime: bool,
     /// Rustdoc for the class.
     pub doc: String,
     /// ID of the concept.
@@ -125,6 +127,7 @@ impl Default for TaoConfig {
             introduced_attributes: vec![],
             introduced_attribute_imports: vec![],
             wrapper_cfg: WrapperConfig::default(),
+            archetype_trait_lifetime: true,
             doc: "".to_owned(),
             id: "1".to_owned(),
         }
@@ -151,6 +154,11 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
     if let Some(import) = &cfg.internal_name_cfg.attr_import {
         imports.push(import.to_string());
     }
+    let lifetime = if cfg.archetype_trait_lifetime {
+        "<'a>"
+    } else {
+        ""
+    };
 
     AtomicFragment {
         imports,
@@ -189,7 +197,7 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
                 }}
             }}
             
-            impl<'a> ArchetypeTrait<'a> for {name} {{
+            impl{lifetime} ArchetypeTrait{lifetime} for {name} {{
                 type ArchetypeForm = {archetype};
                 type Form = {form};
 
@@ -204,6 +212,7 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
             parent = cfg.parent_name,
             archetype = cfg.archetype.name,
             id = cfg.id,
+            lifetime = lifetime,
         },
     }
 }

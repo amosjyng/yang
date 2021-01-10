@@ -1,5 +1,5 @@
 [build-dependencies]
-zamm = "0.1.1"
+zamm = "0.1.6"
 
 [dependencies]
 colored = "2"
@@ -21,4 +21,4 @@ license = "GPL-3.0"
 name = "zamm_yang"
 readme = "README.md"
 repository = "https://github.com/amosjyng/yang"
-version = "0.1.9"
+version = "0.1.10"
