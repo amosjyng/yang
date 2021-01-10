@@ -145,11 +145,14 @@ fn generic_config(
         }
     };
 
-    let wrapper_cfg = if Crate::yin().version_at_least(0, 2, 0) {
+    let yin_0_2_x = Crate::yin().version_at_least(0, 2, 0);
+    let wrapper_cfg = if yin_0_2_x {
         wrapper::YIN_0_2_X
     } else {
         wrapper::YIN_0_1_X
     };
+
+    let archetype_trait_lifetime = !yin_0_2_x;
 
     TaoConfig {
         imports,
@@ -165,6 +168,7 @@ fn generic_config(
         introduced_attribute_imports,
         archetype,
         wrapper_cfg,
+        archetype_trait_lifetime,
         doc,
         id,
     }
