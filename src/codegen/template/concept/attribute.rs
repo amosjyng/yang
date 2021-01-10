@@ -13,8 +13,6 @@ use std::rc::Rc;
 pub struct AttributeFormatConfig {
     /// Regular concept config.
     pub tao_cfg: TaoConfig,
-    /// Whether or not attribute trait should be implemented with a lifetime.
-    pub attribute_trait_lifetime: bool,
     /// Attribute's owner archetype.
     pub owner_type: StructConfig,
     /// Attribute's owner form.
@@ -31,11 +29,6 @@ pub struct AttributeFormatConfig {
 
 /// Get the attribute body fragment.
 fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
-    let attr_lifetime = if cfg.attribute_trait_lifetime {
-        "<'a>"
-    } else {
-        ""
-    };
     AtomicFragment {
         imports: vec![
             "zamm_yin::tao::relation::attribute::AttributeTrait".to_owned(),
@@ -43,12 +36,10 @@ fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
             cfg.value_form.import.clone(),
         ],
         atom: formatdoc! {r#"
-            impl{lifetime} AttributeTrait{lifetime} for {name} {{
+            impl AttributeTrait for {name} {{
                 type OwnerForm = {owner_form};
                 type ValueForm = {value_form};
-            }}"#,
-            name = cfg.tao_cfg.this.name,
-            lifetime = attr_lifetime,
+            }}"#, name = cfg.tao_cfg.this.name,
             owner_form = cfg.owner_form.name,
             value_form = cfg.value_form.name,
         },
@@ -151,7 +142,6 @@ mod tests {
                     archetype: StructConfig::new("crate::AttributeArchetype".to_owned()),
                     ..TaoConfig::default()
                 },
-                attribute_trait_lifetime: false,
                 owner_type: StructConfig {
                     name: "MyOwner".to_owned(),
                     import: "zamm_yin::tao::MyOwner".to_owned(),

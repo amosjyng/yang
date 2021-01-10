@@ -10,30 +10,17 @@ use std::rc::Rc;
 pub struct FormFormatConfig {
     /// Regular concept config.
     pub tao_cfg: TaoConfig,
-    /// Whether or not form trait should be implemented with a lifetime.
-    pub form_trait_lifetime: bool,
     /// Meta archetype specifically for this type, if one exists.
     pub meta_archetype: Option<StructConfig>,
     /// All ancestors of the concept.
     pub ancestors: Vec<StructConfig>,
 }
 
-fn form_impl_fragment(cfg: &FormFormatConfig) -> ImplementationFragment {
-    let form_trait_name = if cfg.form_trait_lifetime {
-        "FormTrait<'a>"
-    } else {
-        "FormTrait"
-    };
+fn form_impl_fragment(cfg: &TaoConfig) -> ImplementationFragment {
     let mut implementation = ImplementationFragment::new_trait_impl(
-        StructConfig {
-            name: form_trait_name.to_owned(),
-            import: "zamm_yin::tao::form::FormTrait".to_owned(),
-        },
-        cfg.tao_cfg.this.clone(),
+        StructConfig::new("zamm_yin::tao::form::FormTrait".to_owned()),
+        cfg.this.clone(),
     );
-    if cfg.form_trait_lifetime {
-        implementation.add_lifetime('a');
-    }
     implementation.mark_same_file_as_struct();
     implementation
 }
@@ -61,7 +48,7 @@ fn deref_fragment(this_name: &str, ancestor: &StructConfig) -> ImplementationFra
 
 /// Add the form fragment to a file.
 pub fn add_form_fragment(cfg: &FormFormatConfig, file: &mut FileFragment) {
-    file.append(Rc::new(RefCell::new(form_impl_fragment(cfg))));
+    file.append(Rc::new(RefCell::new(form_impl_fragment(&cfg.tao_cfg))));
     for ancestor in &cfg.ancestors {
         file.append(Rc::new(RefCell::new(deref_fragment(
             &cfg.tao_cfg.this.name,
@@ -79,15 +66,12 @@ mod tests {
     #[test]
     fn test_form_fragment() {
         assert_eq!(
-            form_impl_fragment(&FormFormatConfig {
-                tao_cfg: TaoConfig {
-                    this: StructConfig {
-                        name: "MyConcept".to_owned(),
-                        ..StructConfig::default()
-                    },
-                    ..TaoConfig::default()
+            form_impl_fragment(&TaoConfig {
+                this: StructConfig {
+                    name: "MyConcept".to_owned(),
+                    ..StructConfig::default()
                 },
-                ..FormFormatConfig::default()
+                ..TaoConfig::default()
             })
             .body(80),
             "impl FormTrait for MyConcept {}"
