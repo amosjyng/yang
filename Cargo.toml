@@ -1,6 +1,6 @@
 [package]
 name = "zamm_yang"
-version = "0.1.9-beta"
+version = "0.1.10-beta"
 authors = ["Amos Jun-yeung Ng <me@amos.ng>"]
 edition = "2018"
 description = "A basic, experimental code generator"
