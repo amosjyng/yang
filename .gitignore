@@ -4,3 +4,4 @@
 *.log
 .autogen.txt
 Cargo.lock
+zamm_override.md
