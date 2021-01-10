@@ -210,6 +210,7 @@ fn form_config(
 
     FormFormatConfig {
         tao_cfg: base_cfg.clone(),
+        form_trait_lifetime: Crate::yin().version_at_least(0, 2, 0),
         meta_archetype,
         ancestors,
     }
@@ -236,6 +237,7 @@ fn attribute_config(
 
     AttributeFormatConfig {
         tao_cfg: base_cfg.clone(),
+        attribute_trait_lifetime: Crate::yin().version_at_least(0, 2, 0),
         owner_type,
         owner_form,
         value_type,
