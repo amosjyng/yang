@@ -74,7 +74,7 @@ Every type of data usually has a "default" value that we think of when construct
 
 ```rust
 let mut meta_rust_item = rust_item.specific_meta();
-meta_rust_item.set_internal_name_str("rust-item-archetype");
+meta_rust_item.set_internal_name("rust-item-archetype");
 let mut meta_data = data.specific_meta();
 
 add_attr!(
@@ -495,8 +495,11 @@ module!(
 This also means redefining the modules for concepts that were first introduced in Yin, but which we have since created new children for:
 
 ```rust
-let mut form_mod = form.impl_mod("All things that can be interacted with have form.");
-form_mod.re_export("zamm_yin::tao::form::FormTrait");
+module!(
+    form,
+    "All things that can be interacted with have form.",
+    ["zamm_yin::tao::form::FormTrait"]
+);
 
 module!(
     rust_item,
