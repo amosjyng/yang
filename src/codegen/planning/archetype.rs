@@ -120,16 +120,7 @@ fn generic_config(
         .map(|s| s.import.clone())
         .collect();
 
-    let archetype = if Crate::yang().version_at_least(0, 1, 8) {
-        concept_to_struct(&target.meta_archetype(), codegen_cfg.yin)
-    } else {
-        // legacy logic
-        if activate_attribute(target) {
-            concept_to_struct(&AttributeArchetype::archetype(), codegen_cfg.yin)
-        } else {
-            concept_to_struct(&Archetype::archetype(), codegen_cfg.yin)
-        }
-    };
+    let archetype = concept_to_struct(&target.meta_archetype(), codegen_cfg.yin);
 
     let yin_0_2_x = Crate::yin().version_at_least(0, 2, 0);
 
@@ -516,10 +507,9 @@ mod tests {
 
         assert_eq!(attr_cfg.owner_type.name, "Tao".to_owned());
         assert_eq!(attr_cfg.value_type.name, "Form".to_owned());
-        assert_eq!(
-            attr_cfg.tao_cfg.archetype.name,
-            "AttributeArchetype".to_owned()
-        );
+        // Caller is responsible for designating a custom archetype, if so desired. Simply marking
+        // a node as an attribute analogue does not make its archetype an attribute analogue too.
+        assert_eq!(attr_cfg.tao_cfg.archetype.name, "Archetype".to_owned());
     }
 
     #[test]
