@@ -1,5 +1,6 @@
-use super::{AppendedFragment, AtomicFragment, CodeFragment};
+use super::{AppendedFragment, AtomicFragment, CodeFragment, ModuleFragment};
 use crate::codegen::template::imports::imports_as_str;
+use crate::codegen::CODE_WIDTH;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -9,10 +10,17 @@ use std::rc::Rc;
 pub struct FileFragment {
     preamble: Option<AtomicFragment>,
     contents: Rc<RefCell<AppendedFragment>>,
-    tests: Option<Rc<RefCell<dyn CodeFragment>>>,
+    tests: Vec<Rc<RefCell<dyn CodeFragment>>>,
+    self_import: Option<String>,
+    current_crate: Option<Rc<str>>,
 }
 
 impl FileFragment {
+    /// Get a new default FileFragment to use.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Set a preamble for this file. Preambles are like hashbangs or module tags.
     pub fn set_preamble(&mut self, preamble: AtomicFragment) {
         self.preamble = Some(preamble)
@@ -23,32 +31,56 @@ impl FileFragment {
         self.contents.borrow_mut().append(fragment);
     }
 
-    /// Set the test module for this file.
-    pub fn set_tests(&mut self, tests: Rc<RefCell<dyn CodeFragment>>) {
-        self.tests = Some(tests);
+    /// Add test code to the test module for this file.
+    pub fn append_test(&mut self, test: Rc<RefCell<dyn CodeFragment>>) {
+        self.tests.push(test);
+    }
+
+    /// If there's something defined within this file, set the import path here, and it will be
+    /// excluded from the file's final set of imports.
+    pub fn set_self_import(&mut self, import: String) {
+        self.self_import = Some(import);
+    }
+
+    /// Set the current crate for file imports.
+    pub fn set_current_crate(&mut self, current_crate: Rc<str>) {
+        self.current_crate = Some(current_crate);
     }
 
     /// Get the code for this fragment.
     pub fn generate_code(&self) -> String {
         let mut combined = AppendedFragment::default();
         combined.append(self.contents.clone());
-        if let Some(t) = self.tests.as_ref() {
-            combined.append(t.clone());
+        if !self.tests.is_empty() {
+            let mut test_mod = ModuleFragment::new_test_module();
+            if let Some(current_crate) = &self.current_crate {
+                test_mod.set_current_crate(current_crate.clone());
+            }
+            for test in &self.tests {
+                test_mod.append(test.clone());
+            }
+            combined.append(Rc::new(RefCell::new(test_mod)));
         }
 
+        let mut exluded_imports = vec![];
+        if let Some(excluded_import) = &self.self_import {
+            exluded_imports.push(excluded_import.as_str());
+        }
         let imports = imports_as_str(
-            &combined
-                .imports()
-                .iter()
-                .map(|s| s.as_str())
-                .collect::<Vec<&str>>(),
+            &*self
+                .current_crate
+                .as_ref()
+                .cloned()
+                .unwrap_or_else(|| Rc::from("DUMMY-TEST-CRATE")),
+            combined.imports(),
+            &exluded_imports,
         );
 
-        let body = combined.body();
+        let body = combined.body(CODE_WIDTH);
 
         let mut final_file = String::new();
         if let Some(preamble) = &self.preamble {
-            final_file += &format!("{}\n\n", preamble.body());
+            final_file += &format!("{}\n\n", preamble.body(CODE_WIDTH));
         }
         if !imports.is_empty() {
             final_file += &format!("{}\n\n", imports);
@@ -63,8 +95,9 @@ impl FileFragment {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{AtomicFragment, ModuleFragment};
+    use super::super::AtomicFragment;
     use super::*;
+    use crate::tao::initialize_kb;
     use indoc::indoc;
 
     #[test]
@@ -74,12 +107,15 @@ mod tests {
 
     #[test]
     fn test_file_with_preamble() {
+        initialize_kb();
+
         let mut file = FileFragment::default();
+        file.set_current_crate(Rc::from("my_crate"));
         file.append(Rc::new(RefCell::new(AtomicFragment {
             imports: vec![
                 "std::OrTheOther".to_owned(),
-                "crate::Something".to_owned(),
-                "crate::Unused".to_owned(),
+                "my_crate::Something".to_owned(),
+                "my_crate::Unused".to_owned(),
             ],
             atom: indoc! {"
                 pub struct Big {
@@ -125,8 +161,7 @@ mod tests {
             .trim()
             .to_string(),
         })));
-        let mut test_mod = ModuleFragment::new_test_module();
-        test_mod.append(Rc::new(RefCell::new(AtomicFragment {
+        file.append_test(Rc::new(RefCell::new(AtomicFragment {
             imports: Vec::new(),
             atom: indoc! {"
                 #[test]
@@ -138,7 +173,6 @@ mod tests {
                 }"}
             .to_string(),
         })));
-        file.set_tests(Rc::new(RefCell::new(test_mod)));
 
         assert_eq!(
             file.generate_code(),

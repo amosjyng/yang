@@ -1,5 +1,3 @@
-use super::form::form_fragment;
-use super::tao::tao_test_fragment;
 use super::tao::TaoConfig;
 use crate::codegen::template::basic::{AtomicFragment, FileFragment};
 use indoc::formatdoc;
@@ -7,51 +5,65 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Config values at the time of Attribute code generation.
-#[derive(Default)]
 pub struct DataFormatConfig {
     /// Regular concept config.
     pub tao_cfg: TaoConfig,
-    /// Rust primitive that this concept represents.
-    pub rust_primitive_name: Rc<String>,
+    /// Rust primitive that this concept represents, when referenced in an unboxed way.
+    pub rust_primitive_unboxed_name: Rc<str>,
+    /// Rust primitive that this concept represents, when referenced in a boxed way (e.g. inside an
+    /// `Rc` or `Box`).
+    pub rust_primitive_boxed_name: Rc<str>,
     /// Rust code representation of the default value of this concept.
-    pub default_value: Rc<String>,
+    pub default_value: Rc<str>,
+}
+
+impl Default for DataFormatConfig {
+    fn default() -> Self {
+        Self {
+            tao_cfg: TaoConfig::default(),
+            rust_primitive_unboxed_name: Rc::from(""),
+            rust_primitive_boxed_name: Rc::from(""),
+            default_value: Rc::from(""),
+        }
+    }
 }
 
 /// Get the body fragment for a data concept.
-pub fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
+fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![
-            format!("{}::node_wrappers::BaseNodeTrait", cfg.tao_cfg.yin_crate),
-            format!(
-                "{}::graph::value_wrappers::StrongValue",
-                cfg.tao_cfg.yin_crate
-            ),
-            format!(
-                "{}::graph::value_wrappers::unwrap_value",
-                cfg.tao_cfg.yin_crate
-            ),
+            "zamm_yin::node_wrappers::BaseNodeTrait".to_owned(),
+            "zamm_yin::graph::value_wrappers::StrongValue".to_owned(),
+            "zamm_yin::graph::value_wrappers::unwrap_value".to_owned(),
             "std::rc::Rc".to_owned(),
         ],
+        // we allow for the potential use of Rc<String> here right now because String is in fact a
+        // proper Rust type just like any other, and it is too much trouble to craft a bespoke
+        // implementation for it right now when we'll do a more proper job of allowing editing in
+        // the future
         atom: formatdoc! {r#"
             impl {name} {{
-                /// Set {primitive} value for this concept.
-                pub fn set_value(&mut self, value: {primitive}) {{
-                    self.essence_mut()
-                        .set_value(Rc::new(StrongValue::new(value)));
+                /// Set {boxed_primitive} value for this concept.
+                pub fn set_value(&mut self, value: {unboxed_primitive}) {{
+                    self.deref_mut().set_value(Rc::new(StrongValue::new_rc(
+                        Rc::<{boxed_primitive}>::from(value)
+                    )));
                 }}
 
-                /// Retrieve {primitive}-valued StrongValue.
-                pub fn value(&self) -> Option<Rc<{primitive}>> {{
-                    unwrap_value::<{primitive}>(self.essence().value())
+                /// Retrieve {boxed_primitive}-valued StrongValue.
+                #[allow(clippy::rc_buffer)]
+                pub fn value(&self) -> Option<Rc<{boxed_primitive}>> {{
+                    unwrap_value::<{boxed_primitive}>(self.deref().value())
                 }}
             }}"#, name = cfg.tao_cfg.this.name,
-            primitive = cfg.rust_primitive_name,
+            unboxed_primitive = cfg.rust_primitive_unboxed_name,
+            boxed_primitive = cfg.rust_primitive_boxed_name
         },
     }
 }
 
-/// Get the string concept test fragment.
-pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
+/// Get the data concept test fragment.
+fn data_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![],
         atom: formatdoc! {r#"
@@ -67,7 +79,7 @@ pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 initialize_kb();
                 let mut concept = {name}::new();
                 concept.set_value({sample_value});
-                assert_eq!(concept.value(), Some(Rc::new({sample_value})));
+                assert_eq!(concept.value(), Some(Rc::from({sample_value})));
             }}"#, name = cfg.tao_cfg.this.name,
                 // todo: create a better sample value than the default. This will require an
                 // understanding of what the types actually are and how to construct them.
@@ -77,14 +89,9 @@ pub fn string_concept_test_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
 }
 
 /// Generate code for a Data concept.
-pub fn code_data_concept(cfg: &DataFormatConfig) -> String {
-    let mut file = FileFragment::default();
-    file.append(Rc::new(RefCell::new(form_fragment(&cfg.tao_cfg))));
+pub fn add_data_fragments(cfg: &DataFormatConfig, file: &mut FileFragment) {
     file.append(Rc::new(RefCell::new(data_concept_fragment(cfg))));
-    let mut test_frag = tao_test_fragment(&cfg.tao_cfg);
-    test_frag.append(Rc::new(RefCell::new(string_concept_test_fragment(cfg))));
-    file.set_tests(Rc::new(RefCell::new(test_frag)));
-    file.generate_code()
+    file.append_test(Rc::new(RefCell::new(data_concept_test_fragment(cfg))));
 }
 
 #[cfg(test)]
@@ -94,21 +101,35 @@ mod tests {
 
     #[test]
     fn test_string_output() {
-        let code = code_data_concept(&DataFormatConfig {
-            rust_primitive_name: Rc::new("String".to_owned()),
-            ..DataFormatConfig::default()
-        });
+        let mut f = FileFragment::new();
+        add_data_fragments(
+            &DataFormatConfig {
+                rust_primitive_unboxed_name: Rc::from("String"),
+                rust_primitive_boxed_name: Rc::from("String"),
+                ..DataFormatConfig::default()
+            },
+            &mut f,
+        );
+        let code = f.generate_code();
         assert!(code.contains("String"));
         assert!(!code.contains("i64"));
+        assert!(code.contains("set_value"));
     }
 
     #[test]
     fn test_int_output() {
-        let code = code_data_concept(&DataFormatConfig {
-            rust_primitive_name: Rc::new("i64".to_owned()),
-            ..DataFormatConfig::default()
-        });
+        let mut f = FileFragment::new();
+        add_data_fragments(
+            &DataFormatConfig {
+                rust_primitive_unboxed_name: Rc::from("i64"),
+                rust_primitive_boxed_name: Rc::from("i64"),
+                ..DataFormatConfig::default()
+            },
+            &mut f,
+        );
+        let code = f.generate_code();
         // todo: assert no "String" in code after CommonNodeTrait gets automatically implemented
         assert!(code.contains("i64"));
+        assert!(code.contains("set_value"));
     }
 }

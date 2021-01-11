@@ -65,18 +65,54 @@ fn group_imports(imports: &[&str]) -> Vec<String> {
     final_imports
 }
 
-/// Serialize imports into a string.
-pub fn imports_as_str(imports: &[&str]) -> String {
+/// Common function for producing import code blocks.
+fn imports_as_str_impl(imports: &[&str], public: bool) -> String {
     let grouped_imports = group_imports(imports);
     let grouped_imports_str: Vec<&str> = grouped_imports.iter().map(|i| i.as_str()).collect();
     let sorted_imports = sort_imports(&grouped_imports_str);
+    let public_str = if public { "pub " } else { "" };
     // this doesn't need to take into account self.tests because tests don't contribute to file
     // imports
     let mut result = String::new();
     for import in sorted_imports {
-        result += &format!("use {};\n", import);
+        result += &format!("{}use {};\n", public_str, import);
     }
     result.trim().to_owned()
+}
+
+/// If the "import" comes from the current crate, replace the current crate name with "crate".
+fn replace_current_crate(current_crate: &str, import: String) -> String {
+    if import.starts_with(current_crate) {
+        format!("crate::{}", &import[current_crate.len() + 2..import.len()])
+    } else {
+        import
+    }
+}
+
+/// Serialize imports into a string.
+///
+/// `current_crate` is always required because we always want to know what it is in order to avoid.
+/// `existing_imports` filters out imports that are not needed.
+pub fn imports_as_str(
+    current_crate: &str,
+    imports: Vec<String>,
+    existing_imports: &[&str],
+) -> String {
+    let final_imports = imports
+        .into_iter()
+        .map(|i| replace_current_crate(current_crate, i))
+        .collect::<Vec<String>>();
+    let import_strs = final_imports
+        .iter()
+        .map(|s| s.as_str())
+        .filter(|s| !existing_imports.contains(s))
+        .collect::<Vec<&str>>();
+    imports_as_str_impl(&import_strs, false)
+}
+
+/// Serialize re-exports into a string.
+pub fn re_exports_as_str(imports: &[&str]) -> String {
+    imports_as_str_impl(imports, true)
 }
 
 #[cfg(test)]
@@ -98,6 +134,20 @@ mod tests {
         ($a:expr, $b:expr) => {
             assert_eq!(vec_as_set($a), vec_as_set($b));
         };
+    }
+
+    #[test]
+    fn test_replace_current_crate() {
+        let replaced_import =
+            replace_current_crate("my_crate", "my_crate::some::import".to_owned());
+        assert_eq!(replaced_import, "crate::some::import");
+    }
+
+    #[test]
+    fn test_not_replacing_current_crate() {
+        let replaced_import =
+            replace_current_crate("my_crate", "other_crate::some::import".to_owned());
+        assert_eq!(replaced_import, "other_crate::some::import");
     }
 
     #[test]
@@ -235,10 +285,46 @@ mod tests {
     #[test]
     fn test_imports_as_str() {
         assert_eq!(
-            imports_as_str(&["std::cell::RefCell", "std::rc::Rc", "std::cell::Cell"]),
+            imports_as_str(
+                "my_crate",
+                vec![
+                    "std::cell::RefCell".to_owned(),
+                    "std::rc::Rc".to_owned(),
+                    "std::cell::Cell".to_owned()
+                ],
+                &[]
+            ),
             indoc! {"
                 use std::cell::{Cell, RefCell};
                 use std::rc::Rc;"}
+        );
+    }
+
+    #[test]
+    fn test_imports_as_str_filtered() {
+        assert_eq!(
+            imports_as_str(
+                "my_crate",
+                vec![
+                    "std::cell::RefCell".to_owned(),
+                    "std::rc::Rc".to_owned(),
+                    "std::cell::Cell".to_owned()
+                ],
+                &["std::cell::Cell"]
+            ),
+            indoc! {"
+                use std::cell::RefCell;
+                use std::rc::Rc;"}
+        );
+    }
+
+    #[test]
+    fn test_re_exports_as_str() {
+        assert_eq!(
+            re_exports_as_str(&["std::cell::RefCell", "std::rc::Rc", "std::cell::Cell"]),
+            indoc! {"
+                pub use std::cell::{Cell, RefCell};
+                pub use std::rc::Rc;"}
         );
     }
 }

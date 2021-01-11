@@ -1,18 +1,53 @@
+use super::util::kb_test_function;
 use crate::codegen::docstring::into_docstring;
-use crate::codegen::template::basic::{AtomicFragment, FileFragment, FunctionFragment};
-use crate::codegen::StructConfig;
+use crate::codegen::template::basic::{
+    AtomicFragment, FileFragment, FunctionCallFragment, FunctionFragment, ItemDeclarationAPI,
+};
+use crate::codegen::{StructConfig, CODE_WIDTH};
+use crate::tao::form::rust_item::{Crate, CrateExtension};
 use indoc::formatdoc;
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+/// Represents a binary relation between two nodes.
+#[derive(Debug, Default, Eq, PartialEq)]
+pub struct Link {
+    /// The struct name of the from-node.
+    pub from: StructConfig,
+    /// The struct name of the link type.
+    pub link_type: StructConfig,
+    /// The struct name of the to-node.
+    pub to: StructConfig,
+}
+
+impl Link {
+    /// Get the relationship as a 3-tuple of concept names.
+    pub fn as_tuple(&self) -> (&str, &str, &str) {
+        (
+            self.from.name.as_str(),
+            self.link_type.name.as_str(),
+            self.to.name.as_str(),
+        )
+    }
+}
+
 /// Configuration values for KB initialization template.
 #[derive(Default)]
 pub struct KBInitConfig {
-    /// Crate name to use for Yin.
-    pub yin_crate: String,
     /// The list of concepts to be initialized.
     pub concepts_to_initialize: Vec<StructConfig>,
+    /// The list of binary relations between concepts.
+    pub attributes: Vec<Link>,
+    /// If we're building for Yin, or not. False implies that we're building on top of Yin.
+    pub yin: bool,
+}
+
+fn concept_id_fragment(concept: &StructConfig) -> AtomicFragment {
+    AtomicFragment {
+        imports: vec![concept.import.clone()],
+        atom: format!("{}::TYPE_ID", concept.name),
+    }
 }
 
 /// Get the function that initializes concept types.
@@ -21,13 +56,14 @@ pub struct KBInitConfig {
 /// themselves. The caller will also have to initialize archetype relations themselves.
 fn init_types_fragment(cfg: &KBInitConfig) -> FunctionFragment {
     let mut init_fn = FunctionFragment::new("initialize_types".to_owned());
-    init_fn.make_public();
-    init_fn.set_documentation("Adds all concepts to knowledge graph.".to_owned());
+    init_fn.mark_as_public();
+    init_fn.document("Adds all concepts to knowledge graph.".to_owned());
 
-    init_fn.add_import(format!("{}::graph::InjectionGraph", cfg.yin_crate));
-    init_fn.add_import(format!("{}::graph::Graph", cfg.yin_crate));
-    init_fn.add_import(format!("{}::initialize_type", cfg.yin_crate));
-    init_fn.add_import(format!("{}::tao::archetype::ArchetypeTrait", cfg.yin_crate));
+    init_fn.add_import("zamm_yin::graph::InjectionGraph".to_owned());
+    init_fn.add_import("zamm_yin::graph::Graph".to_owned());
+    init_fn.add_import("zamm_yin::initialize_type".to_owned());
+    init_fn.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
+    init_fn.add_import("zamm_yin::tao::relation::attribute::Inherits".to_owned());
     for concept in &cfg.concepts_to_initialize {
         init_fn.add_import(concept.import.clone());
     }
@@ -50,18 +86,41 @@ fn init_types_fragment(cfg: &KBInitConfig) -> FunctionFragment {
         );
     ", concepts = concepts_list}))));
 
+    for attr in &cfg.attributes {
+        let mut add_edge = FunctionCallFragment::new(AtomicFragment::new("ig.add_edge".to_owned()));
+        add_edge.add_argument(Rc::new(RefCell::new(concept_id_fragment(&attr.from))));
+        add_edge.add_argument(Rc::new(RefCell::new(concept_id_fragment(&attr.link_type))));
+        add_edge.add_argument(Rc::new(RefCell::new(concept_id_fragment(&attr.to))));
+        init_fn.append(Rc::new(RefCell::new(add_edge)));
+    }
+
     init_fn
 }
 
 /// Defines the number of concepts generated.
 fn max_id_fragment(cfg: &KBInitConfig) -> AtomicFragment {
-    let max_id_doc = into_docstring("The maximum concept ID inside the types distributed by Yin itself. App-specific type concepts should continue their numbering on top of this.", 0);
+    let max_id_doc = into_docstring("The maximum concept ID inside the types distributed by Yin itself. App-specific type concepts should continue their numbering on top of this.", CODE_WIDTH);
+    let concepts_size = cfg.concepts_to_initialize.len();
+    let max_id = if cfg.yin {
+        format!("{}", concepts_size - 1) // -1 because IDs are zero-indexed
+    } else {
+        format!("zamm_yin::tao::YIN_MAX_ID + {}", concepts_size)
+    };
     AtomicFragment::new(formatdoc! {"
         {doc}
-        pub const YIN_MAX_ID: usize = {concepts_size};
+        pub const YIN_MAX_ID: usize = {max_id};
     ", doc = max_id_doc,
-        concepts_size = cfg.concepts_to_initialize.len() - 1 // -1 because IDs are zero-indexed
+        max_id = max_id,
     })
+}
+
+fn yin_size_test() -> FunctionFragment {
+    let mut f = kb_test_function("test_yin_size");
+    // node IDs are zero-indexed, so add 1 to YIN_MAX_ID
+    f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
+        let g = InjectionGraph::new();
+        assert_eq!(g.size(), YIN_MAX_ID + 1);"}))));
+    f
 }
 
 /// Generate code for the init file.
@@ -69,6 +128,13 @@ pub fn code_init(cfg: &KBInitConfig) -> String {
     let mut file = FileFragment::default();
     file.append(Rc::new(RefCell::new(max_id_fragment(cfg)))); // always define, even if unused
     file.append(Rc::new(RefCell::new(init_types_fragment(cfg))));
+    if cfg.yin {
+        // todo: generate for Yang as well once all individuals are also autogenerated. As of now,
+        // there is no way for Yang to know how many non-archetype nodes are created during
+        // initialization.
+        file.append_test(Rc::new(RefCell::new(yin_size_test())));
+    }
+    file.set_current_crate(Crate::current().implementation_name().unwrap());
     file.generate_code()
 }
 
@@ -76,19 +142,20 @@ pub fn code_init(cfg: &KBInitConfig) -> String {
 mod tests {
     use super::*;
     use crate::codegen::template::basic::CodeFragment;
+    use crate::tao::initialize_kb;
     use indoc::indoc;
 
     #[test]
     fn test_init_one_concept() {
         assert_eq!(
             init_types_fragment(&KBInitConfig {
-                yin_crate: "crate".to_owned(),
                 concepts_to_initialize: vec![StructConfig {
                     name: "Me".to_owned(),
                     import: "crate::people::Me".to_owned(),
-                }]
+                }],
+                ..KBInitConfig::default()
             })
-            .body(),
+            .body(80),
             indoc! {"
             /// Adds all concepts to knowledge graph.
             pub fn initialize_types() {
@@ -108,7 +175,6 @@ mod tests {
     fn test_init_multiple_concepts() {
         assert_eq!(
             init_types_fragment(&KBInitConfig {
-                yin_crate: "zamm_yin".to_owned(),
                 concepts_to_initialize: vec![
                     StructConfig {
                         name: "Me".to_owned(),
@@ -122,9 +188,10 @@ mod tests {
                         name: "Us".to_owned(),
                         import: "crate::groups::Us".to_owned(),
                     }
-                ]
+                ],
+                ..KBInitConfig::default()
             })
-            .body(),
+            .body(80),
             indoc! {"
             /// Adds all concepts to knowledge graph.
             pub fn initialize_types() {
@@ -143,9 +210,62 @@ mod tests {
     }
 
     #[test]
+    fn test_init_additional_relations() {
+        assert_eq!(
+            init_types_fragment(&KBInitConfig {
+                concepts_to_initialize: vec![
+                    StructConfig {
+                        name: "Me".to_owned(),
+                        import: "zamm_yin::people::Me".to_owned(),
+                    },
+                    StructConfig {
+                        name: "You".to_owned(),
+                        import: "crate::people::You".to_owned(),
+                    },
+                    StructConfig {
+                        name: "Us".to_owned(),
+                        import: "crate::groups::Us".to_owned(),
+                    }
+                ],
+                attributes: vec![
+                    Link {
+                        from: StructConfig::new("zamm_yin::people::Me".to_owned()),
+                        link_type: StructConfig::new("crate::emotions::Dislike".to_owned()),
+                        to: StructConfig::new("crate::people::You".to_owned()),
+                    },
+                    Link {
+                        from: StructConfig::new("zamm_yin::people::Me".to_owned()),
+                        link_type: StructConfig::new("crate::emotions::Like".to_owned()),
+                        to: StructConfig::new("crate::people::Us".to_owned()),
+                    },
+                ],
+                yin: false,
+            })
+            .body(80),
+            indoc! {"
+            /// Adds all concepts to knowledge graph.
+            pub fn initialize_types() {
+                let mut ig = InjectionGraph::new();
+                #[rustfmt::skip]
+                initialize_type!(
+                    ig,
+                    (
+                        Me,
+                        You,
+                        Us
+                    )
+                );
+                ig.add_edge(Me::TYPE_ID, Dislike::TYPE_ID, You::TYPE_ID);
+                ig.add_edge(Me::TYPE_ID, Like::TYPE_ID, Us::TYPE_ID);
+            }"}
+        );
+    }
+
+    #[test]
     fn test_init_file() {
+        initialize_kb();
+        Crate::current().set_implementation_name("zamm_yin");
         let code = code_init(&KBInitConfig {
-            yin_crate: "zamm_yin".to_owned(),
             concepts_to_initialize: vec![
                 StructConfig {
                     name: "Me".to_owned(),
@@ -160,7 +280,10 @@ mod tests {
                     import: "crate::groups::Us".to_owned(),
                 },
             ],
+            yin: true,
+            ..KBInitConfig::default()
         });
         assert!(code.contains("YIN_MAX_ID: usize = 2"));
+        assert!(!code.contains("zamm_yin"));
     }
 }

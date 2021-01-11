@@ -1,124 +1,83 @@
-use super::{Implement, ImplementExtension};
-use crate::codegen::planning::{code, file_path, handle_init};
+use crate::codegen::planning::{
+    archetype_file_path, code_archetype, code_module, handle_init, module_file_path,
+};
 use crate::codegen::track_autogen::save_autogen;
 use crate::codegen::{output_code, CodegenConfig};
+use crate::tao::action::Implement;
+use crate::tao::form::rust_item::{Crate, CrateExtension, Module};
+use crate::tao::perspective::KnowledgeGraphNode;
+use colored::*;
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
+use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait};
+use zamm_yin::tao::form::FormTrait;
+
+/// Retrieve all non-imported implement actions.
+pub fn implements() -> Box<dyn Iterator<Item = Implement>> {
+    Box::new(
+        Implement::archetype()
+            .individuals()
+            .into_iter()
+            .filter(|i| !KnowledgeGraphNode::from(i.id()).is_imported())
+            .map(|i| Implement::from(i.id())),
+    )
+}
+
+/// Retrieve implementation requests that pertain to archetypes.
+fn archetypes_to_implement() -> Vec<Implement> {
+    implements()
+        .filter(|i| !i.target().unwrap().has_ancestor(Module::archetype().into()))
+        .collect()
+}
+
+/// Retrieve implementation requests that pertain to modules.
+fn modules_to_implement() -> Vec<Implement> {
+    implements()
+        .filter(|i| i.target().unwrap().has_ancestor(Module::archetype().into()))
+        .collect()
+}
 
 /// Handle the implementation request for a new archetype.
-pub fn handle_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
-    let code = code(request, codegen_cfg);
-    output_code(&code, &file_path(&request.target().unwrap()), codegen_cfg);
+fn handle_archetype_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
+    let code = code_archetype(request, codegen_cfg);
+    let target_type = Archetype::from(request.target().unwrap().id());
+    output_code(&code, &archetype_file_path(&target_type), codegen_cfg);
+}
+
+/// Handle the implementation request for a new module.
+fn handle_module_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
+    let target_module = Module::from(request.target().unwrap().id());
+    let primary_archetype = Archetype::from(target_module.most_prominent_member().unwrap().id());
+    let code = code_module(request, target_module, primary_archetype);
+    output_code(&code, &module_file_path(&primary_archetype), codegen_cfg);
 }
 
 /// Handle all defined implementation requests.
 pub fn handle_all_implementations(codegen_cfg: &CodegenConfig) {
-    // handle initialization first to ensure all concepts land with the right concept IDs
-    handle_init(codegen_cfg);
-    for implement_command in Implement::archetype().individuals() {
-        handle_implementation(Implement::from(implement_command.id()), codegen_cfg);
+    let mut current_build = Crate::current();
+    if current_build.implementation_name().is_none() {
+        println!(
+            "{}It is now recommended to explicitly specify the current crate name for import cleanup.",
+            "Warning: ".yellow().bold()
+        );
+        if codegen_cfg.yin {
+            current_build.set_implementation_name("zamm_yin");
+        } else {
+            current_build.set_implementation_name("DUMMY-CUSTOM-CRATE");
+        }
+    }
+
+    let mut initial_archetype_requests = archetypes_to_implement();
+    // handle initialization first to ensure all concepts land with the right concept IDs, and to
+    // make sure all implement commands get created, even the ones that are implicitly defined
+    handle_init(&mut initial_archetype_requests, codegen_cfg);
+    // handle_init might create new implement commands
+    let final_archetype_requests = archetypes_to_implement();
+    for implement_command in final_archetype_requests {
+        handle_archetype_implementation(implement_command, codegen_cfg);
+    }
+    for implement_command in modules_to_implement() {
+        handle_module_implementation(implement_command, codegen_cfg);
     }
 
     save_autogen();
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::codegen::template::concept::attribute::{code_attribute, AttributeFormatConfig};
-    use crate::codegen::template::concept::data::{code_data_concept, DataFormatConfig};
-    use crate::codegen::template::concept::form::code_form;
-    use crate::codegen::template::concept::tao::{code_tao, TaoConfig};
-    use crate::codegen::StructConfig;
-    use std::rc::Rc;
-
-    #[test]
-    fn integration_test_attribute_generation() {
-        let code = code_attribute(&AttributeFormatConfig {
-            tao_cfg: TaoConfig {
-                this: StructConfig {
-                    name: "MyNewAttr".to_owned(),
-                    ..StructConfig::default()
-                },
-                parent_name: "MyAttr".to_owned(),
-                archetype_name: "AttributeArchetype".to_owned(),
-                ..TaoConfig::default()
-            },
-            owner_type: StructConfig {
-                name: "MyOwner".to_owned(),
-                import: "zamm_yin::tao::MyOwner".to_owned(),
-            },
-            owner_form: StructConfig {
-                name: "MyOwner".to_owned(),
-                import: "zamm_yin::tao::MyOwner".to_owned(),
-            },
-            value_type: StructConfig {
-                name: "MyValue".to_owned(),
-                import: "zamm_yin::tao::MyValue".to_owned(),
-            },
-            value_form: StructConfig {
-                name: "MyValue".to_owned(),
-                import: "zamm_yin::tao::MyValue".to_owned(),
-            },
-        });
-
-        assert!(code.contains("AttributeArchetype"));
-        assert!(code.contains("type OwnerForm = MyOwner"));
-        assert!(code.contains("type ValueForm = MyValue"));
-        assert!(code.contains("check_attribute_constraints"));
-        assert!(code.contains(
-            "assert_eq!(
-            MyNewAttr::archetype().owner_archetype(),
-            MyOwner::archetype().as_archetype()
-        )"
-        ));
-    }
-
-    #[test]
-    fn integration_test_root_node_generation() {
-        let code = code_tao(&TaoConfig {
-            this: StructConfig {
-                name: "MyRoot".to_owned(),
-                ..StructConfig::default()
-            },
-            form: StructConfig {
-                name: "MyForm".to_owned(),
-                ..StructConfig::default()
-            },
-            parent_name: "Tao".to_owned(),
-            ..TaoConfig::default()
-        });
-        assert!(!code.contains("impl FormTrait"));
-        assert!(code.contains("type Form = MyForm;"));
-    }
-
-    #[test]
-    fn integration_test_data_generation() {
-        let code = code_data_concept(&DataFormatConfig {
-            tao_cfg: TaoConfig {
-                this: StructConfig {
-                    name: "MyStr".to_owned(),
-                    ..StructConfig::default()
-                },
-                parent_name: "MyData".to_owned(),
-                ..TaoConfig::default()
-            },
-            rust_primitive_name: Rc::new("asdf".to_owned()),
-            default_value: Rc::new("bsdf".to_owned()),
-        });
-        assert!(code.contains("impl FormTrait"));
-        assert!(code.contains("set_value"));
-    }
-
-    #[test]
-    fn integration_test_regular_generation() {
-        let code = code_form(&TaoConfig {
-            this: StructConfig {
-                name: "Tao".to_owned(),
-                ..StructConfig::default()
-            },
-            ..TaoConfig::default()
-        });
-        assert!(code.contains("impl FormTrait"));
-        assert!(!code.contains("Attribute"));
-    }
 }

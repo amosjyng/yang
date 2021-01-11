@@ -80,7 +80,7 @@ pub fn add_autogeneration_comments(code: &str) -> String {
         let (commented_line, is_comment) = add_comment(line, AUTOGENERATION_MARKER, was_comment);
         was_comment = is_comment;
         result.push_str(commented_line.as_str());
-        result.push_str("\n");
+        result.push('\n');
     }
     if result.ends_with("\n\n") {
         // happens if input code already contains trailing newline

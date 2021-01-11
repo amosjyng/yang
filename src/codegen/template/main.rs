@@ -49,10 +49,7 @@ mod tests {
                 imports: vec![],
                 lines: vec![],
             }),
-            indoc! {"
-                fn main() {
-                }
-                "}
+            "fn main() {}\n"
         );
     }
 

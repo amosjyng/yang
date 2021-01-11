@@ -24,6 +24,11 @@ impl AppendedFragment {
         }
     }
 
+    /// Update the separator between fragments.
+    pub fn set_separator(&mut self, separator: &str) {
+        self.block_separator = separator.to_owned();
+    }
+
     /// Append other code fragment into this one.
     pub fn append(&mut self, other: Rc<RefCell<dyn CodeFragment>>) {
         self.appendages.push(other);
@@ -40,10 +45,11 @@ impl Default for AppendedFragment {
 }
 
 impl CodeFragment for AppendedFragment {
-    fn body(&self) -> String {
+    fn body(&self, line_width: usize) -> String {
         (&self.appendages)
             .iter()
-            .map(|cf| cf.borrow().body())
+            .map(|cf| cf.borrow().body(line_width))
+            .filter(|b| !b.is_empty())
             .format(&self.block_separator)
             .to_string()
     }
@@ -62,6 +68,32 @@ mod tests {
     use super::*;
     use crate::codegen::template::basic::AtomicFragment;
     use indoc::indoc;
+
+    #[test]
+    fn test_append_empty() {
+        let appended = AppendedFragment::default();
+        assert_eq!(appended.imports(), Vec::<String>::default());
+        assert_eq!(appended.body(80), "");
+    }
+
+    #[test]
+    fn test_append_one() {
+        let mut appended = AppendedFragment::default();
+        appended.append(Rc::new(RefCell::new(AtomicFragment::new("one".to_owned()))));
+        assert_eq!(appended.imports(), Vec::<String>::default());
+        assert_eq!(appended.body(80), "one");
+    }
+
+    #[test]
+    fn test_append_one_actual() {
+        let mut appended = AppendedFragment::default();
+        appended.append(Rc::new(RefCell::new(AtomicFragment::new("one".to_owned()))));
+        appended.append(Rc::new(RefCell::new(
+            AtomicFragment::new(String::default()),
+        )));
+        assert_eq!(appended.imports(), Vec::<String>::default());
+        assert_eq!(appended.body(80), "one");
+    }
 
     #[test]
     fn test_append() {
@@ -84,19 +116,12 @@ mod tests {
             ]
         );
         assert_eq!(
-            appended.body(),
+            appended.body(80),
             indoc! {"
                 let mut f = ForeignStruct {};
                 f.foo_bar()
             "}
             .trim()
         );
-    }
-
-    #[test]
-    fn test_append_empty() {
-        let appended = AppendedFragment::default();
-        assert_eq!(appended.imports(), Vec::<String>::default());
-        assert_eq!(appended.body(), "");
     }
 }

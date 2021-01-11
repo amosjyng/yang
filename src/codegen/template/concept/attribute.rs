@@ -1,7 +1,8 @@
-use super::form::form_fragment;
-use super::tao::tao_test_fragment;
 use super::tao::TaoConfig;
-use crate::codegen::template::basic::{AtomicFragment, FileFragment};
+use super::util::{add_assert, new_kb_test};
+use crate::codegen::template::basic::{
+    AppendedFragment, AtomicFragment, FileFragment, ItemDeclarationAPI,
+};
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -20,16 +21,17 @@ pub struct AttributeFormatConfig {
     pub value_type: StructConfig,
     /// Attribute's value form.
     pub value_form: StructConfig,
+    /// Code to use for converting the owner archetype type into `Archetype`.
+    pub owner_into_archetype: String,
+    /// Code to use for converting the value archetype type into `Archetype`.
+    pub value_into_archetype: String,
 }
 
 /// Get the attribute body fragment.
-pub fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
+fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
     AtomicFragment {
         imports: vec![
-            format!(
-                "{}::tao::relation::attribute::AttributeTrait",
-                cfg.tao_cfg.yin_crate
-            ),
+            "zamm_yin::tao::relation::attribute::AttributeTrait".to_owned(),
             cfg.owner_form.import.clone(),
             cfg.value_form.import.clone(),
         ],
@@ -45,16 +47,10 @@ pub fn attribute_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
 }
 
 /// Get the attribute test fragment.
-pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
+fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AppendedFragment {
     let mut imports = vec![
-        format!(
-            "{}::tao::archetype::ArchetypeFormTrait",
-            cfg.tao_cfg.yin_crate
-        ),
-        format!(
-            "{}::tao::archetype::AttributeArchetypeFormTrait",
-            cfg.tao_cfg.yin_crate
-        ),
+        "zamm_yin::tao::archetype::ArchetypeFormTrait".to_owned(),
+        "zamm_yin::tao::archetype::AttributeArchetypeFormTrait".to_owned(),
     ];
     // there's a chance the form is the same as the type, in which case it will have gotten
     // imported above already
@@ -67,22 +63,34 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
         imports.push(cfg.value_type.import.clone());
     }
 
-    AtomicFragment {
+    let mut test_frag = AppendedFragment::default();
+    let name = &cfg.tao_cfg.this.name;
+    let check_attribute_constraints = new_kb_test(&mut test_frag, "check_attribute_constraints");
+    check_attribute_constraints
+        .borrow_mut()
+        .add_attribute("allow(clippy::useless_conversion)".to_owned());
+    add_assert(
+        &check_attribute_constraints,
+        format!("{}::archetype().owner_archetype()", name),
+        format!(
+            "{owner_type}::archetype(){owner_into_archetype}",
+            owner_type = cfg.owner_type.name,
+            owner_into_archetype = cfg.owner_into_archetype,
+        ),
+    );
+    add_assert(
+        &check_attribute_constraints,
+        format!("{}::archetype().value_archetype()", name),
+        format!(
+            "{value_type}::archetype(){value_into_archetype}",
+            value_type = cfg.value_type.name,
+            value_into_archetype = cfg.value_into_archetype,
+        ),
+    );
+
+    test_frag.append(Rc::new(RefCell::new(AtomicFragment {
         imports,
         atom: formatdoc! {r#"
-            #[test]
-            fn check_attribute_constraints() {{
-                initialize_kb();
-                assert_eq!(
-                    {name}::archetype().owner_archetype(),
-                    {owner_type}::archetype().as_archetype()
-                );
-                assert_eq!(
-                    {name}::archetype().value_archetype(),
-                    {value_type}::archetype().as_archetype()
-                );
-            }}
-
             #[test]
             fn get_owner() {{
                 initialize_kb();
@@ -101,19 +109,71 @@ pub fn attribute_test_fragment(cfg: &AttributeFormatConfig) -> AtomicFragment {
                 instance.set_value(&value_of_instance);
                 assert_eq!(instance.owner(), None);
                 assert_eq!(instance.value(), Some(value_of_instance));
-            }}"#, name = cfg.tao_cfg.this.name,
+            }}"#, 
+            name = cfg.tao_cfg.this.name,
             owner_type = cfg.owner_type.name,
-        value_type = cfg.value_type.name},
-    }
+            value_type = cfg.value_type.name,
+        },
+    })));
+    test_frag
 }
 
-/// Generate code for an Attribute config.
-pub fn code_attribute(cfg: &AttributeFormatConfig) -> String {
-    let mut file = FileFragment::default();
-    file.append(Rc::new(RefCell::new(form_fragment(&cfg.tao_cfg))));
-    file.append(Rc::new(RefCell::new(attribute_fragment(&cfg))));
-    let mut test_frag = tao_test_fragment(&cfg.tao_cfg);
-    test_frag.append(Rc::new(RefCell::new(attribute_test_fragment(&cfg))));
-    file.set_tests(Rc::new(RefCell::new(test_frag)));
-    file.generate_code()
+/// Add these flags to a file.
+pub fn add_attr_fragments(cfg: &AttributeFormatConfig, file: &mut FileFragment) {
+    file.append(Rc::new(RefCell::new(attribute_fragment(cfg))));
+    file.append_test(Rc::new(RefCell::new(attribute_test_fragment(cfg))));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_attribute_generation() {
+        let mut f = FileFragment::new();
+        add_attr_fragments(
+            &AttributeFormatConfig {
+                tao_cfg: TaoConfig {
+                    this: StructConfig {
+                        name: "MyNewAttr".to_owned(),
+                        ..StructConfig::default()
+                    },
+                    parent_name: "MyAttr".to_owned(),
+                    archetype: StructConfig::new("crate::AttributeArchetype".to_owned()),
+                    ..TaoConfig::default()
+                },
+                owner_type: StructConfig {
+                    name: "MyOwner".to_owned(),
+                    import: "zamm_yin::tao::MyOwner".to_owned(),
+                },
+                owner_form: StructConfig {
+                    name: "MyOwner".to_owned(),
+                    import: "zamm_yin::tao::MyOwner".to_owned(),
+                },
+                value_type: StructConfig {
+                    name: "MyValue".to_owned(),
+                    import: "zamm_yin::tao::MyValue".to_owned(),
+                },
+                value_form: StructConfig {
+                    name: "MyValue".to_owned(),
+                    import: "zamm_yin::tao::MyValue".to_owned(),
+                },
+                owner_into_archetype: ".as_archetype()".to_owned(),
+                value_into_archetype: ".as_archetype()".to_owned(),
+            },
+            &mut f,
+        );
+        let code = f.generate_code();
+
+        assert!(code.contains("AttributeArchetype"));
+        assert!(code.contains("type OwnerForm = MyOwner"));
+        assert!(code.contains("type ValueForm = MyValue"));
+        assert!(code.contains("check_attribute_constraints"));
+        assert!(code.contains(
+            "assert_eq!(
+            MyNewAttr::archetype().owner_archetype(),
+            MyOwner::archetype().as_archetype()
+        )"
+        ));
+    }
 }
