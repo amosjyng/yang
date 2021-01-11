@@ -13,11 +13,12 @@ use crate::codegen::template::concept::form::{add_form_fragment, FormFormatConfi
 use crate::codegen::template::concept::tao::{tao_file_fragment, TaoConfig};
 use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
-use crate::tao::archetype::DataArchetype;
-use crate::tao::form::data::Data;
-use crate::tao::form::{Crate, CrateExtension};
-use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
-use crate::tao::Implement;
+use crate::tao::action::Implement;
+use crate::tao::archetype::rust_item_archetype::DataArchetype;
+use crate::tao::archetype::CreateImplementation;
+use crate::tao::form::rust_item::data::Data;
+use crate::tao::form::rust_item::{Crate, CrateExtension};
+use crate::tao::perspective::KnowledgeGraphNode;
 use heck::{KebabCase, SnakeCase};
 use std::cell::RefCell;
 use std::convert::TryFrom;
@@ -242,10 +243,13 @@ fn data_config(base_cfg: &TaoConfig, target: &DataArchetype) -> DataFormatConfig
     }
 }
 
-fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype) -> FlagConfig {
-    let doc = BuildInfo::from(flag.id())
-        .dual_purpose_documentation()
-        .unwrap();
+fn flag_config(
+    codegen_cfg: &CodegenConfig,
+    implement: &Implement,
+    target: &Archetype,
+    flag: &Archetype,
+) -> FlagConfig {
+    let doc = implement.dual_purpose_documentation().unwrap();
     FlagConfig {
         public: true,
         property_name: Rc::from(flag.internal_name().unwrap().to_snake_case()),
@@ -258,6 +262,7 @@ fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype
 
 fn attr_config(
     codegen_cfg: &CodegenConfig,
+    attr_implement: &Implement,
     target: &Archetype,
     attr: &AttributeArchetype,
 ) -> AttributePropertyConfig {
@@ -275,9 +280,16 @@ fn attr_config(
         Some(unboxed) => Some(unboxed),
         None => rust_primitive.clone(),
     };
-    let doc = BuildInfo::from(attr.id())
+    // this must not be the target's implement, but rather the attribute's implement
+    assert_eq!(attr_implement.target().unwrap(), Form::from(attr.id()));
+    let doc = attr_implement
         .dual_purpose_documentation()
-        .unwrap();
+        .unwrap_or_else(|| {
+            panic!(
+                "No dual documentation for implement {:?} on attribute {:?}",
+                attr_implement, attr
+            )
+        });
 
     AttributePropertyConfig {
         public: true,
@@ -306,7 +318,16 @@ fn add_struct_flag_fragments(
     file: &mut FileFragment,
 ) {
     for flag in target.added_flags() {
-        add_flag_to_impl(&flag_config(cfg, &target, &flag), implementation, file);
+        add_flag_to_impl(
+            &flag_config(
+                cfg,
+                &flag.accessor_implementation().unwrap(),
+                &target,
+                &flag,
+            ),
+            implementation,
+            file,
+        );
     }
 }
 
@@ -317,7 +338,16 @@ fn add_struct_attr_fragments(
     file: &mut FileFragment,
 ) {
     for attr in target.added_attributes() {
-        add_attr_to_impl(&attr_config(cfg, &target, &attr), implementation, file);
+        add_attr_to_impl(
+            &attr_config(
+                cfg,
+                &attr.accessor_implementation().unwrap(),
+                &target,
+                &attr,
+            ),
+            implementation,
+            file,
+        );
     }
 }
 

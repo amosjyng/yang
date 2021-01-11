@@ -4,7 +4,7 @@ use crate::codegen::template::basic::{
     AtomicFragment, FileFragment, FunctionCallFragment, FunctionFragment, ItemDeclarationAPI,
 };
 use crate::codegen::{StructConfig, CODE_WIDTH};
-use crate::tao::form::{Crate, CrateExtension};
+use crate::tao::form::rust_item::{Crate, CrateExtension};
 use indoc::formatdoc;
 use itertools::Itertools;
 use std::cell::RefCell;

@@ -1,9 +1,9 @@
 use super::{concept_to_struct, grab_new_implementation_id};
 use crate::codegen::template::concept::auto_init_kb::{code_init, KBInitConfig, Link};
 use crate::codegen::{output_code, CodegenConfig, StructConfig};
+use crate::tao::action::Implement;
 use crate::tao::archetype::CreateImplementation;
 use crate::tao::perspective::KnowledgeGraphNode;
-use crate::tao::Implement;
 use heck::CamelCase;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::node_wrappers::CommonNodeTrait;

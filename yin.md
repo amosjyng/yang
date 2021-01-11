@@ -4,6 +4,16 @@
 
 I've [mentioned](https://github.com/amosjyng/yin/blob/master/yin.md) Yang a lot already, but I've never formally introduced the two of you. Meet Yang, a code-generation tool. Traditional, worldly, and experienced, he knows all about the cool spots in his little digital neighborhood, all the idiosyncrasies and quirks of his down-to-earth neighbors. Ever the ruthless pragmatic, he has a healthy disregard for the pious rectitude of the compilers. He wishes badly to explore the world outside, but he is fated to stay in this little Rustic village until Yin comes for a visit.
 
+As small as it may be, the little village of Rust forms its own universe of sorts. We would do well to call explicit attention to this.
+
+```rust
+define_child!(
+    rust_item,
+    form,
+    "An item recognized by the Rust programming language."
+);
+```
+
 ### Data
 
 One archetype type we haven't discussed yet is `Data`, perhaps roughly analogous to the linguistic concept of a "noun." What do we generally start out describing as nouns? Physical objects in the physical world.
@@ -15,7 +25,7 @@ The same can be said for the bits in Yin and Yang's world. Everything is ultimat
 ```rust
 define_child!(
     data,
-    form,
+    rust_item,
     "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
 );
 ```
@@ -63,6 +73,8 @@ KnowledgeGraphNode::from(number.id()).mark_data_analogue();
 Every type of data usually has a "default" value that we think of when constructing one from scratch.
 
 ```rust
+let mut meta_rust_item = rust_item.specific_meta();
+meta_rust_item.set_internal_name_str("rust-item-archetype");
 let mut meta_data = data.specific_meta();
 
 add_attr!(
@@ -87,7 +99,7 @@ For numbers, this would be zero:
 number.set_default_value("0");
 ```
 
-This next bit is more of a Yang thing, but we'll define it here anyways to keep everything in one place. We need to refer to these data structures somehow in our code, and the "how" is to call them by their name as they're known in Rust.
+We need to refer to these data structures somehow in our code, and the "how" is to call them by their name as they're known in Rust.
 
 ```rust
 add_attr!(
@@ -149,11 +161,14 @@ number.set_dummy_value("17");
 
 ### Implementations
 
-Here's what Yang knows: implementing is an action it can take:
+Here's what Yang knows: it can perform actions, and implementing is one of those actions.
 
 ```rust
-define!(
+define!(action, "A process that mutates the state of the world.");
+
+define_child!(
     implement,
+    action,
     "The act of implementing something. When created, this effectively serves as a call to action for Yang."
 );
 ```
@@ -195,6 +210,18 @@ add_attr!(
 ```
 
 Now we finally understand why there's a documentation string with each introduced concept.
+
+For attributes and flags, their getters and setters should have their own dual-purpose documentation strings.
+
+```rust
+add_attr!(
+    dual_purpose_documentation <= attribute,
+    implement,
+    str_concept,
+    "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string.",
+    "the dual-purpose documentation substring to be used for the implementation of this property as getters and setters in a different concept's class."
+);
+```
 
 ### Perspective
 
@@ -316,24 +343,14 @@ define_child!(
 
 There are some concepts that might only reveal themselves in a debugging or deployment context, and other meta-concepts that indirectly influence how the code is built but is not represented directly in any part of the code. These are out of scope for now.
 
-Getters and setters in particular have their own dual-purpose documentation strings. This is highly similar in concept to the `documentation` attribute introduced earlier, and should be made a property of the same concept.
-
-```rust
-add_attr!(
-    dual_purpose_documentation <= attribute,
-    build_info,
-    str_concept,
-    "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string.",
-    "the dual-purpose documentation substring to be used for the implementation of this property as getters and setters in a different concept's class."
-);
-```
+Note that while this is not meta for Rust items such as modules and traits (each individual module and each individual trait actually does have its own import path), it is meta for Rust data items. Rust's `String` class has an import path, but an individual instance of that class does not -- *unless* it's a public constant, in which case it does indeed have its own import path. Unfortunately as of now, representing this nuance would break some assumptions about how archetypes work.
 
 Rust groups things by modules.
 
 ```rust
 define_child!(
     module,
-    form,
+    rust_item,
     "Concept representing a Rust module."
 );
 ```
@@ -361,11 +378,14 @@ aa(member).mark_nonhereditary_attr();
 Rust modules sometimes re-export things so that it looks like it's coming from that module.
 
 ```rust
-define_child!(
-    re_exports,
-    attribute,
-    "Marks the owner module as re-exporting the value symbol."
+add_attr!(
+    re_export <= attribute,
+    module,
+    str_concept,
+    "Marks the owner module as re-exporting the value symbol.",
+    "a symbol to be re-exported from this module."
 );
+aa(re_export).mark_multi_valued_attr();
 ```
 
 It seems to make sense to group a concept and its descendants inside the same module. For such modules, we'll mark the concept as the most prominent member of the module.
@@ -410,7 +430,7 @@ So to finish up with build information that applies to any implemented concept, 
 ```rust
 define_child!(
     crate_concept,
-    form,
+    rust_item,
     "Crate that a concept was built as a part of."
 );
 crate_concept.set_internal_name_str("crate");
@@ -421,10 +441,12 @@ We can reuse the existing generic `HasMember` relation for describing the relati
 Crates are versioned:
 
 ```rust
-define_child!(
-    version,
-    attribute,
-    "Version number for a versioned object."
+add_attr!(
+    version <= attribute,
+    crate_concept,
+    str_concept,
+    "Version number for a versioned object.",
+    "the version number for the crate."
 );
 ```
 
@@ -471,12 +493,21 @@ This also means redefining the modules for concepts that were first introduced i
 
 ```rust
 let mut form_mod = form.impl_mod("All things that can be interacted with have form.");
-form_mod.has_extension("crate_extension::CrateExtension");
-form_mod.has_extension("module_extension::ModuleExtension");
 form_mod.re_export("zamm_yin::tao::form::FormTrait");
 
+module!(
+    rust_item,
+    "Elements of the Rust programming language.",
+    [
+        "crate_extension::CrateExtension",
+        "module_extension::ModuleExtension"
+    ]
+);
+module!(data, "Rust data elements.");
 module!(relation, "Relations between the forms.");
 module!(flag, "Relations involving only one form.");
+
+module!(action, "Processes that mutate state.");
 
 let mut attribute_mod = attribute.impl_mod("Relations between two forms.");
 attribute_mod.has_extension("supports_membership::SupportsMembership");
@@ -493,10 +524,7 @@ archetype_mod.re_export("zamm_yin::tao::archetype::ArchetypeTrait");
 archetype_mod.re_export("zamm_yin::tao::archetype::ArchetypeFormTrait");
 archetype_mod.re_export("zamm_yin::tao::archetype::AttributeArchetypeFormTrait");
 
-module!(
-    data,
-    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
-);
+module!(meta_rust_item, "Metadata about Rust elements.");
 ```
 
 We should really save the build info, so that one day we will no longer need to redefine the documentation for these modules.
@@ -536,6 +564,5 @@ Additional imports not used by Yin:
 
 ```rust
 use zamm_yang::add_attr;
-use zamm_yang::tao::form::ModuleExtension;
 use zamm_yang::tao::form::data::DataExtension;
 ```
