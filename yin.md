@@ -441,10 +441,12 @@ We can reuse the existing generic `HasMember` relation for describing the relati
 Crates are versioned:
 
 ```rust
-define_child!(
-    version,
-    attribute,
-    "Version number for a versioned object."
+add_attr!(
+    version <= attribute,
+    crate_concept,
+    str_concept,
+    "Version number for a versioned object.",
+    "the version number for the crate."
 );
 ```
 
