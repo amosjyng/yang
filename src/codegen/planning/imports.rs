@@ -16,6 +16,8 @@ pub fn root_node_or_equivalent(target: &Archetype) -> bool {
 /// Whether or not the given archetype belongs in its own submodule.
 pub fn in_own_submodule(target: &Archetype) -> bool {
     // todo: filter by type, once Yin has that functionality
+    // todo: since an archetype can be represented as multiple Rust items, this attribute and its
+    // information should perhaps live in the general implementaion concept
     BuildInfo::from(target.id()).is_own_module()
         || root_node_or_equivalent(target)
         || !target.child_archetypes().is_empty()

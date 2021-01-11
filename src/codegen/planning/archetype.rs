@@ -17,7 +17,7 @@ use crate::tao::action::Implement;
 use crate::tao::archetype::rust_item_archetype::DataArchetype;
 use crate::tao::form::rust_item::data::Data;
 use crate::tao::form::rust_item::{Crate, CrateExtension};
-use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
+use crate::tao::perspective::KnowledgeGraphNode;
 use heck::{KebabCase, SnakeCase};
 use std::cell::RefCell;
 use std::convert::TryFrom;
@@ -242,10 +242,13 @@ fn data_config(base_cfg: &TaoConfig, target: &DataArchetype) -> DataFormatConfig
     }
 }
 
-fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype) -> FlagConfig {
-    let doc = BuildInfo::from(flag.id())
-        .dual_purpose_documentation()
-        .unwrap();
+fn flag_config(
+    codegen_cfg: &CodegenConfig,
+    implement: &Implement,
+    target: &Archetype,
+    flag: &Archetype,
+) -> FlagConfig {
+    let doc = implement.dual_purpose_documentation().unwrap();
     FlagConfig {
         public: true,
         property_name: Rc::from(flag.internal_name().unwrap().to_snake_case()),
@@ -258,6 +261,7 @@ fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype
 
 fn attr_config(
     codegen_cfg: &CodegenConfig,
+    implement: &Implement,
     target: &Archetype,
     attr: &AttributeArchetype,
 ) -> AttributePropertyConfig {
@@ -275,9 +279,7 @@ fn attr_config(
         Some(unboxed) => Some(unboxed),
         None => rust_primitive.clone(),
     };
-    let doc = BuildInfo::from(attr.id())
-        .dual_purpose_documentation()
-        .unwrap();
+    let doc = implement.dual_purpose_documentation().unwrap();
 
     AttributePropertyConfig {
         public: true,
@@ -300,24 +302,34 @@ fn primary_parent(target: &Archetype) -> Archetype {
 }
 
 fn add_struct_flag_fragments(
+    implement: &Implement,
     target: &Archetype,
     cfg: &CodegenConfig,
     implementation: &mut ImplementationFragment,
     file: &mut FileFragment,
 ) {
     for flag in target.added_flags() {
-        add_flag_to_impl(&flag_config(cfg, &target, &flag), implementation, file);
+        add_flag_to_impl(
+            &flag_config(cfg, implement, &target, &flag),
+            implementation,
+            file,
+        );
     }
 }
 
 fn add_struct_attr_fragments(
+    implement: &Implement,
     target: &Archetype,
     cfg: &CodegenConfig,
     implementation: &mut ImplementationFragment,
     file: &mut FileFragment,
 ) {
     for attr in target.added_attributes() {
-        add_attr_to_impl(&attr_config(cfg, &target, &attr), implementation, file);
+        add_attr_to_impl(
+            &attr_config(cfg, implement, &target, &attr),
+            implementation,
+            file,
+        );
     }
 }
 
@@ -360,10 +372,22 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
         let mut implementation =
             ImplementationFragment::new_struct_impl(concept_to_struct(&target, codegen_cfg.yin));
         if !target.added_flags().is_empty() {
-            add_struct_flag_fragments(&target, codegen_cfg, &mut implementation, &mut file);
+            add_struct_flag_fragments(
+                &request,
+                &target,
+                codegen_cfg,
+                &mut implementation,
+                &mut file,
+            );
         }
         if !target.added_attributes().is_empty() {
-            add_struct_attr_fragments(&target, codegen_cfg, &mut implementation, &mut file);
+            add_struct_attr_fragments(
+                &request,
+                &target,
+                codegen_cfg,
+                &mut implementation,
+                &mut file,
+            );
         }
         if !implementation.content.borrow().appendages.is_empty() {
             file.append(Rc::new(RefCell::new(implementation)));

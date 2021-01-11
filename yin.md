@@ -211,6 +211,18 @@ add_attr!(
 
 Now we finally understand why there's a documentation string with each introduced concept.
 
+For attributes and flags, their getters and setters should have their own dual-purpose documentation strings.
+
+```rust
+add_attr!(
+    dual_purpose_documentation <= attribute,
+    implement,
+    str_concept,
+    "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string.",
+    "the dual-purpose documentation substring to be used for the implementation of this property as getters and setters in a different concept's class."
+);
+```
+
 ### Perspective
 
 All this can apply to any concept at all that's being implemented. However, these attributes are only meaningful within the context of code generation. As such, they should live inside a build config lens -- a way of viewing concepts through a different perspective than usual.
@@ -331,17 +343,7 @@ define_child!(
 
 There are some concepts that might only reveal themselves in a debugging or deployment context, and other meta-concepts that indirectly influence how the code is built but is not represented directly in any part of the code. These are out of scope for now.
 
-Getters and setters in particular have their own dual-purpose documentation strings. This is highly similar in concept to the `documentation` attribute introduced earlier, and should be made a property of the same concept.
-
-```rust
-add_attr!(
-    dual_purpose_documentation <= attribute,
-    build_info,
-    str_concept,
-    "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string.",
-    "the dual-purpose documentation substring to be used for the implementation of this property as getters and setters in a different concept's class."
-);
-```
+Note that while this is not meta for Rust items such as modules and traits (each individual module and each individual trait actually does have its own import path), it is meta for Rust data items. Rust's `String` class has an import path, but an individual instance of that class does not -- *unless* it's a public constant, in which case it does indeed have its own import path. Unfortunately as of now, representing this nuance would break some assumptions about how archetypes work.
 
 Rust groups things by modules.
 
@@ -500,11 +502,7 @@ module!(data, "Rust data elements.");
 module!(relation, "Relations between the forms.");
 module!(flag, "Relations involving only one form.");
 
-module!(
-    action,
-    "Processes that mutate state.",
-    ["implement_extension::ImplementExtension"]
-);
+module!(action, "Processes that mutate state.");
 
 let mut attribute_mod = attribute.impl_mod("Relations between two forms.");
 attribute_mod.has_extension("supports_membership::SupportsMembership");
@@ -521,10 +519,7 @@ archetype_mod.re_export("zamm_yin::tao::archetype::ArchetypeTrait");
 archetype_mod.re_export("zamm_yin::tao::archetype::ArchetypeFormTrait");
 archetype_mod.re_export("zamm_yin::tao::archetype::AttributeArchetypeFormTrait");
 
-module!(
-    meta_rust_item,
-    "Metadata about Rust elements, such as where they can be found in the Rust ecosystem."
-);
+module!(meta_rust_item, "Metadata about Rust elements.");
 ```
 
 We should really save the build info, so that one day we will no longer need to redefine the documentation for these modules.
