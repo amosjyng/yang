@@ -1,6 +1,6 @@
 use super::BuildInfo;
-use crate::tao::form::data::StringConcept;
-use crate::tao::form::{Crate, CrateExtension, Module};
+use crate::tao::form::rust_item::data::StrConcept;
+use crate::tao::form::rust_item::{Crate, CrateExtension, Module};
 use crate::tao::relation::attribute::{
     ImplementationName, Member, MostProminentMember, SupportsMembership,
 };
@@ -29,23 +29,21 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
     /// Retrieve crate which the object was built as a part of. This is called `crate_name` instead
     /// of just `crate` because `crate` is a reserved keyword in Rust.
     fn crate_name(&self) -> Option<Rc<str>> {
-        // todo: retrieve using StringConcept API once that is correctly generated once more
         self.inheritance_wrapper()
             .base_wrapper()
             .incoming_nodes(Member::TYPE_ID)
             .iter()
             .map(|n| Form::from(n.id()))
-            .find(|f| f.has_ancestor(Crate::archetype()))
+            .find(|f| f.has_ancestor(Crate::archetype().into()))
             .map(|c| Crate::from(c.id()).implementation_name())
             .flatten()
     }
 
     /// Set name the concept took on for its actual implementation.
     fn set_implementation_name(&mut self, name: &str) {
-        let mut s = StringConcept::new();
-        // todo: set using StringConcept API once that is correctly generated once more
+        let mut s = StrConcept::new();
         s.deref_mut()
-            .set_value(Rc::new(StrongValue::new(name.to_owned())));
+            .set_value(Rc::new(StrongValue::<str>::new_rc(Rc::from(name))));
         self.add_outgoing(ImplementationName::TYPE_ID, &s);
     }
 
@@ -56,11 +54,7 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
             .base_wrapper()
             .outgoing_nodes(ImplementationName::TYPE_ID)
             .last()
-            .map(|s| {
-                StringConcept::from(s.id())
-                    .value()
-                    .map(|rc| Rc::from(rc.as_str()))
-            })
+            .map(|s| StrConcept::from(s.id()).value())
             .flatten()
     }
 
@@ -106,14 +100,9 @@ mod tests {
         initialize_kb();
         let mut info = BuildInfo::new();
         info.set_crate_name("zamm_yang");
-        info.set_import_path("zamm_yang::import::path");
         info.set_implementation_name("Yolo");
 
         assert_eq!(info.crate_name(), Some(Rc::from("zamm_yang")));
-        assert_eq!(
-            info.import_path(),
-            Some(Rc::from("zamm_yang::import::path"))
-        );
         assert_eq!(info.implementation_name(), Some(Rc::from("Yolo")));
     }
 
@@ -124,13 +113,11 @@ mod tests {
         let type1 = Tao::archetype().individuate_as_archetype();
         let mut info = BuildInfo::from(type1.id());
         info.set_crate_name("zamm_yang");
-        info.set_import_path("zamm_yang::import::path");
         info.set_implementation_name("Yolo");
 
         let type2 = type1.individuate_as_archetype();
         let info2 = BuildInfo::from(type2.id());
         assert_eq!(info2.crate_name(), None);
-        assert_eq!(info2.import_path(), None);
         assert_eq!(info2.implementation_name(), None);
     }
 

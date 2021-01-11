@@ -1,10 +1,9 @@
 use super::{concept_to_struct, grab_new_implementation_id};
 use crate::codegen::template::concept::auto_init_kb::{code_init, KBInitConfig, Link};
 use crate::codegen::{output_code, CodegenConfig, StructConfig};
+use crate::tao::action::Implement;
 use crate::tao::archetype::CreateImplementation;
-use crate::tao::form::{Crate, CrateExtension};
 use crate::tao::perspective::KnowledgeGraphNode;
-use crate::tao::Implement;
 use heck::CamelCase;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::node_wrappers::CommonNodeTrait;
@@ -18,7 +17,6 @@ fn setup_archetype_init(
     target_type: &Archetype,
     concepts_to_initialize: &mut Vec<StructConfig>,
     attributes: &mut Vec<Link>,
-    add_attributes: bool,
     codegen_cfg: &CodegenConfig,
 ) {
     let has_attr = concept_to_struct(&HasAttribute::archetype().into(), codegen_cfg.yin);
@@ -31,40 +29,36 @@ fn setup_archetype_init(
         implement.set_concept_id(grab_new_implementation_id(codegen_cfg.yin));
     }
 
-    // only initialize concept attributes if user hasn't already done it because they were
-    // using an older version of Yang
-    if add_attributes {
-        let target_struct = concept_to_struct(&target_type, codegen_cfg.yin);
+    let target_struct = concept_to_struct(&target_type, codegen_cfg.yin);
 
-        for flag in target_type.added_flags() {
+    for flag in target_type.added_flags() {
+        attributes.push(Link {
+            from: target_struct.clone(),
+            link_type: has_flag.clone(),
+            to: concept_to_struct(&flag, codegen_cfg.yin),
+        });
+    } // todo: set flags like we set attributes down below
+
+    for attr in target_type.added_attributes() {
+        attributes.push(Link {
+            from: target_struct.clone(),
+            link_type: has_attr.clone(),
+            to: concept_to_struct(&attr.into(), codegen_cfg.yin),
+        });
+    }
+    let mut attributes_to_check = target_type.attributes();
+    attributes_to_check.push(OwnerArchetype::archetype());
+    attributes_to_check.push(ValueArchetype::archetype());
+    for attr in attributes_to_check {
+        let attr_struct = concept_to_struct(&Archetype::from(attr.id()), codegen_cfg.yin);
+        // use base wrapper because we want to see if the flag is set with this node, not
+        // with an ancestor
+        for outgoing in target_type.base_wrapper().outgoing_nodes(attr.id()) {
             attributes.push(Link {
                 from: target_struct.clone(),
-                link_type: has_flag.clone(),
-                to: concept_to_struct(&flag, codegen_cfg.yin),
+                link_type: attr_struct.clone(),
+                to: concept_to_struct(&Archetype::from(outgoing.id()), codegen_cfg.yin),
             });
-        } // todo: set flags like we set attributes down below
-
-        for attr in target_type.added_attributes() {
-            attributes.push(Link {
-                from: target_struct.clone(),
-                link_type: has_attr.clone(),
-                to: concept_to_struct(&attr.into(), codegen_cfg.yin),
-            });
-        }
-        let mut attributes_to_check = target_type.attributes();
-        attributes_to_check.push(OwnerArchetype::archetype());
-        attributes_to_check.push(ValueArchetype::archetype());
-        for attr in attributes_to_check {
-            let attr_struct = concept_to_struct(&Archetype::from(attr.id()), codegen_cfg.yin);
-            // use base wrapper because we want to see if the flag is set with this node, not
-            // with an ancestor
-            for outgoing in target_type.base_wrapper().outgoing_nodes(attr.id()) {
-                attributes.push(Link {
-                    from: target_struct.clone(),
-                    link_type: attr_struct.clone(),
-                    to: concept_to_struct(&Archetype::from(outgoing.id()), codegen_cfg.yin),
-                });
-            }
         }
     }
 }
@@ -72,7 +66,6 @@ fn setup_archetype_init(
 fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig) -> KBInitConfig {
     let mut concepts_to_initialize = Vec::<StructConfig>::new();
     let mut attributes = Vec::<Link>::new();
-    let add_attributes = Crate::yang().version_at_least(0, 1, 7);
 
     for implement in archetype_requests {
         let mut target_type = Archetype::from(implement.target().unwrap().id());
@@ -81,7 +74,6 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
             &target_type,
             &mut concepts_to_initialize,
             &mut attributes,
-            add_attributes,
             codegen_cfg,
         );
 
@@ -106,7 +98,6 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
                     &target_meta,
                     &mut concepts_to_initialize,
                     &mut attributes,
-                    add_attributes,
                     codegen_cfg,
                 );
 
@@ -145,7 +136,6 @@ mod tests {
     #[test]
     fn test_single_new_concept() {
         initialize_kb();
-        Crate::yang().set_version("0.1.7");
         let mut impls = vec![];
         let mut implement = Implement::new();
         let mut new_concept = Form::archetype().individuate_as_archetype();
@@ -163,7 +153,6 @@ mod tests {
     #[test]
     fn test_concept_attr() {
         initialize_kb();
-        Crate::yang().set_version("0.1.7");
         let mut impls = vec![];
 
         let mut new_attr = Attribute::archetype().individuate_as_archetype();
@@ -210,7 +199,6 @@ mod tests {
     #[test]
     fn test_generic_attr() {
         initialize_kb();
-        Crate::yang().set_version("0.1.7");
         let mut impls = vec![];
 
         let mut new_attr = Attribute::archetype().individuate_as_archetype();

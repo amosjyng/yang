@@ -3,7 +3,6 @@ use crate::codegen::template::basic::{
     AtomicFragment, FileFragment, FunctionCallFragment, FunctionFragment, ImplementationFragment,
     ItemDeclarationAPI, SelfReference,
 };
-use crate::codegen::template::concept::wrapper::WrapperConfig;
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
 use std::cell::RefCell;
@@ -39,8 +38,6 @@ fn primitive_config(
 
 /// Config values at the time of Attribute getter/setter code generation.
 pub struct AttributePropertyConfig {
-    /// Wrapper API to use when generating accessors for this flag.
-    pub wrapper_cfg: WrapperConfig,
     /// The public name to serve as a basis for the getter/setter function names.
     pub property_name: Rc<str>,
     /// Whether or not the getters and setters should be marked public. False if this is to be
@@ -73,7 +70,6 @@ pub struct AttributePropertyConfig {
 impl Default for AttributePropertyConfig {
     fn default() -> Self {
         Self {
-            wrapper_cfg: WrapperConfig::default(),
             property_name: Rc::from(""),
             public: false,
             doc: Rc::from(""),
@@ -148,14 +144,13 @@ fn setter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     };
 
     let final_value = if cfg.rust_primitive.is_some() {
-        format!("value_concept.{}()", cfg.wrapper_cfg.deref)
+        "value_concept.deref()".to_owned()
     } else {
-        format!("{}.{}()", cfg.property_name, cfg.wrapper_cfg.deref)
+        format!("{}.deref()", cfg.property_name)
     };
-    let mut add_outgoing = FunctionCallFragment::new(AtomicFragment::new(format!(
-        "self.{}().add_outgoing",
-        cfg.wrapper_cfg.deref_mut
-    )));
+    let mut add_outgoing = FunctionCallFragment::new(AtomicFragment::new(
+        "self.deref_mut().add_outgoing".to_owned(),
+    ));
     add_outgoing.add_argument(Rc::new(RefCell::new(AtomicFragment::new(format!(
         "{}::TYPE_ID",
         cfg.attr.name
@@ -222,11 +217,10 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     };
 
     f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
-        self.{deref}(){inheritance}
+        self.deref(){inheritance}
             .outgoing_nodes({attr}::TYPE_ID)
             {collection}
             .map(|f| {value_type}::from(f.id()){primitive_map}){post_collection}",
-        deref = cfg.wrapper_cfg.deref,
         inheritance = nonhereditary_access,
         attr = cfg.attr.name,
         value_type = cfg.value_type.name,
@@ -477,9 +471,9 @@ mod tests {
             indoc! {"
                 /// Set the crate associated with the struct.
                 fn set_associated_crate(&mut self, associated_crate: &Crate) {
-                    self.essence_mut().add_outgoing(
+                    self.deref_mut().add_outgoing(
                         AssociatedCrate::TYPE_ID,
-                        associated_crate.essence(),
+                        associated_crate.deref(),
                     );
                 }"}
         );
@@ -494,9 +488,9 @@ mod tests {
                 fn set_associated_crate(&mut self, associated_crate: &str) {
                     let mut value_concept = Crate::new();
                     value_concept.set_value(associated_crate);
-                    self.essence_mut().add_outgoing(
+                    self.deref_mut().add_outgoing(
                         AssociatedCrate::TYPE_ID,
-                        value_concept.essence(),
+                        value_concept.deref(),
                     );
                 }"}
         );
@@ -509,9 +503,9 @@ mod tests {
             indoc! {"
                 /// Add one of the crates associated with the struct.
                 fn add_associated_crate(&mut self, associated_crate: &Crate) {
-                    self.essence_mut().add_outgoing(
+                    self.deref_mut().add_outgoing(
                         AssociatedCrate::TYPE_ID,
-                        associated_crate.essence(),
+                        associated_crate.deref(),
                     );
                 }"}
         );
@@ -524,7 +518,7 @@ mod tests {
             indoc! {"
                 /// Get the crate associated with the struct.
                 fn associated_crate(&self) -> Option<Crate> {
-                    self.essence()
+                    self.deref()
                         .outgoing_nodes(AssociatedCrate::TYPE_ID)
                         .last()
                         .map(|f| Crate::from(f.id()))
@@ -540,7 +534,7 @@ mod tests {
                 /// Get the crate associated with the struct.
                 #[allow(clippy::rc_buffer)]
                 fn associated_crate(&self) -> Option<Rc<str>> {
-                    self.essence()
+                    self.deref()
                         .outgoing_nodes(AssociatedCrate::TYPE_ID)
                         .last()
                         .map(|f| Crate::from(f.id()).value().unwrap())
@@ -560,7 +554,7 @@ mod tests {
                 /// Get the crate associated with the struct.
                 #[allow(clippy::rc_buffer)]
                 fn associated_crate(&self) -> Option<Rc<str>> {
-                    self.essence()
+                    self.deref()
                         .base_wrapper()
                         .outgoing_nodes(AssociatedCrate::TYPE_ID)
                         .last()
@@ -576,7 +570,7 @@ mod tests {
             indoc! {"
                 /// Get the crates associated with the struct.
                 fn associated_crates(&self) -> Vec<Crate> {
-                    self.essence()
+                    self.deref()
                         .outgoing_nodes(AssociatedCrate::TYPE_ID)
                         .into_iter()
                         .map(|f| Crate::from(f.id()))
