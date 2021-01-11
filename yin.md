@@ -470,30 +470,29 @@ perspective_mod.has_extension("build_info_extension::BuildInfoExtension");
 This also means redefining the modules for concepts that were first introduced in Yin, but which we have since created new children for:
 
 ```rust
-module!(
-    form,
-    "All things that can be interacted with have form.",
-    [
-        "crate_extension::CrateExtension",
-        "module_extension::ModuleExtension"
-    ]
-);
+let mut form_mod = form.impl_mod("All things that can be interacted with have form.");
+form_mod.has_extension("crate_extension::CrateExtension");
+form_mod.has_extension("module_extension::ModuleExtension");
+form_mod.re_export("zamm_yin::tao::form::FormTrait");
+
 module!(relation, "Relations between the forms.");
 module!(flag, "Relations involving only one form.");
-module!(
-    attribute,
-    "Relations between two forms.",
-    ["supports_membership::SupportsMembership"]
-);
+
+let mut attribute_mod = attribute.impl_mod("Relations between two forms.");
+attribute_mod.has_extension("supports_membership::SupportsMembership");
+attribute_mod.re_export("zamm_yin::tao::relation::attribute::AttributeTrait");
+
 module!(
     has_property,
     "Meta-attributes around what attributes instances of an archetype have."
 );
-module!(
-    archetype,
-    "Types of forms, as opposed to the forms themselves.",
-    ["create_implementation::CreateImplementation"]
-);
+
+let mut archetype_mod = archetype.impl_mod("Types of forms, as opposed to the forms themselves.");
+archetype_mod.has_extension("create_implementation::CreateImplementation");
+archetype_mod.re_export("zamm_yin::tao::archetype::ArchetypeTrait");
+archetype_mod.re_export("zamm_yin::tao::archetype::ArchetypeFormTrait");
+archetype_mod.re_export("zamm_yin::tao::archetype::AttributeArchetypeFormTrait");
+
 module!(
     data,
     "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
@@ -537,5 +536,6 @@ Additional imports not used by Yin:
 
 ```rust
 use zamm_yang::add_attr;
+use zamm_yang::tao::form::ModuleExtension;
 use zamm_yang::tao::form::data::DataExtension;
 ```

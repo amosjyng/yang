@@ -82,8 +82,9 @@ macro_rules! add_flag {
     };
     ($name:ident <= $parent:expr, $owner:ident, $doc:expr, $dual_doc:expr) => {
         define_child!($name, $parent);
-        zamm_yang::tao::archetype::AttributeArchetype::from($name.id()).set_owner_archetype($owner);
-        $owner.add_flag($name);
+        zamm_yang::tao::archetype::AttributeArchetype::from($name.id())
+            .set_owner_archetype(&$owner);
+        $owner.add_flag(&$name);
         {
             let mut new_impl = $name.implement_with_doc($doc);
             new_impl.dual_document($dual_doc);
@@ -108,12 +109,12 @@ macro_rules! add_attr {
         {
             let mut new_aa = zamm_yang::tao::archetype::AttributeArchetype::from($name.id());
             if $owner != zamm_yang::tao::Tao::archetype() {
-                new_aa.set_owner_archetype($owner);
+                new_aa.set_owner_archetype(&$owner);
             }
             if $value != zamm_yang::tao::Tao::archetype() {
-                new_aa.set_value_archetype($value);
+                new_aa.set_value_archetype(&$value);
             }
-            $owner.add_attribute(new_aa);
+            $owner.add_attribute(&new_aa);
             let mut new_impl = $name.implement_with_doc($doc);
             new_impl.dual_document($dual_doc);
         }
