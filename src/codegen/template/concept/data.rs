@@ -56,19 +56,20 @@ fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
             impl {name} {{
                 /// Set {boxed_primitive} value for this concept.
                 pub fn set_value(&mut self, value: {unboxed_primitive}) {{
-                    self.essence_mut()
-                        .set_value(Rc::new({strongvalue_init}));
+                    self.{deref_mut}().set_value(Rc::new({strongvalue_init}));
                 }}
 
                 /// Retrieve {boxed_primitive}-valued StrongValue.
                 #[allow(clippy::rc_buffer)]
                 pub fn value(&self) -> Option<Rc<{boxed_primitive}>> {{
-                    unwrap_value::<{boxed_primitive}>(self.essence().value())
+                    unwrap_value::<{boxed_primitive}>(self.{deref}().value())
                 }}
             }}"#, name = cfg.tao_cfg.this.name,
             unboxed_primitive = cfg.rust_primitive_unboxed_name,
             boxed_primitive = cfg.rust_primitive_boxed_name,
             strongvalue_init = strongvalue_init,
+            deref = cfg.tao_cfg.wrapper_cfg.deref,
+            deref_mut = cfg.tao_cfg.wrapper_cfg.deref_mut
         },
     }
 }

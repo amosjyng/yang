@@ -1,9 +1,11 @@
 use super::util::{add_assert, add_assert_frags, new_kb_test};
 use crate::codegen::template::basic::{
-    AppendedFragment, AtomicFragment, FileFragment, VecFragment,
+    AppendedFragment, AtomicFragment, FileFragment, ImplementationFragment, VecFragment,
 };
+use crate::codegen::template::concept::wrapper;
+use crate::codegen::template::concept::wrapper::WrapperConfig;
 use crate::codegen::StructConfig;
-use indoc::formatdoc;
+use indoc::{formatdoc, indoc};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -54,6 +56,16 @@ impl InternalNameConfig {
         all_attributes: "attributes",
         attr_import: None,
     };
+
+    /// Internal API config for Yin versions >= 0.2.0.
+    pub const YIN_AT_LEAST_0_2_0: Self = Self {
+        getter: "internal_name",
+        setter: "set_internal_name",
+        suffix: "",
+        added_attributes: "added_attributes",
+        all_attributes: "attributes",
+        attr_import: None,
+    };
 }
 
 impl Default for InternalNameConfig {
@@ -89,6 +101,10 @@ pub struct TaoConfig {
     pub introduced_attributes: Vec<String>,
     /// Imports for above list of introduced attributes.
     pub introduced_attribute_imports: Vec<String>,
+    /// Which wrapper API to use.
+    pub wrapper_cfg: WrapperConfig,
+    /// Whether or not to specify a lifetime for the Archetype trait implementation.
+    pub archetype_trait_lifetime: bool,
     /// Rustdoc for the class.
     pub doc: String,
     /// ID of the concept.
@@ -110,6 +126,8 @@ impl Default for TaoConfig {
             all_attribute_imports: vec![],
             introduced_attributes: vec![],
             introduced_attribute_imports: vec![],
+            wrapper_cfg: WrapperConfig::default(),
+            archetype_trait_lifetime: true,
             doc: "".to_owned(),
             id: "1".to_owned(),
         }
@@ -128,7 +146,6 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
         "zamm_yin::tao::archetype::ArchetypeTrait".to_owned(),
         cfg.archetype.import.clone(),
         "zamm_yin::node_wrappers::debug_wrapper".to_owned(),
-        "zamm_yin::Wrapper".to_owned(),
         "zamm_yin::node_wrappers::FinalNode".to_owned(),
     ];
     if let Some(import) = &cfg.imports {
@@ -137,6 +154,11 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
     if let Some(import) = &cfg.internal_name_cfg.attr_import {
         imports.push(import.to_string());
     }
+    let lifetime = if cfg.archetype_trait_lifetime {
+        "<'a>"
+    } else {
+        ""
+    };
 
     AtomicFragment {
         imports,
@@ -174,20 +196,8 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
                     FinalNode::try_from(name).map(|f| Self {{ base: f }})
                 }}
             }}
-
-            impl Wrapper for {name} {{
-                type BaseType = FinalNode;
-
-                fn essence(&self) -> &FinalNode {{
-                    &self.base
-                }}
-
-                fn essence_mut(&mut self) -> &mut FinalNode {{
-                    &mut self.base
-                }}
-            }}
             
-            impl<'a> ArchetypeTrait<'a> for {name} {{
+            impl{lifetime} ArchetypeTrait{lifetime} for {name} {{
                 type ArchetypeForm = {archetype};
                 type Form = {form};
 
@@ -202,6 +212,7 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
             parent = cfg.parent_name,
             archetype = cfg.archetype.name,
             id = cfg.id,
+            lifetime = lifetime,
         },
     }
 }
@@ -309,12 +320,75 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
             fn test_wrapper_implemented() {{
                 initialize_kb();
                 let concept = {name}::new();
-                assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
+                assert_eq!(concept.{deref}(), &FinalNode::from(concept.id()));
             }}"#,
             name = cfg.this.name,
+            deref = cfg.wrapper_cfg.deref,
         },
     })));
     test_frag
+}
+
+fn wrapper_fragment(cfg: &TaoConfig) -> ImplementationFragment {
+    let mut implementation = ImplementationFragment::new_trait_impl(
+        StructConfig::new("zamm_yin::Wrapper".to_owned()),
+        cfg.this.clone(),
+    );
+    implementation.append(Rc::new(RefCell::new(AtomicFragment {
+        imports: vec!["zamm_yin::node_wrappers::FinalNode".to_owned()],
+        atom: "type BaseType = FinalNode;".to_owned(),
+    })));
+    implementation.append(Rc::new(RefCell::new(AtomicFragment {
+        imports: vec![],
+        atom: indoc! {"
+            fn essence(&self) -> &FinalNode {
+                &self.base
+            }
+            fn essence_mut(&mut self) -> &mut FinalNode {
+                &mut self.base
+            }"}
+        .to_owned(),
+    })));
+    implementation.mark_same_file_as_struct();
+    implementation
+}
+
+fn deref_fragment(cfg: &TaoConfig) -> ImplementationFragment {
+    let mut implementation = ImplementationFragment::new_trait_impl(
+        StructConfig::new("std::ops::Deref".to_owned()),
+        cfg.this.clone(),
+    );
+    implementation.append(Rc::new(RefCell::new(AtomicFragment {
+        imports: vec!["zamm_yin::node_wrappers::FinalNode".to_owned()],
+        atom: "type Target = FinalNode;".to_owned(),
+    })));
+    implementation.append(Rc::new(RefCell::new(AtomicFragment {
+        imports: vec![],
+        atom: indoc! {"
+            fn deref(&self) -> &Self::Target {
+                &self.base
+            }"}
+        .to_owned(),
+    })));
+    implementation.mark_same_file_as_struct();
+    implementation
+}
+
+fn deref_mut_fragment(cfg: &TaoConfig) -> ImplementationFragment {
+    let mut implementation = ImplementationFragment::new_trait_impl(
+        StructConfig::new("std::ops::DerefMut".to_owned()),
+        cfg.this.clone(),
+    );
+    implementation.append(Rc::new(RefCell::new(AtomicFragment {
+        imports: vec![],
+        atom: indoc! {"
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                &mut self.base
+            }"}
+        .to_owned(),
+    })));
+    implementation.mark_same_file_as_struct();
+    implementation
 }
 
 /// Returns a file fragment, which may be appended to further.
@@ -322,6 +396,12 @@ pub fn tao_file_fragment(cfg: &TaoConfig) -> FileFragment {
     let mut file = FileFragment::default();
     file.set_self_import(cfg.this.import.clone());
     file.append(Rc::new(RefCell::new(tao_fragment(cfg))));
+    if cfg.wrapper_cfg == wrapper::YIN_0_1_X {
+        file.append(Rc::new(RefCell::new(wrapper_fragment(cfg))));
+    } else {
+        file.append(Rc::new(RefCell::new(deref_fragment(cfg))));
+        file.append(Rc::new(RefCell::new(deref_mut_fragment(cfg))));
+    }
     file.append_test(Rc::new(RefCell::new(tao_test_fragment(cfg))));
     file
 }
@@ -329,6 +409,18 @@ pub fn tao_file_fragment(cfg: &TaoConfig) -> FileFragment {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::codegen::template::basic::CodeFragment;
+
+    fn test_cfg() -> TaoConfig {
+        TaoConfig {
+            this: StructConfig {
+                name: String::from("MyConcept"),
+                ..StructConfig::default()
+            },
+            internal_name_cfg: InternalNameConfig::YIN_AT_LEAST_0_2_0,
+            ..TaoConfig::default()
+        }
+    }
 
     #[test]
     fn test_default_internal_name_used() {
@@ -356,5 +448,33 @@ mod tests {
         assert!(!code.contains(".internal_name("));
         assert!(code.contains(".internal_name_str("));
         assert!(!code.contains(".to_owned()"));
+    }
+
+    #[test]
+    fn test_deref_fragment() {
+        assert_eq!(
+            deref_fragment(&test_cfg()).body(80),
+            indoc! {"
+                impl Deref for MyConcept {
+                    type Target = FinalNode;
+                
+                    fn deref(&self) -> &Self::Target {
+                        &self.base
+                    }
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_deref_mut_fragment() {
+        assert_eq!(
+            deref_mut_fragment(&test_cfg()).body(80),
+            indoc! {"
+                impl DerefMut for MyConcept {
+                    fn deref_mut(&mut self) -> &mut Self::Target {
+                        &mut self.base
+                    }
+                }"}
+        );
     }
 }

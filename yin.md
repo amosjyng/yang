@@ -389,6 +389,7 @@ add_flag!(
     "Marks an archetype as living inside its own module, even if it doesn't have any defined child archetypes yet.",
     "residing in its own Rust module."
 );
+aa(own_module).mark_nonhereditary_attr();
 ```
 
 Once built, structs have a certain import path:
@@ -508,7 +509,7 @@ We should really save the build info, so that one day we will no longer need to 
 This is the version of Yang used to make this build happen:
 
 ```toml
-zamm_yang = {path = "C:/Users/Amos Ng/Documents/projects/zamm/yang"}
+zamm_yang = "=0.1.7"
 ```
 
 Yang does his best to be backwards-compatible, so we should let old Yang know that this is new Yang speaking:

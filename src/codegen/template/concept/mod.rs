@@ -18,3 +18,5 @@ pub mod form;
 /// Tao code template.
 pub mod tao;
 mod util;
+/// Wrapper API.
+pub mod wrapper;

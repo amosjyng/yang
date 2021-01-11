@@ -14,14 +14,21 @@ pub struct ArchetypeFormatConfig {
 }
 
 fn archetype_impl_fragment(cfg: &ArchetypeFormatConfig) -> ImplementationFragment {
+    let trait_name = if cfg.tao_cfg.archetype_trait_lifetime {
+        "ArchetypeFormTrait<'a>"
+    } else {
+        "ArchetypeFormTrait"
+    };
     let mut implementation = ImplementationFragment::new_trait_impl(
         StructConfig {
             import: "zamm_yin::tao::archetype::ArchetypeFormTrait".to_owned(),
-            name: "ArchetypeFormTrait<'a>".to_owned(),
+            name: trait_name.to_owned(),
         },
         cfg.tao_cfg.this.clone(),
     );
-    implementation.add_lifetime('a');
+    if cfg.tao_cfg.archetype_trait_lifetime {
+        implementation.add_lifetime('a');
+    }
     implementation.mark_same_file_as_struct();
     implementation.append(Rc::new(RefCell::new(AtomicFragment {
         imports: vec![cfg.infra_archetype.import.clone()],

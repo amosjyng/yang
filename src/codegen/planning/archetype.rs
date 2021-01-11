@@ -11,6 +11,8 @@ use crate::codegen::template::concept::data::{add_data_fragments, DataFormatConf
 use crate::codegen::template::concept::flag::{add_flag_to_impl, FlagConfig};
 use crate::codegen::template::concept::form::{add_form_fragment, FormFormatConfig};
 use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
+use crate::codegen::template::concept::wrapper;
+use crate::codegen::template::concept::wrapper::WrapperConfig;
 use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::archetype::DataArchetype;
@@ -72,7 +74,9 @@ fn generic_config(
     let internal_name = this.name.to_kebab_case();
     let form = form_for(target, codegen_cfg);
 
-    let internal_name_cfg = if Crate::yin().version_at_least(0, 1, 4) {
+    let internal_name_cfg = if Crate::yin().version_at_least(0, 2, 0) {
+        InternalNameConfig::YIN_AT_LEAST_0_2_0
+    } else if Crate::yin().version_at_least(0, 1, 4) {
         InternalNameConfig::YIN_AT_LEAST_0_1_4
     } else if Crate::yin().version_at_least(0, 1, 1) {
         InternalNameConfig::YIN_AT_LEAST_0_1_1
@@ -139,6 +143,15 @@ fn generic_config(
         }
     };
 
+    let yin_0_2_x = Crate::yin().version_at_least(0, 2, 0);
+    let wrapper_cfg = if yin_0_2_x {
+        wrapper::YIN_0_2_X
+    } else {
+        wrapper::YIN_0_1_X
+    };
+
+    let archetype_trait_lifetime = !yin_0_2_x;
+
     TaoConfig {
         imports,
         this,
@@ -152,6 +165,8 @@ fn generic_config(
         introduced_attributes,
         introduced_attribute_imports,
         archetype,
+        wrapper_cfg,
+        archetype_trait_lifetime,
         doc,
         id,
     }
@@ -266,11 +281,17 @@ fn data_config(base_cfg: &TaoConfig, target: &DataArchetype) -> DataFormatConfig
     }
 }
 
-fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype) -> FlagConfig {
-    let doc = BuildInfo::from(flag.id())
+fn flag_config(
+    codegen_cfg: &CodegenConfig,
+    target: &Archetype,
+    flag: &Archetype,
+    wrapper_cfg: &WrapperConfig,
+) -> FlagConfig {
+    let doc_string = BuildInfo::from(flag.id())
         .dual_purpose_documentation()
         .unwrap();
     FlagConfig {
+        wrapper_cfg: wrapper_cfg.clone(),
         public: true,
         property_name: Rc::from(flag.internal_name().unwrap().to_snake_case()),
         doc,
@@ -284,6 +305,7 @@ fn attr_config(
     codegen_cfg: &CodegenConfig,
     target: &Archetype,
     attr: &AttributeArchetype,
+    wrapper_cfg: &WrapperConfig,
 ) -> AttributePropertyConfig {
     let value_type = or_form_default(attr.value_archetype());
     let value_as_data = DataArchetype::from(value_type.id());
@@ -304,6 +326,7 @@ fn attr_config(
         .unwrap();
 
     AttributePropertyConfig {
+        wrapper_cfg: wrapper_cfg.clone(),
         public: true,
         property_name: Rc::from(attr.internal_name().unwrap().to_snake_case()),
         doc,
@@ -326,22 +349,32 @@ fn primary_parent(target: &Archetype) -> Archetype {
 fn add_struct_flag_fragments(
     target: &Archetype,
     cfg: &CodegenConfig,
+    wrapper_cfg: &WrapperConfig,
     implementation: &mut ImplementationFragment,
     file: &mut FileFragment,
 ) {
     for flag in target.added_flags() {
-        add_flag_to_impl(&flag_config(cfg, &target, &flag), implementation, file);
+        add_flag_to_impl(
+            &flag_config(cfg, &target, &flag, wrapper_cfg),
+            implementation,
+            file,
+        );
     }
 }
 
 fn add_struct_attr_fragments(
     target: &Archetype,
     cfg: &CodegenConfig,
+    wrapper_cfg: &WrapperConfig,
     implementation: &mut ImplementationFragment,
     file: &mut FileFragment,
 ) {
     for attr in target.added_attributes() {
-        add_attr_to_impl(&attr_config(cfg, &target, &attr), implementation, file);
+        add_attr_to_impl(
+            &attr_config(cfg, &target, &attr, wrapper_cfg),
+            implementation,
+            file,
+        );
     }
 }
 
@@ -384,10 +417,22 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
         let mut implementation =
             ImplementationFragment::new_struct_impl(concept_to_struct(&target, codegen_cfg.yin));
         if !target.added_flags().is_empty() {
-            add_struct_flag_fragments(&target, codegen_cfg, &mut implementation, &mut file);
+            add_struct_flag_fragments(
+                &target,
+                codegen_cfg,
+                &base_cfg.wrapper_cfg,
+                &mut implementation,
+                &mut file,
+            );
         }
         if !target.added_attributes().is_empty() {
-            add_struct_attr_fragments(&target, codegen_cfg, &mut implementation, &mut file);
+            add_struct_attr_fragments(
+                &target,
+                codegen_cfg,
+                &base_cfg.wrapper_cfg,
+                &mut implementation,
+                &mut file,
+            );
         }
         if !implementation.content.borrow().appendages.is_empty() {
             file.append(Rc::new(RefCell::new(implementation)));

@@ -84,7 +84,11 @@ pub fn archetype_file_path(target: &Archetype) -> String {
 /// Get the output path for a given concept.
 pub fn module_file_path(target: &Archetype) -> String {
     // module path should always be forced if mod.rs is being generated for it
-    assert!(in_own_submodule(target));
+    assert!(
+        in_own_submodule(target),
+        "Getting module file path for {:?} which is not inside its own module",
+        target
+    );
     format!("src/{}/mod.rs", ancestor_path(target, "/"))
 }
 
