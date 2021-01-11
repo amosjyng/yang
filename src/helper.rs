@@ -51,7 +51,7 @@ macro_rules! module {
         {
             let mut new_mod = $name.impl_mod($doc);
             $(
-                zamm_yang::tao::form::rust_item::ModuleExtension::has_extension(&mut new_mod, $extension);
+                zamm_yang::tao::form::rust_item::Module::has_extension(&mut new_mod, $extension);
             )*
         }
     };

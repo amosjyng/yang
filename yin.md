@@ -378,11 +378,14 @@ aa(member).mark_nonhereditary_attr();
 Rust modules sometimes re-export things so that it looks like it's coming from that module.
 
 ```rust
-define_child!(
-    re_exports,
-    attribute,
-    "Marks the owner module as re-exporting the value symbol."
+add_attr!(
+    re_export <= attribute,
+    module,
+    str_concept,
+    "Marks the owner module as re-exporting the value symbol.",
+    "a symbol to be re-exported from this module."
 );
+aa(re_export).mark_multi_valued_attr();
 ```
 
 It seems to make sense to group a concept and its descendants inside the same module. For such modules, we'll mark the concept as the most prominent member of the module.

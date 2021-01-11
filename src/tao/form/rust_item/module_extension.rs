@@ -1,9 +1,8 @@
-use crate::tao::form::rust_item::data::StringConcept;
 use crate::tao::form::rust_item::Module;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
-use crate::tao::relation::attribute::{ReExports, SupportsMembership};
+use crate::tao::relation::attribute::{SupportsMembership};
 use std::rc::Rc;
-use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
+use zamm_yin::node_wrappers::{CommonNodeTrait};
 use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::form::FormTrait;
 
@@ -30,30 +29,16 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait + SupportsMembership {
             .map(|f| Module::from(f.id()))
             .collect()
     }
+}
 
-    /// Add a new symbol to re-export from this module.
-    fn re_export(&mut self, symbol: &str) {
-        let mut re_export_symbol = StringConcept::new();
-        re_export_symbol.set_value(symbol.to_owned());
-        self.add_outgoing(ReExports::TYPE_ID, &re_export_symbol);
-    }
-
-    /// Retrieve all symbols re-exported by this module.
-    fn re_exports(&self) -> Vec<Rc<str>> {
-        // no need to worry about inheritance because modules don't inherit from each other
-        self.outgoing_nodes(ReExports::TYPE_ID)
-            .iter()
-            .map(|f| Rc::from(StringConcept::from(*f).value().unwrap().as_str()))
-            .collect()
-    }
-
+impl Module {
     /// If the submodule is locally defined, then defines it. Marks the trait for re-export.
-    fn has_extension(&mut self, extension: &str) {
+    pub fn has_extension(&mut self, extension: &str) {
         let import_path = extension.split("::").collect::<Vec<&str>>();
         if import_path.len() == 2 {
             self.add_submodule(import_path.first().unwrap());
         }
-        self.re_export(extension);
+        self.add_re_export(extension);
     }
 }
 
@@ -78,14 +63,6 @@ mod tests {
                 .collect::<Vec<Option<Rc<str>>>>(),
             vec![Some(Rc::from("submod"))]
         );
-    }
-
-    #[test]
-    fn add_and_retrieve_re_exports() {
-        initialize_kb();
-        let mut module = Module::new();
-        module.re_export("submod::X");
-        assert_eq!(module.re_exports(), vec![Rc::from("submod::X")]);
     }
 
     #[test]
