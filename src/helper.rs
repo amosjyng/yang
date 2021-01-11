@@ -1,4 +1,4 @@
-use crate::tao::archetype::DataArchetype;
+use crate::tao::archetype::rust_item_archetype::DataArchetype;
 use crate::tao::callbacks::implements;
 use crate::tao::perspective::KnowledgeGraphNode;
 use std::cell::Cell;

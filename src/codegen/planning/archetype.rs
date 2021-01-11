@@ -13,9 +13,9 @@ use crate::codegen::template::concept::form::{add_form_fragment, FormFormatConfi
 use crate::codegen::template::concept::tao::{tao_file_fragment, TaoConfig};
 use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
-use crate::tao::archetype::DataArchetype;
-use crate::tao::form::data::Data;
-use crate::tao::form::{Crate, CrateExtension};
+use crate::tao::archetype::rust_item_archetype::DataArchetype;
+use crate::tao::form::rust_item::data::Data;
+use crate::tao::form::rust_item::{Crate, CrateExtension};
 use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
 use crate::tao::Implement;
 use heck::{KebabCase, SnakeCase};

@@ -3,7 +3,7 @@ use super::in_own_submodule;
 use crate::codegen::template::concept::archetype_module::{
     code_archetype_module, ArchetypeModuleConfig,
 };
-use crate::tao::form::{Module, ModuleExtension};
+use crate::tao::form::rust_item::{Module, ModuleExtension};
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
 use crate::tao::Implement;
 use zamm_yin::node_wrappers::CommonNodeTrait;

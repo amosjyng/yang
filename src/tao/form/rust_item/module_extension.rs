@@ -1,5 +1,5 @@
-use crate::tao::form::data::StringConcept;
-use crate::tao::form::Module;
+use crate::tao::form::rust_item::data::StringConcept;
+use crate::tao::form::rust_item::Module;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::{ReExports, SupportsMembership};
 use std::rc::Rc;
@@ -26,7 +26,7 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait + SupportsMembership {
     fn submodules(&self) -> Vec<Module> {
         self.members()
             .iter()
-            .filter(|f| f.has_ancestor(Module::archetype()))
+            .filter(|f| f.has_ancestor(Module::archetype().into()))
             .map(|f| Module::from(f.id()))
             .collect()
     }

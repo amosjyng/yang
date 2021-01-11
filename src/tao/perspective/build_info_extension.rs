@@ -1,6 +1,6 @@
 use super::BuildInfo;
-use crate::tao::form::data::StringConcept;
-use crate::tao::form::{Crate, CrateExtension, Module};
+use crate::tao::form::rust_item::data::StringConcept;
+use crate::tao::form::rust_item::{Crate, CrateExtension, Module};
 use crate::tao::relation::attribute::{
     ImplementationName, Member, MostProminentMember, SupportsMembership,
 };
@@ -35,7 +35,7 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
             .incoming_nodes(Member::TYPE_ID)
             .iter()
             .map(|n| Form::from(n.id()))
-            .find(|f| f.has_ancestor(Crate::archetype()))
+            .find(|f| f.has_ancestor(Crate::archetype().into()))
             .map(|c| Crate::from(c.id()).implementation_name())
             .flatten()
     }

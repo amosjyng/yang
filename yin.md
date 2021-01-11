@@ -4,6 +4,16 @@
 
 I've [mentioned](https://github.com/amosjyng/yin/blob/master/yin.md) Yang a lot already, but I've never formally introduced the two of you. Meet Yang, a code-generation tool. Traditional, worldly, and experienced, he knows all about the cool spots in his little digital neighborhood, all the idiosyncrasies and quirks of his down-to-earth neighbors. Ever the ruthless pragmatic, he has a healthy disregard for the pious rectitude of the compilers. He wishes badly to explore the world outside, but he is fated to stay in this little Rustic village until Yin comes for a visit.
 
+As small as it may be, the little village of Rust forms its own universe of sorts. We would do well to call explicit attention to this.
+
+```rust
+define_child!(
+    rust_item,
+    form,
+    "An item recognized by the Rust programming language."
+);
+```
+
 ### Data
 
 One archetype type we haven't discussed yet is `Data`, perhaps roughly analogous to the linguistic concept of a "noun." What do we generally start out describing as nouns? Physical objects in the physical world.
@@ -15,7 +25,7 @@ The same can be said for the bits in Yin and Yang's world. Everything is ultimat
 ```rust
 define_child!(
     data,
-    form,
+    rust_item,
     "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
 );
 ```
@@ -63,6 +73,8 @@ KnowledgeGraphNode::from(number.id()).mark_data_analogue();
 Every type of data usually has a "default" value that we think of when constructing one from scratch.
 
 ```rust
+let mut meta_rust_item = rust_item.specific_meta();
+meta_rust_item.set_internal_name_str("rust-item-archetype");
 let mut meta_data = data.specific_meta();
 
 add_attr!(
@@ -333,7 +345,7 @@ Rust groups things by modules.
 ```rust
 define_child!(
     module,
-    form,
+    rust_item,
     "Concept representing a Rust module."
 );
 ```
@@ -410,7 +422,7 @@ So to finish up with build information that applies to any implemented concept, 
 ```rust
 define_child!(
     crate_concept,
-    form,
+    rust_item,
     "Crate that a concept was built as a part of."
 );
 crate_concept.set_internal_name_str("crate");
@@ -471,10 +483,17 @@ This also means redefining the modules for concepts that were first introduced i
 
 ```rust
 let mut form_mod = form.impl_mod("All things that can be interacted with have form.");
-form_mod.has_extension("crate_extension::CrateExtension");
-form_mod.has_extension("module_extension::ModuleExtension");
 form_mod.re_export("zamm_yin::tao::form::FormTrait");
 
+module!(
+    rust_item,
+    "Elements of the Rust programming language.",
+    [
+        "crate_extension::CrateExtension",
+        "module_extension::ModuleExtension"
+    ]
+);
+module!(data, "Rust data elements.");
 module!(relation, "Relations between the forms.");
 module!(flag, "Relations involving only one form.");
 
@@ -494,8 +513,8 @@ archetype_mod.re_export("zamm_yin::tao::archetype::ArchetypeFormTrait");
 archetype_mod.re_export("zamm_yin::tao::archetype::AttributeArchetypeFormTrait");
 
 module!(
-    data,
-    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
+    meta_rust_item,
+    "Metadata about Rust elements, such as where they can be found in the Rust ecosystem."
 );
 ```
 
@@ -536,6 +555,5 @@ Additional imports not used by Yin:
 
 ```rust
 use zamm_yang::add_attr;
-use zamm_yang::tao::form::ModuleExtension;
 use zamm_yang::tao::form::data::DataExtension;
 ```

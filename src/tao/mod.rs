@@ -8,8 +8,8 @@ mod implement_form;
 pub mod perspective;
 pub mod relation;
 
-use crate::tao::form::data::{Number, StringConcept};
-use crate::tao::form::{Crate, CrateExtension};
+use crate::tao::form::rust_item::data::{Number, StringConcept};
+use crate::tao::form::rust_item::{Crate, CrateExtension};
 use auto_init::initialize_types;
 pub use auto_init::YIN_MAX_ID;
 pub use implement_extension::ImplementExtension;
