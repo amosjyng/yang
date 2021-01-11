@@ -61,7 +61,7 @@ mod tests {
     use super::*;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
     use zamm_yin::tao::form::Form;
-    use zamm_yin::tao::initialize_kb;
+    use crate::tao::initialize_kb;
 
     #[test]
     fn retrieve_implementations() {
