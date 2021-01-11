@@ -77,14 +77,14 @@ add_attr!(
 For strings, this would be the empty string:
 
 ```rust
-string_concept.set_default_value("String::new()");
-str_concept.set_default_value("\"\"");
+da(string_concept).set_default_value("String::new()");
+da(str_concept).set_default_value("\"\"");
 ```
 
 For numbers, this would be zero:
 
 ```rust
-number.set_default_value("0");
+da(number).set_default_value("0");
 ```
 
 This next bit is more of a Yang thing, but we'll define it here anyways to keep everything in one place. We need to refer to these data structures somehow in our code, and the "how" is to call them by their name as they're known in Rust.
@@ -98,9 +98,9 @@ add_attr!(
     "the name of the Rust primitive that this concept represents."
 );
 
-string_concept.set_rust_primitive("String");
-str_concept.set_rust_primitive("str");
-number.set_rust_primitive("usize");
+da(string_concept).set_rust_primitive("String");
+da(str_concept).set_rust_primitive("str");
+da(number).set_rust_primitive("usize");
 ```
 
 This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
@@ -116,7 +116,7 @@ add_attr!(
     "the unboxed version of this primitive."
 );
 
-str_concept.set_unboxed_representation("&str");
+da(str_concept).set_unboxed_representation("&str");
 ```
 
 Since the reason was that `str` is unsized, we'll let the user mark it as such as well:
@@ -128,7 +128,7 @@ add_flag!(
     "Whether or not this data structure has a known size at compile-time.",
     "having a known size at compile-time."
 );
-unsized_flag.set_internal_name_str("unsized");
+unsized_flag.set_internal_name("unsized");
 ```
 
 Last but not least, testing is important. While the default value is a good place to start, we'll want to come up with other values as well to test with. Ideally, we can simply figure out how to generate them, but for now we'll just specify an alternative value to use other than the default. This alternative value should be unique in the codebase, so that a grep for it will quickly return this spot as documentation.
@@ -142,9 +142,9 @@ add_attr!(
     "the the Rust code representation for the dummy test value of this concept."
 );
 
-string_concept.set_dummy_value("\"test-dummy-string\".to_owned()");
-str_concept.set_dummy_value("\"test-dummy-str\"");
-number.set_dummy_value("17");
+da(string_concept).set_dummy_value("\"test-dummy-string\".to_owned()");
+da(str_concept).set_dummy_value("\"test-dummy-str\"");
+da(number).set_dummy_value("17");
 ```
 
 ### Implementations
@@ -413,7 +413,7 @@ define_child!(
     form,
     "Crate that a concept was built as a part of."
 );
-crate_concept.set_internal_name_str("crate");
+crate_concept.set_internal_name("crate");
 ```
 
 We can reuse the existing generic `HasMember` relation for describing the relationship between a concept and its crate, because there is nothing special about this particular membership scenario that warrants a separate membership concept specifically for this.
@@ -475,7 +475,8 @@ module!(
     "All things that can be interacted with have form.",
     [
         "crate_extension::CrateExtension",
-        "module_extension::ModuleExtension"
+        "module_extension::ModuleExtension",
+        "zamm_yin::tao::form::FormTrait"
     ]
 );
 module!(relation, "Relations between the forms.");
@@ -483,7 +484,10 @@ module!(flag, "Relations involving only one form.");
 module!(
     attribute,
     "Relations between two forms.",
-    ["supports_membership::SupportsMembership"]
+    [
+        "supports_membership::SupportsMembership",
+        "zamm_yin::tao::relation::attribute::AttributeTrait"
+    ]
 );
 module!(
     has_property,
@@ -492,7 +496,12 @@ module!(
 module!(
     archetype,
     "Types of forms, as opposed to the forms themselves.",
-    ["create_implementation::CreateImplementation"]
+    [
+        "create_implementation::CreateImplementation",
+        "zamm_yin::tao::archetype::ArchetypeTrait",
+        "zamm_yin::tao::archetype::ArchetypeFormTrait",
+        "zamm_yin::tao::archetype::AttributeArchetypeFormTrait"
+    ]
 );
 module!(
     data,
@@ -509,7 +518,7 @@ We should really save the build info, so that one day we will no longer need to 
 This is the version of Yang used to make this build happen:
 
 ```toml
-zamm_yang = "=0.1.10"
+zamm_yang = "0.2.0"
 ```
 
 Yang does his best to be backwards-compatible, so we should let old Yang know that this is new Yang speaking:
@@ -537,5 +546,5 @@ Additional imports not used by Yin:
 
 ```rust
 use zamm_yang::add_attr;
-use zamm_yang::tao::form::data::DataExtension;
+use zamm_yang::helper::da;
 ```
