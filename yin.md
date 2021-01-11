@@ -99,7 +99,7 @@ For numbers, this would be zero:
 number.set_default_value("0");
 ```
 
-This next bit is more of a Yang thing, but we'll define it here anyways to keep everything in one place. We need to refer to these data structures somehow in our code, and the "how" is to call them by their name as they're known in Rust.
+We need to refer to these data structures somehow in our code, and the "how" is to call them by their name as they're known in Rust.
 
 ```rust
 add_attr!(
