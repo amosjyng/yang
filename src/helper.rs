@@ -51,7 +51,7 @@ macro_rules! module {
         {
             let mut new_mod = $name.impl_mod($doc);
             $(
-                new_mod.has_extension($extension);
+                zamm_yang::tao::form::rust_item::ModuleExtension::has_extension(&mut new_mod, $extension);
             )*
         }
     };
@@ -85,10 +85,13 @@ macro_rules! add_flag {
         define_child!($name, $parent);
         zamm_yang::tao::archetype::AttributeArchetype::from($name.id())
             .set_owner_archetype(&$owner);
-        $owner.add_flag(&$name);
+        zamm_yang::tao::archetype::ArchetypeFormTrait::add_flag(&mut $owner, &$name);
         {
             let mut new_impl = $name.implement_with_doc($doc);
-            new_impl.dual_document($dual_doc);
+            zamm_yang::tao::action::Implement::set_dual_purpose_documentation(
+                &mut new_impl,
+                $dual_doc,
+            );
         }
     };
 }
