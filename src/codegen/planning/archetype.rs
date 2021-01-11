@@ -10,7 +10,7 @@ use crate::codegen::template::concept::attribute_property::{
 use crate::codegen::template::concept::data::{add_data_fragments, DataFormatConfig};
 use crate::codegen::template::concept::flag::{add_flag_to_impl, FlagConfig};
 use crate::codegen::template::concept::form::{add_form_fragment, FormFormatConfig};
-use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
+use crate::codegen::template::concept::tao::{tao_file_fragment, TaoConfig};
 use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::archetype::DataArchetype;
@@ -71,16 +71,6 @@ fn generic_config(
     let this = concept_to_struct(&target, codegen_cfg.yin);
     let internal_name = this.name.to_kebab_case();
     let form = form_for(target, codegen_cfg);
-
-    let internal_name_cfg = if Crate::yin().version_at_least(0, 2, 0) {
-        InternalNameConfig::YIN_AT_LEAST_0_2_0
-    } else if Crate::yin().version_at_least(0, 1, 4) {
-        InternalNameConfig::YIN_AT_LEAST_0_1_4
-    } else if Crate::yin().version_at_least(0, 1, 1) {
-        InternalNameConfig::YIN_AT_LEAST_0_1_1
-    } else {
-        InternalNameConfig::DEFAULT
-    };
 
     let doc = match &request.documentation() {
         Some(d) => format!("\n{}", into_docstring(&d, CODE_WIDTH)),
@@ -149,7 +139,6 @@ fn generic_config(
         imports,
         this,
         internal_name,
-        internal_name_cfg,
         form,
         parent_name: parent_struct.name,
         parent_import: parent_struct.import,
