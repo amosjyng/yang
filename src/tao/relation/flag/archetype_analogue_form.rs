@@ -1,12 +1,13 @@
 use std::convert::{From, TryFrom};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+use std::ops::{Deref, DerefMut};
 use zamm_yin::node_wrappers::{debug_wrapper, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::relation::flag::Flag;
-use zamm_yin::tao::YIN_MAX_ID;
-use zamm_yin::Wrapper;
+use zamm_yin::tao::relation::Relation;
+use zamm_yin::tao::{Tao, YIN_MAX_ID};
 
 /// Marks an archetype and all its descendants as requiring archetype-specific
 /// logic during generation.
@@ -43,28 +44,42 @@ impl<'a> TryFrom<&'a str> for ArchetypeAnalogue {
     }
 }
 
-impl Wrapper for ArchetypeAnalogue {
-    type BaseType = FinalNode;
-
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
-
-impl<'a> ArchetypeTrait<'a> for ArchetypeAnalogue {
+impl ArchetypeTrait for ArchetypeAnalogue {
     type ArchetypeForm = Archetype;
     type Form = ArchetypeAnalogue;
 
-    const TYPE_ID: usize = YIN_MAX_ID + 14;
+    const TYPE_ID: usize = YIN_MAX_ID + 26;
     const TYPE_NAME: &'static str = "archetype-analogue";
     const PARENT_TYPE_ID: usize = Flag::TYPE_ID;
 }
 
+impl Deref for ArchetypeAnalogue {
+    type Target = FinalNode;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
+impl DerefMut for ArchetypeAnalogue {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
+    }
+}
+
 impl FormTrait for ArchetypeAnalogue {}
+
+impl From<ArchetypeAnalogue> for Tao {
+    fn from(this: ArchetypeAnalogue) -> Tao {
+        Tao::from(this.base)
+    }
+}
+
+impl From<ArchetypeAnalogue> for Relation {
+    fn from(this: ArchetypeAnalogue) -> Relation {
+        Relation::from(this.base)
+    }
+}
 
 impl From<ArchetypeAnalogue> for Flag {
     fn from(this: ArchetypeAnalogue) -> Flag {
@@ -89,7 +104,7 @@ mod tests {
             ArchetypeAnalogue::TYPE_ID
         );
         assert_eq!(
-            ArchetypeAnalogue::archetype().internal_name_str(),
+            ArchetypeAnalogue::archetype().internal_name(),
             Some(Rc::from(ArchetypeAnalogue::TYPE_NAME))
         );
     }
@@ -98,7 +113,7 @@ mod tests {
     fn from_name() {
         initialize_kb();
         let mut concept = ArchetypeAnalogue::new();
-        concept.set_internal_name_str("A");
+        concept.set_internal_name("A");
         assert_eq!(
             ArchetypeAnalogue::try_from("A").map(|c| c.id()),
             Ok(concept.id())
@@ -128,6 +143,6 @@ mod tests {
     fn test_wrapper_implemented() {
         initialize_kb();
         let concept = ArchetypeAnalogue::new();
-        assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
+        assert_eq!(concept.deref(), &FinalNode::from(concept.id()));
     }
 }

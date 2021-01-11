@@ -1,10 +1,10 @@
-use super::Implement;
 use crate::codegen::planning::{
     archetype_file_path, code_archetype, code_module, handle_init, module_file_path,
 };
 use crate::codegen::track_autogen::save_autogen;
 use crate::codegen::{output_code, CodegenConfig};
-use crate::tao::form::{Crate, CrateExtension, Module};
+use crate::tao::action::Implement;
+use crate::tao::form::rust_item::{Crate, CrateExtension, Module};
 use crate::tao::perspective::KnowledgeGraphNode;
 use colored::*;
 use zamm_yin::node_wrappers::CommonNodeTrait;
@@ -25,14 +25,14 @@ pub fn implements() -> Box<dyn Iterator<Item = Implement>> {
 /// Retrieve implementation requests that pertain to archetypes.
 fn archetypes_to_implement() -> Vec<Implement> {
     implements()
-        .filter(|i| !i.target().unwrap().has_ancestor(Module::archetype()))
+        .filter(|i| !i.target().unwrap().has_ancestor(Module::archetype().into()))
         .collect()
 }
 
 /// Retrieve implementation requests that pertain to modules.
 fn modules_to_implement() -> Vec<Implement> {
     implements()
-        .filter(|i| i.target().unwrap().has_ancestor(Module::archetype()))
+        .filter(|i| i.target().unwrap().has_ancestor(Module::archetype().into()))
         .collect()
 }
 

@@ -1,12 +1,13 @@
 use std::convert::{From, TryFrom};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+use std::ops::{Deref, DerefMut};
 use zamm_yin::node_wrappers::{debug_wrapper, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::relation::flag::Flag;
-use zamm_yin::tao::YIN_MAX_ID;
-use zamm_yin::Wrapper;
+use zamm_yin::tao::relation::Relation;
+use zamm_yin::tao::{Tao, YIN_MAX_ID};
 
 /// Marks a concept as being defined in an imported file.
 #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -42,28 +43,42 @@ impl<'a> TryFrom<&'a str> for Imported {
     }
 }
 
-impl Wrapper for Imported {
-    type BaseType = FinalNode;
-
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
-
-impl<'a> ArchetypeTrait<'a> for Imported {
+impl ArchetypeTrait for Imported {
     type ArchetypeForm = Archetype;
     type Form = Imported;
 
-    const TYPE_ID: usize = YIN_MAX_ID + 10;
+    const TYPE_ID: usize = YIN_MAX_ID + 22;
     const TYPE_NAME: &'static str = "imported";
     const PARENT_TYPE_ID: usize = Flag::TYPE_ID;
 }
 
+impl Deref for Imported {
+    type Target = FinalNode;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
+impl DerefMut for Imported {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
+    }
+}
+
 impl FormTrait for Imported {}
+
+impl From<Imported> for Tao {
+    fn from(this: Imported) -> Tao {
+        Tao::from(this.base)
+    }
+}
+
+impl From<Imported> for Relation {
+    fn from(this: Imported) -> Relation {
+        Relation::from(this.base)
+    }
+}
 
 impl From<Imported> for Flag {
     fn from(this: Imported) -> Flag {
@@ -85,7 +100,7 @@ mod tests {
         initialize_kb();
         assert_eq!(Imported::archetype().id(), Imported::TYPE_ID);
         assert_eq!(
-            Imported::archetype().internal_name_str(),
+            Imported::archetype().internal_name(),
             Some(Rc::from(Imported::TYPE_NAME))
         );
     }
@@ -94,7 +109,7 @@ mod tests {
     fn from_name() {
         initialize_kb();
         let mut concept = Imported::new();
-        concept.set_internal_name_str("A");
+        concept.set_internal_name("A");
         assert_eq!(Imported::try_from("A").map(|c| c.id()), Ok(concept.id()));
         assert!(Imported::try_from("B").is_err());
     }
@@ -118,6 +133,6 @@ mod tests {
     fn test_wrapper_implemented() {
         initialize_kb();
         let concept = Imported::new();
-        assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
+        assert_eq!(concept.deref(), &FinalNode::from(concept.id()));
     }
 }

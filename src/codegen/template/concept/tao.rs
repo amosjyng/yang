@@ -2,77 +2,10 @@ use super::util::{add_assert, add_assert_frags, new_kb_test};
 use crate::codegen::template::basic::{
     AppendedFragment, AtomicFragment, FileFragment, ImplementationFragment, VecFragment,
 };
-use crate::codegen::template::concept::wrapper;
-use crate::codegen::template::concept::wrapper::WrapperConfig;
 use crate::codegen::StructConfig;
 use indoc::{formatdoc, indoc};
 use std::cell::RefCell;
 use std::rc::Rc;
-
-/// Backwards-compatibility logic for the internal API.
-#[derive(Clone)]
-pub struct InternalNameConfig {
-    /// Getter function for the internal name.
-    pub getter: &'static str,
-    /// Setter function for the internal name.
-    pub setter: &'static str,
-    /// Suffix to get strings into the right place.
-    pub suffix: &'static str,
-    /// Getter for added attributes.
-    pub added_attributes: &'static str,
-    /// Getter for all attributes.
-    pub all_attributes: &'static str,
-    /// Import for above attribute functions.
-    pub attr_import: Option<&'static str>,
-}
-
-impl InternalNameConfig {
-    /// Default internal API config, compatible with all Yin 0.1.x versions.
-    pub const DEFAULT: Self = Self {
-        getter: "internal_name",
-        setter: "set_internal_name",
-        suffix: ".to_owned()",
-        added_attributes: "introduced_attribute_archetypes",
-        all_attributes: "attribute_archetypes",
-        attr_import: Some("zamm_yin::tao::form::FormTrait"),
-    };
-
-    /// Internal API config for Yin versions >= 0.1.1.
-    pub const YIN_AT_LEAST_0_1_1: Self = Self {
-        getter: "internal_name_str",
-        setter: "set_internal_name_str",
-        suffix: "",
-        added_attributes: "introduced_attribute_archetypes",
-        all_attributes: "attribute_archetypes",
-        attr_import: Some("zamm_yin::tao::form::FormTrait"),
-    };
-
-    /// Internal API config for Yin versions >= 0.1.4.
-    pub const YIN_AT_LEAST_0_1_4: Self = Self {
-        getter: "internal_name_str",
-        setter: "set_internal_name_str",
-        suffix: "",
-        added_attributes: "added_attributes",
-        all_attributes: "attributes",
-        attr_import: None,
-    };
-
-    /// Internal API config for Yin versions >= 0.2.0.
-    pub const YIN_AT_LEAST_0_2_0: Self = Self {
-        getter: "internal_name",
-        setter: "set_internal_name",
-        suffix: "",
-        added_attributes: "added_attributes",
-        all_attributes: "attributes",
-        attr_import: None,
-    };
-}
-
-impl Default for InternalNameConfig {
-    fn default() -> Self {
-        Self::DEFAULT
-    }
-}
 
 /// Templating config values for all concepts.
 #[derive(Clone)]
@@ -83,8 +16,6 @@ pub struct TaoConfig {
     pub this: StructConfig,
     /// Name of the concept.
     pub internal_name: String,
-    /// Config for which API to use for internal names. For backwards compatibility.
-    pub internal_name_cfg: InternalNameConfig,
     /// The form representing the concept.
     pub form: StructConfig,
     /// Name of the parent class.
@@ -101,10 +32,6 @@ pub struct TaoConfig {
     pub introduced_attributes: Vec<String>,
     /// Imports for above list of introduced attributes.
     pub introduced_attribute_imports: Vec<String>,
-    /// Which wrapper API to use.
-    pub wrapper_cfg: WrapperConfig,
-    /// Whether or not to specify a lifetime for the Archetype trait implementation.
-    pub archetype_trait_lifetime: bool,
     /// Rustdoc for the class.
     pub doc: String,
     /// ID of the concept.
@@ -117,7 +44,6 @@ impl Default for TaoConfig {
             imports: Some("zamm_yin::tao::YIN_MAX_ID".to_owned()),
             this: StructConfig::default(),
             internal_name: "dummy".to_owned(),
-            internal_name_cfg: InternalNameConfig::DEFAULT,
             form: StructConfig::default(),
             parent_name: "Tao".to_owned(),
             parent_import: "tao::Tao".to_owned(),
@@ -126,8 +52,6 @@ impl Default for TaoConfig {
             all_attribute_imports: vec![],
             introduced_attributes: vec![],
             introduced_attribute_imports: vec![],
-            wrapper_cfg: WrapperConfig::default(),
-            archetype_trait_lifetime: true,
             doc: "".to_owned(),
             id: "1".to_owned(),
         }
@@ -151,14 +75,6 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
     if let Some(import) = &cfg.imports {
         imports.push(import.clone());
     }
-    if let Some(import) = &cfg.internal_name_cfg.attr_import {
-        imports.push(import.to_string());
-    }
-    let lifetime = if cfg.archetype_trait_lifetime {
-        "<'a>"
-    } else {
-        ""
-    };
 
     AtomicFragment {
         imports,
@@ -197,7 +113,7 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
                 }}
             }}
             
-            impl{lifetime} ArchetypeTrait{lifetime} for {name} {{
+            impl ArchetypeTrait for {name} {{
                 type ArchetypeForm = {archetype};
                 type Form = {form};
 
@@ -211,8 +127,7 @@ fn tao_fragment(cfg: &TaoConfig) -> AtomicFragment {
             internal_name = cfg.internal_name,
             parent = cfg.parent_name,
             archetype = cfg.archetype.name,
-            id = cfg.id,
-            lifetime = lifetime,
+            id = cfg.id
         },
     }
 }
@@ -242,16 +157,8 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
     );
     add_assert(
         &check_type_created,
-        format!(
-            "{name}::archetype().{getter}()",
-            name = name,
-            getter = cfg.internal_name_cfg.getter
-        ),
-        format!(
-            "Some(Rc::from({name}::TYPE_NAME{suffix}))",
-            name = name,
-            suffix = cfg.internal_name_cfg.suffix
-        ),
+        format!("{name}::archetype().internal_name()", name = name),
+        format!("Some(Rc::from({name}::TYPE_NAME))", name = name),
     );
 
     let from_name = new_kb_test(&mut test_frag, "from_name");
@@ -260,10 +167,8 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
         .append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc!(
             r#"
             let mut concept = {name}::new();
-            concept.{internal_name_setter}("A"{internal_name_suffix});"#,
-            name = name,
-            internal_name_setter = cfg.internal_name_cfg.setter,
-            internal_name_suffix = cfg.internal_name_cfg.suffix,
+            concept.set_internal_name("A");"#,
+            name = name
         )))));
     add_assert(
         &from_name,
@@ -285,9 +190,8 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
     add_assert_frags(
         &check_type_attributes,
         Rc::new(RefCell::new(AtomicFragment::new(format!(
-            "{name}::archetype().{added_attributes_f}()",
-            name = name,
-            added_attributes_f = cfg.internal_name_cfg.added_attributes
+            "{name}::archetype().added_attributes()",
+            name = name
         )))),
         Rc::new(RefCell::new(introduced_attrs)),
     );
@@ -298,9 +202,8 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
     add_assert_frags(
         &check_type_attributes,
         Rc::new(RefCell::new(AtomicFragment::new(format!(
-            "{name}::archetype().{all_attributes_f}()",
-            name = name,
-            all_attributes_f = cfg.internal_name_cfg.all_attributes
+            "{name}::archetype().attributes()",
+            name = name
         )))),
         Rc::new(RefCell::new(all_attrs)),
     );
@@ -320,37 +223,12 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
             fn test_wrapper_implemented() {{
                 initialize_kb();
                 let concept = {name}::new();
-                assert_eq!(concept.{deref}(), &FinalNode::from(concept.id()));
+                assert_eq!(concept.deref(), &FinalNode::from(concept.id()));
             }}"#,
             name = cfg.this.name,
-            deref = cfg.wrapper_cfg.deref,
         },
     })));
     test_frag
-}
-
-fn wrapper_fragment(cfg: &TaoConfig) -> ImplementationFragment {
-    let mut implementation = ImplementationFragment::new_trait_impl(
-        StructConfig::new("zamm_yin::Wrapper".to_owned()),
-        cfg.this.clone(),
-    );
-    implementation.append(Rc::new(RefCell::new(AtomicFragment {
-        imports: vec!["zamm_yin::node_wrappers::FinalNode".to_owned()],
-        atom: "type BaseType = FinalNode;".to_owned(),
-    })));
-    implementation.append(Rc::new(RefCell::new(AtomicFragment {
-        imports: vec![],
-        atom: indoc! {"
-            fn essence(&self) -> &FinalNode {
-                &self.base
-            }
-            fn essence_mut(&mut self) -> &mut FinalNode {
-                &mut self.base
-            }"}
-        .to_owned(),
-    })));
-    implementation.mark_same_file_as_struct();
-    implementation
 }
 
 fn deref_fragment(cfg: &TaoConfig) -> ImplementationFragment {
@@ -396,12 +274,8 @@ pub fn tao_file_fragment(cfg: &TaoConfig) -> FileFragment {
     let mut file = FileFragment::default();
     file.set_self_import(cfg.this.import.clone());
     file.append(Rc::new(RefCell::new(tao_fragment(cfg))));
-    if cfg.wrapper_cfg == wrapper::YIN_0_1_X {
-        file.append(Rc::new(RefCell::new(wrapper_fragment(cfg))));
-    } else {
-        file.append(Rc::new(RefCell::new(deref_fragment(cfg))));
-        file.append(Rc::new(RefCell::new(deref_mut_fragment(cfg))));
-    }
+    file.append(Rc::new(RefCell::new(deref_fragment(cfg))));
+    file.append(Rc::new(RefCell::new(deref_mut_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(tao_test_fragment(cfg))));
     file
 }
@@ -417,36 +291,17 @@ mod tests {
                 name: String::from("MyConcept"),
                 ..StructConfig::default()
             },
-            internal_name_cfg: InternalNameConfig::YIN_AT_LEAST_0_2_0,
             ..TaoConfig::default()
         }
     }
 
     #[test]
     fn test_default_internal_name_used() {
-        let code = tao_file_fragment(&TaoConfig {
-            internal_name_cfg: InternalNameConfig::DEFAULT,
-            ..TaoConfig::default()
-        })
-        .generate_code();
+        let code = tao_file_fragment(&TaoConfig::default()).generate_code();
         assert!(code.contains(".set_internal_name("));
         assert!(!code.contains(".set_internal_name_str("));
         assert!(code.contains(".internal_name("));
         assert!(!code.contains(".internal_name_str("));
-        assert!(code.contains(".to_owned()"));
-    }
-
-    #[test]
-    fn test_new_yin_internal_name_used() {
-        let code = tao_file_fragment(&TaoConfig {
-            internal_name_cfg: InternalNameConfig::YIN_AT_LEAST_0_1_1,
-            ..TaoConfig::default()
-        })
-        .generate_code();
-        assert!(!code.contains(".set_internal_name("));
-        assert!(code.contains(".set_internal_name_str("));
-        assert!(!code.contains(".internal_name("));
-        assert!(code.contains(".internal_name_str("));
         assert!(!code.contains(".to_owned()"));
     }
 

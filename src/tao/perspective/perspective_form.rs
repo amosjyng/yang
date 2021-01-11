@@ -1,11 +1,11 @@
 use std::convert::{From, TryFrom};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+use std::ops::{Deref, DerefMut};
 use zamm_yin::node_wrappers::{debug_wrapper, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::{Tao, YIN_MAX_ID};
-use zamm_yin::Wrapper;
 
 /// Describes a way of looking at things that is only well-defined within a
 /// specific context.
@@ -42,25 +42,27 @@ impl<'a> TryFrom<&'a str> for Perspective {
     }
 }
 
-impl Wrapper for Perspective {
-    type BaseType = FinalNode;
-
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
-
-impl<'a> ArchetypeTrait<'a> for Perspective {
+impl ArchetypeTrait for Perspective {
     type ArchetypeForm = Archetype;
     type Form = Perspective;
 
-    const TYPE_ID: usize = YIN_MAX_ID + 7;
+    const TYPE_ID: usize = YIN_MAX_ID + 19;
     const TYPE_NAME: &'static str = "perspective";
     const PARENT_TYPE_ID: usize = Tao::TYPE_ID;
+}
+
+impl Deref for Perspective {
+    type Target = FinalNode;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
+impl DerefMut for Perspective {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
+    }
 }
 
 impl FormTrait for Perspective {}
@@ -84,7 +86,7 @@ mod tests {
         initialize_kb();
         assert_eq!(Perspective::archetype().id(), Perspective::TYPE_ID);
         assert_eq!(
-            Perspective::archetype().internal_name_str(),
+            Perspective::archetype().internal_name(),
             Some(Rc::from(Perspective::TYPE_NAME))
         );
     }
@@ -93,7 +95,7 @@ mod tests {
     fn from_name() {
         initialize_kb();
         let mut concept = Perspective::new();
-        concept.set_internal_name_str("A");
+        concept.set_internal_name("A");
         assert_eq!(Perspective::try_from("A").map(|c| c.id()), Ok(concept.id()));
         assert!(Perspective::try_from("B").is_err());
     }
@@ -117,6 +119,6 @@ mod tests {
     fn test_wrapper_implemented() {
         initialize_kb();
         let concept = Perspective::new();
-        assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
+        assert_eq!(concept.deref(), &FinalNode::from(concept.id()));
     }
 }

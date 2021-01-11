@@ -1,13 +1,14 @@
-use crate::tao::Implement;
+use crate::tao::action::Implement;
 use std::convert::{From, TryFrom};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+use std::ops::{Deref, DerefMut};
 use zamm_yin::node_wrappers::{debug_wrapper, FinalNode};
 use zamm_yin::tao::archetype::{ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::tao::relation::attribute::{Attribute, AttributeTrait};
-use zamm_yin::tao::YIN_MAX_ID;
-use zamm_yin::Wrapper;
+use zamm_yin::tao::relation::Relation;
+use zamm_yin::tao::{Tao, YIN_MAX_ID};
 
 /// The target of an implement command.
 #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -43,28 +44,42 @@ impl<'a> TryFrom<&'a str> for Target {
     }
 }
 
-impl Wrapper for Target {
-    type BaseType = FinalNode;
-
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
-
-impl<'a> ArchetypeTrait<'a> for Target {
+impl ArchetypeTrait for Target {
     type ArchetypeForm = AttributeArchetype;
     type Form = Target;
 
-    const TYPE_ID: usize = YIN_MAX_ID + 2;
+    const TYPE_ID: usize = YIN_MAX_ID + 15;
     const TYPE_NAME: &'static str = "target";
     const PARENT_TYPE_ID: usize = Attribute::TYPE_ID;
 }
 
+impl Deref for Target {
+    type Target = FinalNode;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
+impl DerefMut for Target {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
+    }
+}
+
 impl FormTrait for Target {}
+
+impl From<Target> for Tao {
+    fn from(this: Target) -> Tao {
+        Tao::from(this.base)
+    }
+}
+
+impl From<Target> for Relation {
+    fn from(this: Target) -> Relation {
+        Relation::from(this.base)
+    }
+}
 
 impl From<Target> for Attribute {
     fn from(this: Target) -> Attribute {
@@ -92,7 +107,7 @@ mod tests {
         initialize_kb();
         assert_eq!(Target::archetype().id(), Target::TYPE_ID);
         assert_eq!(
-            Target::archetype().internal_name_str(),
+            Target::archetype().internal_name(),
             Some(Rc::from(Target::TYPE_NAME))
         );
     }
@@ -101,7 +116,7 @@ mod tests {
     fn from_name() {
         initialize_kb();
         let mut concept = Target::new();
-        concept.set_internal_name_str("A");
+        concept.set_internal_name("A");
         assert_eq!(Target::try_from("A").map(|c| c.id()), Ok(concept.id()));
         assert!(Target::try_from("B").is_err());
     }
@@ -128,17 +143,21 @@ mod tests {
     fn test_wrapper_implemented() {
         initialize_kb();
         let concept = Target::new();
-        assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
+        assert_eq!(concept.deref(), &FinalNode::from(concept.id()));
     }
 
     #[test]
+    #[allow(clippy::useless_conversion)]
     fn check_attribute_constraints() {
         initialize_kb();
         assert_eq!(
             Target::archetype().owner_archetype(),
-            Implement::archetype()
+            Implement::archetype().into()
         );
-        assert_eq!(Target::archetype().value_archetype(), Tao::archetype());
+        assert_eq!(
+            Target::archetype().value_archetype(),
+            Tao::archetype().into()
+        );
     }
 
     #[test]

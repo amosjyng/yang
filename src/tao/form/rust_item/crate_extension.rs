@@ -1,13 +1,11 @@
-use crate::tao::form::Crate;
+use crate::tao::form::rust_item::Crate;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
-use crate::tao::relation::attribute::{SupportsMembership, Version};
+use crate::tao::relation::attribute::SupportsMembership;
 use std::convert::TryFrom;
 use std::rc::Rc;
-use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
+use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
-use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::FormTrait;
-use zamm_yin::Wrapper;
 
 /// Trait to extend Crate functionality that has not been auto-generated.
 pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
@@ -33,34 +31,6 @@ pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
             })
     }
 
-    /// Set the crate version.
-    fn set_version(&mut self, version: &str) {
-        let mut version_string = StringConcept::new();
-        version_string.set_value(version.to_owned());
-        self.essence_mut()
-            .add_outgoing(Version::TYPE_ID, version_string.essence());
-    }
-
-    /// Get the crate version.
-    fn version(&self) -> Option<Rc<str>> {
-        // no need to worry about inheritance because crates don't inherit from each other.
-        self.essence()
-            .outgoing_nodes(Version::TYPE_ID)
-            .last()
-            .map(|f| Rc::from(StringConcept::from(*f).value().unwrap().as_str()))
-    }
-
-    /// Checks if the current crate version is at least the specified version.
-    fn version_at_least(&self, major: u64, minor: u64, patch: u64) -> bool {
-        match self.version() {
-            None => false,
-            Some(actual_version) => {
-                semver::Version::parse(&*actual_version).unwrap()
-                    >= semver::Version::from((major, minor, patch))
-            }
-        }
-    }
-
     /// Name for the Yin crate.
     const YIN_CRATE_NAME: &'static str = "zamm_yin";
     /// Name for the Yang crate.
@@ -81,6 +51,19 @@ pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
     /// Get the current crate as a concept.
     fn current() -> Crate {
         Crate::try_from(Self::CURRENT_CRATE_INTERNAL_NAME).unwrap()
+    }
+}
+
+impl Crate {
+    /// Checks if the current crate version is at least the specified version.
+    pub fn version_at_least(&self, major: u64, minor: u64, patch: u64) -> bool {
+        match self.version() {
+            None => false,
+            Some(actual_version) => {
+                semver::Version::parse(&*actual_version).unwrap()
+                    >= semver::Version::from((major, minor, patch))
+            }
+        }
     }
 }
 

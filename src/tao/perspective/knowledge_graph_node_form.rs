@@ -6,11 +6,11 @@ use crate::tao::relation::flag::{
 use std::convert::{From, TryFrom};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+use std::ops::{Deref, DerefMut};
 use zamm_yin::node_wrappers::{debug_wrapper, BaseNodeTrait, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
-use zamm_yin::tao::YIN_MAX_ID;
-use zamm_yin::Wrapper;
+use zamm_yin::tao::{Tao, YIN_MAX_ID};
 
 /// Look at all information as knowledge graph entities.
 #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -46,28 +46,36 @@ impl<'a> TryFrom<&'a str> for KnowledgeGraphNode {
     }
 }
 
-impl Wrapper for KnowledgeGraphNode {
-    type BaseType = FinalNode;
-
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
-
-impl<'a> ArchetypeTrait<'a> for KnowledgeGraphNode {
+impl ArchetypeTrait for KnowledgeGraphNode {
     type ArchetypeForm = Archetype;
     type Form = KnowledgeGraphNode;
 
-    const TYPE_ID: usize = YIN_MAX_ID + 8;
+    const TYPE_ID: usize = YIN_MAX_ID + 20;
     const TYPE_NAME: &'static str = "knowledge-graph-node";
     const PARENT_TYPE_ID: usize = Perspective::TYPE_ID;
 }
 
+impl Deref for KnowledgeGraphNode {
+    type Target = FinalNode;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
+impl DerefMut for KnowledgeGraphNode {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
+    }
+}
+
 impl FormTrait for KnowledgeGraphNode {}
+
+impl From<KnowledgeGraphNode> for Tao {
+    fn from(this: KnowledgeGraphNode) -> Tao {
+        Tao::from(this.base)
+    }
+}
 
 impl From<KnowledgeGraphNode> for Perspective {
     fn from(this: KnowledgeGraphNode) -> Perspective {
@@ -79,85 +87,75 @@ impl KnowledgeGraphNode {
     /// Whether this is marked as having been newly defined as part of the
     /// current build.
     pub fn is_newly_defined(&self) -> bool {
-        self.essence()
-            .inheritance_wrapper()
-            .base_wrapper()
-            .has_flag(NewlyDefined::TYPE_ID)
+        self.deref().base_wrapper().has_flag(NewlyDefined::TYPE_ID)
     }
 
     /// Mark this as having been newly defined as part of the current build.
     pub fn mark_newly_defined(&mut self) {
-        self.essence_mut().add_flag(NewlyDefined::TYPE_ID);
+        self.deref_mut().add_flag(NewlyDefined::TYPE_ID);
     }
 
     /// Whether this is marked as imported from another build.
     pub fn is_imported(&self) -> bool {
-        self.essence()
-            .inheritance_wrapper()
-            .base_wrapper()
-            .has_flag(Imported::TYPE_ID)
+        self.deref().base_wrapper().has_flag(Imported::TYPE_ID)
     }
 
     /// Mark this as imported from another build.
     pub fn mark_imported(&mut self) {
-        self.essence_mut().add_flag(Imported::TYPE_ID);
+        self.deref_mut().add_flag(Imported::TYPE_ID);
     }
 
     /// Whether this is marked as logically analogous to an attribute node.
     pub fn is_attribute_analogue(&self) -> bool {
-        self.essence().has_flag(AttributeAnalogue::TYPE_ID)
+        self.deref().has_flag(AttributeAnalogue::TYPE_ID)
     }
 
     /// Mark this as logically analogous to an attribute node.
     pub fn mark_attribute_analogue(&mut self) {
-        self.essence_mut().add_flag(AttributeAnalogue::TYPE_ID);
+        self.deref_mut().add_flag(AttributeAnalogue::TYPE_ID);
     }
 
     /// Whether this is marked as logically analogous to the root node.
     pub fn is_root_analogue(&self) -> bool {
-        self.essence()
-            .inheritance_wrapper()
-            .base_wrapper()
-            .has_flag(RootAnalogue::TYPE_ID)
+        self.deref().base_wrapper().has_flag(RootAnalogue::TYPE_ID)
     }
 
     /// Mark this as logically analogous to the root node.
     pub fn mark_root_analogue(&mut self) {
-        self.essence_mut().add_flag(RootAnalogue::TYPE_ID);
+        self.deref_mut().add_flag(RootAnalogue::TYPE_ID);
     }
 
     /// Whether this is marked as logically analogous to the root archetype
     /// node.
     pub fn is_root_archetype_analogue(&self) -> bool {
-        self.essence()
-            .inheritance_wrapper()
+        self.deref()
             .base_wrapper()
             .has_flag(RootArchetypeAnalogue::TYPE_ID)
     }
 
     /// Mark this as logically analogous to the root archetype node.
     pub fn mark_root_archetype_analogue(&mut self) {
-        self.essence_mut().add_flag(RootArchetypeAnalogue::TYPE_ID);
+        self.deref_mut().add_flag(RootArchetypeAnalogue::TYPE_ID);
     }
 
     /// Whether this is marked as logically analogous to an archetype node.
     pub fn is_archetype_analogue(&self) -> bool {
-        self.essence().has_flag(ArchetypeAnalogue::TYPE_ID)
+        self.deref().has_flag(ArchetypeAnalogue::TYPE_ID)
     }
 
     /// Mark this as logically analogous to an archetype node.
     pub fn mark_archetype_analogue(&mut self) {
-        self.essence_mut().add_flag(ArchetypeAnalogue::TYPE_ID);
+        self.deref_mut().add_flag(ArchetypeAnalogue::TYPE_ID);
     }
 
     /// Whether this is marked as logically analogous to a data node.
     pub fn is_data_analogue(&self) -> bool {
-        self.essence().has_flag(DataAnalogue::TYPE_ID)
+        self.deref().has_flag(DataAnalogue::TYPE_ID)
     }
 
     /// Mark this as logically analogous to a data node.
     pub fn mark_data_analogue(&mut self) {
-        self.essence_mut().add_flag(DataAnalogue::TYPE_ID);
+        self.deref_mut().add_flag(DataAnalogue::TYPE_ID);
     }
 }
 
@@ -178,7 +176,7 @@ mod tests {
             KnowledgeGraphNode::TYPE_ID
         );
         assert_eq!(
-            KnowledgeGraphNode::archetype().internal_name_str(),
+            KnowledgeGraphNode::archetype().internal_name(),
             Some(Rc::from(KnowledgeGraphNode::TYPE_NAME))
         );
     }
@@ -187,7 +185,7 @@ mod tests {
     fn from_name() {
         initialize_kb();
         let mut concept = KnowledgeGraphNode::new();
-        concept.set_internal_name_str("A");
+        concept.set_internal_name("A");
         assert_eq!(
             KnowledgeGraphNode::try_from("A").map(|c| c.id()),
             Ok(concept.id())
@@ -214,7 +212,7 @@ mod tests {
     fn test_wrapper_implemented() {
         initialize_kb();
         let concept = KnowledgeGraphNode::new();
-        assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
+        assert_eq!(concept.deref(), &FinalNode::from(concept.id()));
     }
 
     #[test]

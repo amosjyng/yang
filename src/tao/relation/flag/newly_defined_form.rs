@@ -1,12 +1,13 @@
 use std::convert::{From, TryFrom};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+use std::ops::{Deref, DerefMut};
 use zamm_yin::node_wrappers::{debug_wrapper, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::relation::flag::Flag;
-use zamm_yin::tao::YIN_MAX_ID;
-use zamm_yin::Wrapper;
+use zamm_yin::tao::relation::Relation;
+use zamm_yin::tao::{Tao, YIN_MAX_ID};
 
 /// Marks an archetype and all its descendants as having been newly defined as
 /// part of this particular build.
@@ -43,28 +44,42 @@ impl<'a> TryFrom<&'a str> for NewlyDefined {
     }
 }
 
-impl Wrapper for NewlyDefined {
-    type BaseType = FinalNode;
-
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
-
-impl<'a> ArchetypeTrait<'a> for NewlyDefined {
+impl ArchetypeTrait for NewlyDefined {
     type ArchetypeForm = Archetype;
     type Form = NewlyDefined;
 
-    const TYPE_ID: usize = YIN_MAX_ID + 9;
+    const TYPE_ID: usize = YIN_MAX_ID + 21;
     const TYPE_NAME: &'static str = "newly-defined";
     const PARENT_TYPE_ID: usize = Flag::TYPE_ID;
 }
 
+impl Deref for NewlyDefined {
+    type Target = FinalNode;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
+impl DerefMut for NewlyDefined {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
+    }
+}
+
 impl FormTrait for NewlyDefined {}
+
+impl From<NewlyDefined> for Tao {
+    fn from(this: NewlyDefined) -> Tao {
+        Tao::from(this.base)
+    }
+}
+
+impl From<NewlyDefined> for Relation {
+    fn from(this: NewlyDefined) -> Relation {
+        Relation::from(this.base)
+    }
+}
 
 impl From<NewlyDefined> for Flag {
     fn from(this: NewlyDefined) -> Flag {
@@ -86,7 +101,7 @@ mod tests {
         initialize_kb();
         assert_eq!(NewlyDefined::archetype().id(), NewlyDefined::TYPE_ID);
         assert_eq!(
-            NewlyDefined::archetype().internal_name_str(),
+            NewlyDefined::archetype().internal_name(),
             Some(Rc::from(NewlyDefined::TYPE_NAME))
         );
     }
@@ -95,7 +110,7 @@ mod tests {
     fn from_name() {
         initialize_kb();
         let mut concept = NewlyDefined::new();
-        concept.set_internal_name_str("A");
+        concept.set_internal_name("A");
         assert_eq!(
             NewlyDefined::try_from("A").map(|c| c.id()),
             Ok(concept.id())
@@ -125,6 +140,6 @@ mod tests {
     fn test_wrapper_implemented() {
         initialize_kb();
         let concept = NewlyDefined::new();
-        assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
+        assert_eq!(concept.deref(), &FinalNode::from(concept.id()));
     }
 }

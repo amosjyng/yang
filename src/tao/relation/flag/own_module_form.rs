@@ -1,12 +1,13 @@
 use std::convert::{From, TryFrom};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+use std::ops::{Deref, DerefMut};
 use zamm_yin::node_wrappers::{debug_wrapper, FinalNode};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::relation::flag::Flag;
-use zamm_yin::tao::YIN_MAX_ID;
-use zamm_yin::Wrapper;
+use zamm_yin::tao::relation::Relation;
+use zamm_yin::tao::{Tao, YIN_MAX_ID};
 
 /// Marks an archetype as living inside its own module, even if it doesn't have
 /// any defined child archetypes yet.
@@ -43,28 +44,42 @@ impl<'a> TryFrom<&'a str> for OwnModule {
     }
 }
 
-impl Wrapper for OwnModule {
-    type BaseType = FinalNode;
-
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
-
-impl<'a> ArchetypeTrait<'a> for OwnModule {
+impl ArchetypeTrait for OwnModule {
     type ArchetypeForm = Archetype;
     type Form = OwnModule;
 
-    const TYPE_ID: usize = YIN_MAX_ID + 22;
+    const TYPE_ID: usize = YIN_MAX_ID + 34;
     const TYPE_NAME: &'static str = "own-module";
     const PARENT_TYPE_ID: usize = Flag::TYPE_ID;
 }
 
+impl Deref for OwnModule {
+    type Target = FinalNode;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
+impl DerefMut for OwnModule {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
+    }
+}
+
 impl FormTrait for OwnModule {}
+
+impl From<OwnModule> for Tao {
+    fn from(this: OwnModule) -> Tao {
+        Tao::from(this.base)
+    }
+}
+
+impl From<OwnModule> for Relation {
+    fn from(this: OwnModule) -> Relation {
+        Relation::from(this.base)
+    }
+}
 
 impl From<OwnModule> for Flag {
     fn from(this: OwnModule) -> Flag {
@@ -86,7 +101,7 @@ mod tests {
         initialize_kb();
         assert_eq!(OwnModule::archetype().id(), OwnModule::TYPE_ID);
         assert_eq!(
-            OwnModule::archetype().internal_name_str(),
+            OwnModule::archetype().internal_name(),
             Some(Rc::from(OwnModule::TYPE_NAME))
         );
     }
@@ -95,7 +110,7 @@ mod tests {
     fn from_name() {
         initialize_kb();
         let mut concept = OwnModule::new();
-        concept.set_internal_name_str("A");
+        concept.set_internal_name("A");
         assert_eq!(OwnModule::try_from("A").map(|c| c.id()), Ok(concept.id()));
         assert!(OwnModule::try_from("B").is_err());
     }
@@ -122,6 +137,6 @@ mod tests {
     fn test_wrapper_implemented() {
         initialize_kb();
         let concept = OwnModule::new();
-        assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
+        assert_eq!(concept.deref(), &FinalNode::from(concept.id()));
     }
 }

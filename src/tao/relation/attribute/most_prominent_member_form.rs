@@ -1,13 +1,14 @@
-use crate::tao::form::Module;
+use crate::tao::form::rust_item::Module;
 use std::convert::{From, TryFrom};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+use std::ops::{Deref, DerefMut};
 use zamm_yin::node_wrappers::{debug_wrapper, FinalNode};
 use zamm_yin::tao::archetype::{ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::tao::relation::attribute::{Attribute, AttributeTrait};
-use zamm_yin::tao::YIN_MAX_ID;
-use zamm_yin::Wrapper;
+use zamm_yin::tao::relation::Relation;
+use zamm_yin::tao::{Tao, YIN_MAX_ID};
 
 /// The most prominent member of a Rust module. The module will take its name
 /// after this member.
@@ -44,28 +45,42 @@ impl<'a> TryFrom<&'a str> for MostProminentMember {
     }
 }
 
-impl Wrapper for MostProminentMember {
-    type BaseType = FinalNode;
-
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
-
-impl<'a> ArchetypeTrait<'a> for MostProminentMember {
+impl ArchetypeTrait for MostProminentMember {
     type ArchetypeForm = AttributeArchetype;
     type Form = MostProminentMember;
 
-    const TYPE_ID: usize = YIN_MAX_ID + 21;
+    const TYPE_ID: usize = YIN_MAX_ID + 33;
     const TYPE_NAME: &'static str = "most-prominent-member";
     const PARENT_TYPE_ID: usize = Attribute::TYPE_ID;
 }
 
+impl Deref for MostProminentMember {
+    type Target = FinalNode;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
+impl DerefMut for MostProminentMember {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
+    }
+}
+
 impl FormTrait for MostProminentMember {}
+
+impl From<MostProminentMember> for Tao {
+    fn from(this: MostProminentMember) -> Tao {
+        Tao::from(this.base)
+    }
+}
+
+impl From<MostProminentMember> for Relation {
+    fn from(this: MostProminentMember) -> Relation {
+        Relation::from(this.base)
+    }
+}
 
 impl From<MostProminentMember> for Attribute {
     fn from(this: MostProminentMember) -> Attribute {
@@ -96,7 +111,7 @@ mod tests {
             MostProminentMember::TYPE_ID
         );
         assert_eq!(
-            MostProminentMember::archetype().internal_name_str(),
+            MostProminentMember::archetype().internal_name(),
             Some(Rc::from(MostProminentMember::TYPE_NAME))
         );
     }
@@ -105,7 +120,7 @@ mod tests {
     fn from_name() {
         initialize_kb();
         let mut concept = MostProminentMember::new();
-        concept.set_internal_name_str("A");
+        concept.set_internal_name("A");
         assert_eq!(
             MostProminentMember::try_from("A").map(|c| c.id()),
             Ok(concept.id())
@@ -135,19 +150,20 @@ mod tests {
     fn test_wrapper_implemented() {
         initialize_kb();
         let concept = MostProminentMember::new();
-        assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
+        assert_eq!(concept.deref(), &FinalNode::from(concept.id()));
     }
 
     #[test]
+    #[allow(clippy::useless_conversion)]
     fn check_attribute_constraints() {
         initialize_kb();
         assert_eq!(
             MostProminentMember::archetype().owner_archetype(),
-            Module::archetype()
+            Module::archetype().into()
         );
         assert_eq!(
             MostProminentMember::archetype().value_archetype(),
-            Tao::archetype()
+            Tao::archetype().into()
         );
     }
 

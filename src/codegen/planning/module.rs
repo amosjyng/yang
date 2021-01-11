@@ -1,12 +1,11 @@
-use super::imports::{ancestor_path, import_path};
+use super::imports::import_path;
 use super::in_own_submodule;
 use crate::codegen::template::concept::archetype_module::{
     code_archetype_module, ArchetypeModuleConfig,
 };
-use crate::tao::form::{Crate, CrateExtension, Module, ModuleExtension};
+use crate::tao::action::Implement;
+use crate::tao::form::rust_item::{Module, ModuleExtension};
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
-use crate::tao::Implement;
-use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait};
 
@@ -19,8 +18,8 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
 
     let parent_node = KnowledgeGraphNode::from(parent.id());
     if parent_node.is_newly_defined() {
-        archetype_names.push(parent.internal_name_str().unwrap());
-    } else if Crate::yang().version_at_least(0, 1, 8) {
+        archetype_names.push(parent.internal_name().unwrap());
+    } else if parent_node.is_imported() {
         // Parent is already defined as part of a dependency, we're only creating this crate so
         // that we can access the children as well. In which case, we should also re-export the
         // concepts defined in the dependency, so that the end consumer does not depend directly on
@@ -46,18 +45,13 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
         // Instead, this needs to be a re-export of the *currently* imported Yin concepts. Note
         // that for this to be successful, the newly defined concepts have to be children of the
         // imported concepts, not children of Yang's initialized concepts from a previous build.
-        if parent_node.is_imported() {
-            re_exports.push(import_path(&parent_node, false));
-            for child in parent.child_archetypes() {
-                let child_node = KnowledgeGraphNode::from(child.id());
-                if child_node.is_imported() && !in_own_submodule(&child) {
-                    re_exports.push(import_path(&child_node, false));
-                }
+        re_exports.push(import_path(&parent_node, false));
+        for child in parent.child_archetypes() {
+            let child_node = KnowledgeGraphNode::from(child.id());
+            if child_node.is_imported() && !in_own_submodule(&child) {
+                re_exports.push(import_path(&child_node, false));
             }
         }
-    } else {
-        // backwards compatible functionality
-        re_exports.push(format!("zamm_yin::{}::*", ancestor_path(&parent, "::")));
     }
 
     for child in parent.child_archetypes() {
@@ -70,7 +64,7 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
                 (*ModuleExtension::implementation_name(&child_submodule).unwrap()).to_owned(),
             );
         } else if KnowledgeGraphNode::from(child.id()).is_newly_defined() {
-            archetype_names.push(child.internal_name_str().unwrap());
+            archetype_names.push(child.internal_name().unwrap());
         } // else, if this child doesn't have their own module, and has also been already defined,
           // then we will have already set them for re-export earlier
     }
@@ -83,10 +77,8 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
         re_exports.push((*re_export).to_owned());
     }
 
-    let doc = request.documentation().map(|rc| Rc::from(rc.as_str()));
-
     code_archetype_module(&ArchetypeModuleConfig {
-        doc,
+        doc: request.documentation(),
         archetype_names,
         private_submodules,
         public_submodules,

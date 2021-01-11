@@ -3,4 +3,4 @@
 pub mod attribute;
 pub mod flag;
 
-pub use zamm_yin::tao::relation::*;
+pub use zamm_yin::tao::relation::Relation;

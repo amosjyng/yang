@@ -1,14 +1,15 @@
+use crate::tao::form::rust_item::data::StrConcept;
 use crate::tao::perspective::BuildInfo;
 use std::convert::{From, TryFrom};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+use std::ops::{Deref, DerefMut};
 use zamm_yin::node_wrappers::{debug_wrapper, FinalNode};
 use zamm_yin::tao::archetype::{ArchetypeTrait, AttributeArchetype};
-use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::relation::attribute::{Attribute, AttributeTrait};
-use zamm_yin::tao::YIN_MAX_ID;
-use zamm_yin::Wrapper;
+use zamm_yin::tao::relation::Relation;
+use zamm_yin::tao::{Tao, YIN_MAX_ID};
 
 /// Describes the import path of a defined struct.
 #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -44,28 +45,42 @@ impl<'a> TryFrom<&'a str> for ImportPath {
     }
 }
 
-impl Wrapper for ImportPath {
-    type BaseType = FinalNode;
-
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
-
-impl<'a> ArchetypeTrait<'a> for ImportPath {
+impl ArchetypeTrait for ImportPath {
     type ArchetypeForm = AttributeArchetype;
     type Form = ImportPath;
 
-    const TYPE_ID: usize = YIN_MAX_ID + 23;
+    const TYPE_ID: usize = YIN_MAX_ID + 35;
     const TYPE_NAME: &'static str = "import-path";
     const PARENT_TYPE_ID: usize = Attribute::TYPE_ID;
 }
 
+impl Deref for ImportPath {
+    type Target = FinalNode;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
+impl DerefMut for ImportPath {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
+    }
+}
+
 impl FormTrait for ImportPath {}
+
+impl From<ImportPath> for Tao {
+    fn from(this: ImportPath) -> Tao {
+        Tao::from(this.base)
+    }
+}
+
+impl From<ImportPath> for Relation {
+    fn from(this: ImportPath) -> Relation {
+        Relation::from(this.base)
+    }
+}
 
 impl From<ImportPath> for Attribute {
     fn from(this: ImportPath) -> Attribute {
@@ -75,7 +90,7 @@ impl From<ImportPath> for Attribute {
 
 impl AttributeTrait for ImportPath {
     type OwnerForm = BuildInfo;
-    type ValueForm = StringConcept;
+    type ValueForm = StrConcept;
 }
 
 #[cfg(test)]
@@ -92,7 +107,7 @@ mod tests {
         initialize_kb();
         assert_eq!(ImportPath::archetype().id(), ImportPath::TYPE_ID);
         assert_eq!(
-            ImportPath::archetype().internal_name_str(),
+            ImportPath::archetype().internal_name(),
             Some(Rc::from(ImportPath::TYPE_NAME))
         );
     }
@@ -101,7 +116,7 @@ mod tests {
     fn from_name() {
         initialize_kb();
         let mut concept = ImportPath::new();
-        concept.set_internal_name_str("A");
+        concept.set_internal_name("A");
         assert_eq!(ImportPath::try_from("A").map(|c| c.id()), Ok(concept.id()));
         assert!(ImportPath::try_from("B").is_err());
     }
@@ -128,19 +143,20 @@ mod tests {
     fn test_wrapper_implemented() {
         initialize_kb();
         let concept = ImportPath::new();
-        assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
+        assert_eq!(concept.deref(), &FinalNode::from(concept.id()));
     }
 
     #[test]
+    #[allow(clippy::useless_conversion)]
     fn check_attribute_constraints() {
         initialize_kb();
         assert_eq!(
             ImportPath::archetype().owner_archetype(),
-            BuildInfo::archetype()
+            BuildInfo::archetype().into()
         );
         assert_eq!(
             ImportPath::archetype().value_archetype(),
-            StringConcept::archetype()
+            StrConcept::archetype().into()
         );
     }
 
@@ -158,7 +174,7 @@ mod tests {
     fn get_value() {
         initialize_kb();
         let mut instance = ImportPath::new();
-        let value_of_instance = StringConcept::new();
+        let value_of_instance = StrConcept::new();
         instance.set_value(&value_of_instance);
         assert_eq!(instance.owner(), None);
         assert_eq!(instance.value(), Some(value_of_instance));

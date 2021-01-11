@@ -16,6 +16,8 @@ pub fn root_node_or_equivalent(target: &Archetype) -> bool {
 /// Whether or not the given archetype belongs in its own submodule.
 pub fn in_own_submodule(target: &Archetype) -> bool {
     // todo: filter by type, once Yin has that functionality
+    // todo: since an archetype can be represented as multiple Rust items, this attribute and its
+    // information should perhaps live in the general implementaion concept
     BuildInfo::from(target.id()).is_own_module()
         || root_node_or_equivalent(target)
         || !target.child_archetypes().is_empty()
@@ -44,7 +46,7 @@ pub fn ancestor_path(target: &Archetype, separator: &str) -> String {
             };
 
             let target_name = target
-                .internal_name_str()
+                .internal_name()
                 .unwrap()
                 .to_snake_case()
                 .to_ascii_lowercase();
@@ -64,7 +66,7 @@ pub fn ancestor_path(target: &Archetype, separator: &str) -> String {
 
 fn snake_name(target: &Archetype) -> String {
     target
-        .internal_name_str()
+        .internal_name()
         .unwrap()
         .to_snake_case()
         .to_ascii_lowercase()
@@ -113,7 +115,7 @@ pub fn import_path(target: &KnowledgeGraphNode, yin_override: bool) -> String {
             } else {
                 "zamm_yin".to_owned()
             };
-            let struct_name = target.internal_name_str().unwrap().to_camel_case();
+            let struct_name = target.internal_name().unwrap().to_camel_case();
             format!(
                 "{}::{}::{}",
                 yin_crate,
@@ -130,7 +132,7 @@ pub fn concept_to_struct(target: &Archetype, yin_override: bool) -> StructConfig
     let name = build_info.implementation_name().unwrap_or_else(|| {
         Rc::from(
             target
-                .internal_name_str()
+                .internal_name()
                 .unwrap_or_else(|| panic!("{:?} has no internal name", target))
                 .to_camel_case()
                 .as_str(),
@@ -160,9 +162,9 @@ mod tests {
     fn own_submodule_parent() {
         initialize_kb();
         let mut parent = Tao::archetype().individuate_as_archetype();
-        parent.set_internal_name_str("parent");
+        parent.set_internal_name("parent");
         let mut child = parent.individuate_as_archetype();
-        child.set_internal_name_str("child");
+        child.set_internal_name("child");
         assert!(in_own_submodule(&parent));
     }
 
@@ -170,9 +172,9 @@ mod tests {
     fn own_submodule_nested() {
         initialize_kb();
         let mut parent = Tao::archetype().individuate_as_archetype();
-        parent.set_internal_name_str("parent");
+        parent.set_internal_name("parent");
         let mut child = parent.individuate_as_archetype();
-        child.set_internal_name_str("child");
+        child.set_internal_name("child");
         assert!(!in_own_submodule(&child));
     }
 
@@ -180,9 +182,9 @@ mod tests {
     fn own_submodule_forced() {
         initialize_kb();
         let mut parent = Tao::archetype().individuate_as_archetype();
-        parent.set_internal_name_str("parent");
+        parent.set_internal_name("parent");
         let mut child = parent.individuate_as_archetype();
-        child.set_internal_name_str("child");
+        child.set_internal_name("child");
         // these are individuals, not subtypes, so don't count towards a submodule
         child.individuate_as_form();
         child.individuate_as_form();
@@ -231,7 +233,7 @@ mod tests {
     fn folder_path_custom_module() {
         initialize_kb();
         BuildInfo::from(Attribute::TYPE_ID)
-            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute".to_owned());
+            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
         let owner = Owner::archetype();
         BuildInfo::from(owner.id()).mark_own_module();
         assert_eq!(
@@ -318,7 +320,7 @@ mod tests {
     fn import_path_custom_module() {
         initialize_kb();
         BuildInfo::from(Attribute::TYPE_ID)
-            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute".to_owned());
+            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
         let mut owner = KnowledgeGraphNode::from(Owner::TYPE_ID);
         BuildInfo::from(Owner::TYPE_ID).mark_own_module();
         owner.mark_newly_defined();
@@ -332,7 +334,7 @@ mod tests {
     fn import_path_custom_crate() {
         initialize_kb();
         BuildInfo::from(Attribute::TYPE_ID)
-            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute".to_owned());
+            .set_import_path("zamm_yin::tao::newfangled::module::attribute::Attribute");
         let mut owner = KnowledgeGraphNode::from(Owner::TYPE_ID);
         BuildInfo::from(Owner::TYPE_ID).mark_own_module();
         owner.mark_newly_defined();
@@ -350,11 +352,11 @@ mod tests {
         initialize_kb();
         let type1 = Tao::archetype().individuate_as_archetype();
         let mut type1_node = KnowledgeGraphNode::from(type1.id());
-        type1_node.set_internal_name_str("hello");
+        type1_node.set_internal_name("hello");
         type1_node.mark_newly_defined();
         let type2 = type1.individuate_as_archetype();
         let mut type2_node = KnowledgeGraphNode::from(type2.id());
-        type2_node.set_internal_name_str("world");
+        type2_node.set_internal_name("world");
         type2_node.mark_newly_defined();
         BuildInfo::from(type2.id()).mark_own_module();
         assert_eq!(
@@ -368,7 +370,7 @@ mod tests {
         initialize_kb();
         let root = Tao::archetype().individuate_as_archetype();
         let mut root_node = KnowledgeGraphNode::from(root.id());
-        root_node.set_internal_name_str("my-root");
+        root_node.set_internal_name("my-root");
         root_node.mark_newly_defined();
         root_node.mark_root_analogue();
         assert_eq!(import_path(&root_node, false), "crate::my_root::MyRoot");
@@ -442,7 +444,7 @@ mod tests {
         initialize_kb();
         let mut tao_build = BuildInfo::from(Tao::TYPE_ID);
         tao_build.set_implementation_name("TaoStruct");
-        tao_build.set_import_path("crate::TaoStruct".to_owned());
+        tao_build.set_import_path("crate::TaoStruct");
         assert_eq!(
             concept_to_struct(&Tao::archetype(), false),
             StructConfig {

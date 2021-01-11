@@ -1,7 +1,7 @@
-use crate::tao::form::Module;
+use crate::tao::action::Implement;
+use crate::tao::form::rust_item::Module;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::Target;
-use crate::tao::Implement;
 use heck::SnakeCase;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
@@ -19,7 +19,7 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
     /// Implement this concept with the given documentation string.
     fn implement_with_doc(&self, doc: &str) -> Implement {
         let mut implementation = self.implement();
-        implementation.set_documentation(doc.to_owned());
+        implementation.set_documentation(doc);
         implementation
     }
 
@@ -30,24 +30,12 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
         let mut implementation = Implement::new();
         let mut new_module = Module::new();
         new_module.set_most_prominent_member(&self.as_form());
-        if let Some(name) = self.internal_name_str() {
+        if let Some(name) = self.internal_name() {
             BuildInfo::from(new_module.id()).set_implementation_name(&name.to_snake_case());
         }
         implementation.set_target(&new_module.as_form());
-        implementation.set_documentation(doc.to_owned());
+        implementation.set_documentation(doc);
         new_module
-    }
-
-    /// Create a new implementation with the specified ID and documentation string.
-    #[deprecated(
-        since = "0.1.1",
-        note = "Please use implement_with_doc instead, and leave the ID up to the program."
-    )]
-    fn implement_with(&self, id: usize, doc: &str) -> Implement {
-        let mut implementation = self.implement();
-        implementation.set_concept_id(id);
-        implementation.set_documentation(doc.to_owned());
-        implementation
     }
 
     /// Look at this concept through the BuildInfo lens.
@@ -57,12 +45,18 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
 
     /// Grab all implementations for this current node.
     fn implementations(&self) -> Vec<Implement> {
-        self.essence()
-            .base_wrapper()
+        self.base_wrapper()
             .incoming_nodes(Target::TYPE_ID)
             .into_iter()
             .map(|f| Implement::from(f.id()))
             .collect()
+    }
+
+    /// Get the implementation for the accessors of this current node.
+    fn accessor_implementation(&self) -> Option<Implement> {
+        self.implementations()
+            .into_iter()
+            .find(|i| !i.target().unwrap().has_ancestor(Module::archetype().into()))
     }
 }
 
@@ -72,14 +66,24 @@ impl CreateImplementation for AttributeArchetype {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tao::initialize_kb;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
     use zamm_yin::tao::form::Form;
-    use zamm_yin::tao::initialize_kb;
 
     #[test]
     fn retrieve_implementations() {
         initialize_kb();
         let form_subtype = Form::archetype().individuate_as_archetype();
+        let implement = form_subtype.implement();
+        assert_eq!(implement.target(), Some(form_subtype.as_form()));
+        assert_eq!(form_subtype.implementations(), vec![implement]);
+    }
+
+    #[test]
+    fn retrieve_accessor_implementations() {
+        initialize_kb();
+        let form_subtype = Form::archetype().individuate_as_archetype();
+        form_subtype.impl_mod("foosbar");
         let implement = form_subtype.implement();
         assert_eq!(implement.target(), Some(form_subtype.as_form()));
         assert_eq!(form_subtype.implementations(), vec![implement]);

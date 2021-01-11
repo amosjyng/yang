@@ -1,12 +1,13 @@
 use std::convert::{From, TryFrom};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+use std::ops::{Deref, DerefMut};
 use zamm_yin::node_wrappers::{debug_wrapper, FinalNode};
 use zamm_yin::tao::archetype::{ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::{Form, FormTrait};
 use zamm_yin::tao::relation::attribute::{Attribute, AttributeTrait};
-use zamm_yin::tao::YIN_MAX_ID;
-use zamm_yin::Wrapper;
+use zamm_yin::tao::relation::Relation;
+use zamm_yin::tao::{Tao, YIN_MAX_ID};
 
 /// Name the concept actually took on when implemented.
 #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -42,28 +43,42 @@ impl<'a> TryFrom<&'a str> for ImplementationName {
     }
 }
 
-impl Wrapper for ImplementationName {
-    type BaseType = FinalNode;
-
-    fn essence(&self) -> &FinalNode {
-        &self.base
-    }
-
-    fn essence_mut(&mut self) -> &mut FinalNode {
-        &mut self.base
-    }
-}
-
-impl<'a> ArchetypeTrait<'a> for ImplementationName {
+impl ArchetypeTrait for ImplementationName {
     type ArchetypeForm = AttributeArchetype;
     type Form = ImplementationName;
 
-    const TYPE_ID: usize = YIN_MAX_ID + 27;
+    const TYPE_ID: usize = YIN_MAX_ID + 38;
     const TYPE_NAME: &'static str = "implementation-name";
     const PARENT_TYPE_ID: usize = Attribute::TYPE_ID;
 }
 
+impl Deref for ImplementationName {
+    type Target = FinalNode;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
+}
+
+impl DerefMut for ImplementationName {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
+    }
+}
+
 impl FormTrait for ImplementationName {}
+
+impl From<ImplementationName> for Tao {
+    fn from(this: ImplementationName) -> Tao {
+        Tao::from(this.base)
+    }
+}
+
+impl From<ImplementationName> for Relation {
+    fn from(this: ImplementationName) -> Relation {
+        Relation::from(this.base)
+    }
+}
 
 impl From<ImplementationName> for Attribute {
     fn from(this: ImplementationName) -> Attribute {
@@ -94,7 +109,7 @@ mod tests {
             ImplementationName::TYPE_ID
         );
         assert_eq!(
-            ImplementationName::archetype().internal_name_str(),
+            ImplementationName::archetype().internal_name(),
             Some(Rc::from(ImplementationName::TYPE_NAME))
         );
     }
@@ -103,7 +118,7 @@ mod tests {
     fn from_name() {
         initialize_kb();
         let mut concept = ImplementationName::new();
-        concept.set_internal_name_str("A");
+        concept.set_internal_name("A");
         assert_eq!(
             ImplementationName::try_from("A").map(|c| c.id()),
             Ok(concept.id())
@@ -133,19 +148,20 @@ mod tests {
     fn test_wrapper_implemented() {
         initialize_kb();
         let concept = ImplementationName::new();
-        assert_eq!(concept.essence(), &FinalNode::from(concept.id()));
+        assert_eq!(concept.deref(), &FinalNode::from(concept.id()));
     }
 
     #[test]
+    #[allow(clippy::useless_conversion)]
     fn check_attribute_constraints() {
         initialize_kb();
         assert_eq!(
             ImplementationName::archetype().owner_archetype(),
-            Tao::archetype()
+            Tao::archetype().into()
         );
         assert_eq!(
             ImplementationName::archetype().value_archetype(),
-            Tao::archetype()
+            Tao::archetype().into()
         );
     }
 
