@@ -239,7 +239,6 @@ fn data_config(base_cfg: &TaoConfig, target: &DataArchetype) -> DataFormatConfig
         rust_primitive_unboxed_name,
         rust_primitive_boxed_name,
         default_value: target.default_value().unwrap(),
-        explicit_rc: Crate::yang().version_at_least(0, 1, 8),
     }
 }
 

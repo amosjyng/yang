@@ -15,8 +15,6 @@ pub struct DataFormatConfig {
     pub rust_primitive_boxed_name: Rc<str>,
     /// Rust code representation of the default value of this concept.
     pub default_value: Rc<str>,
-    /// Whether we should initialize the Rc explicitly. For backwards compatibility purposes.
-    pub explicit_rc: bool,
 }
 
 impl Default for DataFormatConfig {
@@ -26,21 +24,12 @@ impl Default for DataFormatConfig {
             rust_primitive_unboxed_name: Rc::from(""),
             rust_primitive_boxed_name: Rc::from(""),
             default_value: Rc::from(""),
-            explicit_rc: true,
         }
     }
 }
 
 /// Get the body fragment for a data concept.
 fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
-    let strongvalue_init = if cfg.explicit_rc {
-        format!(
-            "StrongValue::new_rc(Rc::<{}>::from(value))",
-            cfg.rust_primitive_boxed_name
-        )
-    } else {
-        "StrongValue::new(value)".to_owned()
-    };
     AtomicFragment {
         imports: vec![
             "zamm_yin::node_wrappers::BaseNodeTrait".to_owned(),
@@ -56,7 +45,9 @@ fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
             impl {name} {{
                 /// Set {boxed_primitive} value for this concept.
                 pub fn set_value(&mut self, value: {unboxed_primitive}) {{
-                    self.deref_mut().set_value(Rc::new({strongvalue_init}));
+                    self.deref_mut().set_value(Rc::new(StrongValue::new_rc(
+                        Rc::<{boxed_primitive}>::from(value)
+                    )));
                 }}
 
                 /// Retrieve {boxed_primitive}-valued StrongValue.
@@ -66,8 +57,7 @@ fn data_concept_fragment(cfg: &DataFormatConfig) -> AtomicFragment {
                 }}
             }}"#, name = cfg.tao_cfg.this.name,
             unboxed_primitive = cfg.rust_primitive_unboxed_name,
-            boxed_primitive = cfg.rust_primitive_boxed_name,
-            strongvalue_init = strongvalue_init
+            boxed_primitive = cfg.rust_primitive_boxed_name
         },
     }
 }
