@@ -2,8 +2,6 @@ use super::util::{add_assert, add_assert_frags, new_kb_test};
 use crate::codegen::template::basic::{
     AppendedFragment, AtomicFragment, FileFragment, ImplementationFragment, VecFragment,
 };
-use crate::codegen::template::concept::wrapper;
-use crate::codegen::template::concept::wrapper::WrapperConfig;
 use crate::codegen::StructConfig;
 use indoc::{formatdoc, indoc};
 use std::cell::RefCell;
@@ -101,8 +99,6 @@ pub struct TaoConfig {
     pub introduced_attributes: Vec<String>,
     /// Imports for above list of introduced attributes.
     pub introduced_attribute_imports: Vec<String>,
-    /// Which wrapper API to use.
-    pub wrapper_cfg: WrapperConfig,
     /// Whether or not to specify a lifetime for the Archetype trait implementation.
     pub archetype_trait_lifetime: bool,
     /// Rustdoc for the class.
@@ -126,7 +122,6 @@ impl Default for TaoConfig {
             all_attribute_imports: vec![],
             introduced_attributes: vec![],
             introduced_attribute_imports: vec![],
-            wrapper_cfg: WrapperConfig::default(),
             archetype_trait_lifetime: true,
             doc: "".to_owned(),
             id: "1".to_owned(),
@@ -320,37 +315,12 @@ fn tao_test_fragment(cfg: &TaoConfig) -> AppendedFragment {
             fn test_wrapper_implemented() {{
                 initialize_kb();
                 let concept = {name}::new();
-                assert_eq!(concept.{deref}(), &FinalNode::from(concept.id()));
+                assert_eq!(concept.deref(), &FinalNode::from(concept.id()));
             }}"#,
             name = cfg.this.name,
-            deref = cfg.wrapper_cfg.deref,
         },
     })));
     test_frag
-}
-
-fn wrapper_fragment(cfg: &TaoConfig) -> ImplementationFragment {
-    let mut implementation = ImplementationFragment::new_trait_impl(
-        StructConfig::new("zamm_yin::Wrapper".to_owned()),
-        cfg.this.clone(),
-    );
-    implementation.append(Rc::new(RefCell::new(AtomicFragment {
-        imports: vec!["zamm_yin::node_wrappers::FinalNode".to_owned()],
-        atom: "type BaseType = FinalNode;".to_owned(),
-    })));
-    implementation.append(Rc::new(RefCell::new(AtomicFragment {
-        imports: vec![],
-        atom: indoc! {"
-            fn essence(&self) -> &FinalNode {
-                &self.base
-            }
-            fn essence_mut(&mut self) -> &mut FinalNode {
-                &mut self.base
-            }"}
-        .to_owned(),
-    })));
-    implementation.mark_same_file_as_struct();
-    implementation
 }
 
 fn deref_fragment(cfg: &TaoConfig) -> ImplementationFragment {
@@ -396,12 +366,8 @@ pub fn tao_file_fragment(cfg: &TaoConfig) -> FileFragment {
     let mut file = FileFragment::default();
     file.set_self_import(cfg.this.import.clone());
     file.append(Rc::new(RefCell::new(tao_fragment(cfg))));
-    if cfg.wrapper_cfg == wrapper::YIN_0_1_X {
-        file.append(Rc::new(RefCell::new(wrapper_fragment(cfg))));
-    } else {
-        file.append(Rc::new(RefCell::new(deref_fragment(cfg))));
-        file.append(Rc::new(RefCell::new(deref_mut_fragment(cfg))));
-    }
+    file.append(Rc::new(RefCell::new(deref_fragment(cfg))));
+    file.append(Rc::new(RefCell::new(deref_mut_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(tao_test_fragment(cfg))));
     file
 }
