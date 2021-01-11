@@ -74,7 +74,7 @@ Every type of data usually has a "default" value that we think of when construct
 
 ```rust
 let mut meta_rust_item = rust_item.specific_meta();
-meta_rust_item.set_internal_name_str("rust-item-archetype");
+meta_rust_item.set_internal_name("rust-item-archetype");
 let mut meta_data = data.specific_meta();
 
 add_attr!(
@@ -89,14 +89,14 @@ add_attr!(
 For strings, this would be the empty string:
 
 ```rust
-string_concept.set_default_value("String::new()");
-str_concept.set_default_value("\"\"");
+da(string_concept).set_default_value("String::new()");
+da(str_concept).set_default_value("\"\"");
 ```
 
 For numbers, this would be zero:
 
 ```rust
-number.set_default_value("0");
+da(number).set_default_value("0");
 ```
 
 We need to refer to these data structures somehow in our code, and the "how" is to call them by their name as they're known in Rust.
@@ -110,9 +110,9 @@ add_attr!(
     "the name of the Rust primitive that this concept represents."
 );
 
-string_concept.set_rust_primitive("String");
-str_concept.set_rust_primitive("str");
-number.set_rust_primitive("usize");
+da(string_concept).set_rust_primitive("String");
+da(str_concept).set_rust_primitive("str");
+da(number).set_rust_primitive("usize");
 ```
 
 This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
@@ -128,7 +128,7 @@ add_attr!(
     "the unboxed version of this primitive."
 );
 
-str_concept.set_unboxed_representation("&str");
+da(str_concept).set_unboxed_representation("&str");
 ```
 
 Since the reason was that `str` is unsized, we'll let the user mark it as such as well:
@@ -140,7 +140,7 @@ add_flag!(
     "Whether or not this data structure has a known size at compile-time.",
     "having a known size at compile-time."
 );
-unsized_flag.set_internal_name_str("unsized");
+unsized_flag.set_internal_name("unsized");
 ```
 
 Last but not least, testing is important. While the default value is a good place to start, we'll want to come up with other values as well to test with. Ideally, we can simply figure out how to generate them, but for now we'll just specify an alternative value to use other than the default. This alternative value should be unique in the codebase, so that a grep for it will quickly return this spot as documentation.
@@ -154,9 +154,9 @@ add_attr!(
     "the the Rust code representation for the dummy test value of this concept."
 );
 
-string_concept.set_dummy_value("\"test-dummy-string\".to_owned()");
-str_concept.set_dummy_value("\"test-dummy-str\"");
-number.set_dummy_value("17");
+da(string_concept).set_dummy_value("\"test-dummy-string\".to_owned()");
+da(str_concept).set_dummy_value("\"test-dummy-str\"");
+da(number).set_dummy_value("17");
 ```
 
 ### Implementations
@@ -433,7 +433,7 @@ define_child!(
     rust_item,
     "Crate that a concept was built as a part of."
 );
-crate_concept.set_internal_name_str("crate");
+crate_concept.set_internal_name("crate");
 ```
 
 We can reuse the existing generic `HasMember` relation for describing the relationship between a concept and its crate, because there is nothing special about this particular membership scenario that warrants a separate membership concept specifically for this.
@@ -485,45 +485,57 @@ aa(alias).mark_multi_valued_attr();
 Unlike with Yin, we don't actually want to implement *everything* we know, because everything we know about Yin is already implemented inside her physical body. We only want to implement the things that we learned about Yang here. This means implementing the Yang-specific modules:
 
 ```rust
-let mut perspective_mod = perspective.impl_mod("Perspectives on the world.");
-perspective_mod.has_extension("build_info_extension::BuildInfoExtension");
+module!(
+    perspective,
+    "Perspectives on the world.",
+    ["build_info_extension::BuildInfoExtension"]
+);
 ```
 
 This also means redefining the modules for concepts that were first introduced in Yin, but which we have since created new children for:
 
 ```rust
-let mut form_mod = form.impl_mod("All things that can be interacted with have form.");
-form_mod.re_export("zamm_yin::tao::form::FormTrait");
+module!(
+    form,
+    "All things that can be interacted with have form.",
+    ["zamm_yin::tao::form::FormTrait"]
+);
 
 module!(
     rust_item,
     "Elements of the Rust programming language.",
     [
         "crate_extension::CrateExtension",
-        "module_extension::ModuleExtension"
+        "module_extension::ModuleExtension",
+        "zamm_yin::tao::form::FormTrait"
     ]
 );
 module!(data, "Rust data elements.");
 module!(relation, "Relations between the forms.");
 module!(flag, "Relations involving only one form.");
-
 module!(action, "Processes that mutate state.");
-
-let mut attribute_mod = attribute.impl_mod("Relations between two forms.");
-attribute_mod.has_extension("supports_membership::SupportsMembership");
-attribute_mod.re_export("zamm_yin::tao::relation::attribute::AttributeTrait");
-
+module!(
+    attribute,
+    "Relations between two forms.",
+    [
+        "supports_membership::SupportsMembership",
+        "zamm_yin::tao::relation::attribute::AttributeTrait"
+    ]
+);
 module!(
     has_property,
     "Meta-attributes around what attributes instances of an archetype have."
 );
-
-let mut archetype_mod = archetype.impl_mod("Types of forms, as opposed to the forms themselves.");
-archetype_mod.has_extension("create_implementation::CreateImplementation");
-archetype_mod.re_export("zamm_yin::tao::archetype::ArchetypeTrait");
-archetype_mod.re_export("zamm_yin::tao::archetype::ArchetypeFormTrait");
-archetype_mod.re_export("zamm_yin::tao::archetype::AttributeArchetypeFormTrait");
-
+module!(
+    archetype,
+    "Types of forms, as opposed to the forms themselves.",
+    [
+        "create_implementation::CreateImplementation",
+        "zamm_yin::tao::archetype::ArchetypeTrait",
+        "zamm_yin::tao::archetype::ArchetypeFormTrait",
+        "zamm_yin::tao::archetype::AttributeArchetypeFormTrait"
+    ]
+);
 module!(meta_rust_item, "Metadata about Rust elements.");
 ```
 
@@ -536,7 +548,7 @@ We should really save the build info, so that one day we will no longer need to 
 This is the version of Yang used to make this build happen:
 
 ```toml
-zamm_yang = "=0.1.10"
+zamm_yang = "0.2.0"
 ```
 
 Yang does his best to be backwards-compatible, so we should let old Yang know that this is new Yang speaking:
@@ -557,12 +569,12 @@ Crate::current().set_implementation_name("zamm_yang");
 Let's import the build for Yin, so that we can differentiate between where concepts are introduced:
 
 ```zamm
-https://api.zamm.dev/v1/books/zamm/yin/0.2.0/yin.md
+https://api.zamm.dev/v1/books/zamm/yin/0.2.1/yin.md
 ```
 
 Additional imports not used by Yin:
 
 ```rust
 use zamm_yang::add_attr;
-use zamm_yang::tao::form::data::DataExtension;
+use zamm_yang::helper::da;
 ```
