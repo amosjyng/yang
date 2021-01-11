@@ -122,10 +122,6 @@ fn generic_config(
 
     let archetype = concept_to_struct(&target.meta_archetype(), codegen_cfg.yin);
 
-    let yin_0_2_x = Crate::yin().version_at_least(0, 2, 0);
-
-    let archetype_trait_lifetime = !yin_0_2_x;
-
     TaoConfig {
         imports,
         this,
@@ -138,7 +134,6 @@ fn generic_config(
         introduced_attributes,
         introduced_attribute_imports,
         archetype,
-        archetype_trait_lifetime,
         doc,
         id,
     }
