@@ -287,7 +287,7 @@ fn flag_config(
     flag: &Archetype,
     wrapper_cfg: &WrapperConfig,
 ) -> FlagConfig {
-    let doc_string = BuildInfo::from(flag.id())
+    let doc = BuildInfo::from(flag.id())
         .dual_purpose_documentation()
         .unwrap();
     FlagConfig {

@@ -509,14 +509,14 @@ We should really save the build info, so that one day we will no longer need to 
 This is the version of Yang used to make this build happen:
 
 ```toml
-zamm_yang = "=0.1.7"
+zamm_yang = "=0.1.10"
 ```
 
 Yang does his best to be backwards-compatible, so we should let old Yang know that this is new Yang speaking:
 
 ```rust
 Crate::yin().set_version("0.2.0");
-Crate::yang().set_version("0.1.8");
+Crate::yang().set_version("0.2.0");
 ```
 
 We should also let him know what our current crate name is. There is as of yet no way to let him know that this is the same crate as the `Crate::yang()` in the knowledge base, or that this crate is a newer version of himself. Unfortunately, there is no self-awareness yet, only instinct.
@@ -530,7 +530,7 @@ Crate::current().set_implementation_name("zamm_yang");
 Let's import the build for Yin, so that we can differentiate between where concepts are introduced:
 
 ```zamm
-https://api.zamm.dev/v1/books/zamm/yin/0.1.6/yin.md
+https://api.zamm.dev/v1/books/zamm/yin/0.2.0/yin.md
 ```
 
 Additional imports not used by Yin:
