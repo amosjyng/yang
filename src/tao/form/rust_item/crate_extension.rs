@@ -1,9 +1,9 @@
 use crate::tao::form::rust_item::Crate;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
-use crate::tao::relation::attribute::{SupportsMembership};
+use crate::tao::relation::attribute::SupportsMembership;
 use std::convert::TryFrom;
 use std::rc::Rc;
-use zamm_yin::node_wrappers::{CommonNodeTrait};
+use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 

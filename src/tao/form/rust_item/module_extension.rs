@@ -1,8 +1,8 @@
 use crate::tao::form::rust_item::Module;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
-use crate::tao::relation::attribute::{SupportsMembership};
+use crate::tao::relation::attribute::SupportsMembership;
 use std::rc::Rc;
-use zamm_yin::node_wrappers::{CommonNodeTrait};
+use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::form::FormTrait;
 
@@ -94,6 +94,9 @@ mod tests {
                 .collect::<Vec<Option<Rc<str>>>>(),
             vec![]
         );
-        assert_eq!(module.re_exports(), vec![Rc::from("other_crate::submod::X")]);
+        assert_eq!(
+            module.re_exports(),
+            vec![Rc::from("other_crate::submod::X")]
+        );
     }
 }

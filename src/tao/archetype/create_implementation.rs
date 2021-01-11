@@ -1,7 +1,7 @@
+use crate::tao::action::Implement;
 use crate::tao::form::rust_item::Module;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::Target;
-use crate::tao::action::Implement;
 use heck::SnakeCase;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
@@ -54,7 +54,9 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
 
     /// Get the implementation for the accessors of this current node.
     fn accessor_implementation(&self) -> Option<Implement> {
-        self.implementations().into_iter().find(|i| !i.target().unwrap().has_ancestor(Module::archetype().into()))
+        self.implementations()
+            .into_iter()
+            .find(|i| !i.target().unwrap().has_ancestor(Module::archetype().into()))
     }
 }
 
@@ -64,9 +66,9 @@ impl CreateImplementation for AttributeArchetype {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tao::initialize_kb;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
     use zamm_yin::tao::form::Form;
-    use crate::tao::initialize_kb;
 
     #[test]
     fn retrieve_implementations() {

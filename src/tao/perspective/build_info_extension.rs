@@ -1,5 +1,5 @@
 use super::BuildInfo;
-use crate::tao::form::rust_item::data::StringConcept;
+use crate::tao::form::rust_item::data::StrConcept;
 use crate::tao::form::rust_item::{Crate, CrateExtension, Module};
 use crate::tao::relation::attribute::{
     ImplementationName, Member, MostProminentMember, SupportsMembership,
@@ -29,7 +29,6 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
     /// Retrieve crate which the object was built as a part of. This is called `crate_name` instead
     /// of just `crate` because `crate` is a reserved keyword in Rust.
     fn crate_name(&self) -> Option<Rc<str>> {
-        // todo: retrieve using StringConcept API once that is correctly generated once more
         self.inheritance_wrapper()
             .base_wrapper()
             .incoming_nodes(Member::TYPE_ID)
@@ -42,10 +41,9 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
 
     /// Set name the concept took on for its actual implementation.
     fn set_implementation_name(&mut self, name: &str) {
-        let mut s = StringConcept::new();
-        // todo: set using StringConcept API once that is correctly generated once more
+        let mut s = StrConcept::new();
         s.deref_mut()
-            .set_value(Rc::new(StrongValue::new(name.to_owned())));
+            .set_value(Rc::new(StrongValue::<str>::new_rc(Rc::from(name))));
         self.add_outgoing(ImplementationName::TYPE_ID, &s);
     }
 
@@ -56,11 +54,7 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
             .base_wrapper()
             .outgoing_nodes(ImplementationName::TYPE_ID)
             .last()
-            .map(|s| {
-                StringConcept::from(s.id())
-                    .value()
-                    .map(|rc| Rc::from(rc.as_str()))
-            })
+            .map(|s| StrConcept::from(s.id()).value())
             .flatten()
     }
 
