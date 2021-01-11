@@ -139,15 +139,11 @@ fn generic_config(
     }
 }
 
-fn into_archetype_fn(yin: &Crate, archetype: &Archetype) -> String {
-    if yin.version_at_least(0, 1, 4) {
-        if !KnowledgeGraphNode::from(archetype.id()).is_root_archetype_analogue() {
-            ".into()".to_owned()
-        } else {
-            String::new()
-        }
+fn into_archetype_fn(archetype: &Archetype) -> String {
+    if !KnowledgeGraphNode::from(archetype.id()).is_root_archetype_analogue() {
+        ".into()".to_owned()
     } else {
-        ".as_archetype()".to_owned()
+        String::new()
     }
 }
 
@@ -199,9 +195,8 @@ fn attribute_config(
     let owner_form = concept_to_struct(&or_form_default(owner_type_concept), codegen_cfg.yin);
     let value_form = concept_to_struct(&or_form_default(value_type_concept), codegen_cfg.yin);
 
-    let yin = Crate::yin();
-    let owner_into_archetype = into_archetype_fn(&yin, &owner_type_concept);
-    let value_into_archetype = into_archetype_fn(&yin, &value_type_concept);
+    let owner_into_archetype = into_archetype_fn(&owner_type_concept);
+    let value_into_archetype = into_archetype_fn(&value_type_concept);
 
     AttributeFormatConfig {
         tao_cfg: base_cfg.clone(),
