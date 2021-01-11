@@ -10,9 +10,7 @@ use crate::codegen::template::concept::attribute_property::{
 use crate::codegen::template::concept::data::{add_data_fragments, DataFormatConfig};
 use crate::codegen::template::concept::flag::{add_flag_to_impl, FlagConfig};
 use crate::codegen::template::concept::form::{add_form_fragment, FormFormatConfig};
-use crate::codegen::template::concept::tao::{tao_file_fragment, InternalNameConfig, TaoConfig};
-use crate::codegen::template::concept::wrapper;
-use crate::codegen::template::concept::wrapper::WrapperConfig;
+use crate::codegen::template::concept::tao::{tao_file_fragment, TaoConfig};
 use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::archetype::DataArchetype;
@@ -74,16 +72,6 @@ fn generic_config(
     let internal_name = this.name.to_kebab_case();
     let form = form_for(target, codegen_cfg);
 
-    let internal_name_cfg = if Crate::yin().version_at_least(0, 2, 0) {
-        InternalNameConfig::YIN_AT_LEAST_0_2_0
-    } else if Crate::yin().version_at_least(0, 1, 4) {
-        InternalNameConfig::YIN_AT_LEAST_0_1_4
-    } else if Crate::yin().version_at_least(0, 1, 1) {
-        InternalNameConfig::YIN_AT_LEAST_0_1_1
-    } else {
-        InternalNameConfig::DEFAULT
-    };
-
     let doc = match &request.documentation() {
         Some(d) => format!("\n{}", into_docstring(&d, CODE_WIDTH)),
         None => String::new(),
@@ -132,31 +120,12 @@ fn generic_config(
         .map(|s| s.import.clone())
         .collect();
 
-    let archetype = if Crate::yang().version_at_least(0, 1, 8) {
-        concept_to_struct(&target.meta_archetype(), codegen_cfg.yin)
-    } else {
-        // legacy logic
-        if activate_attribute(target) {
-            concept_to_struct(&AttributeArchetype::archetype(), codegen_cfg.yin)
-        } else {
-            concept_to_struct(&Archetype::archetype(), codegen_cfg.yin)
-        }
-    };
-
-    let yin_0_2_x = Crate::yin().version_at_least(0, 2, 0);
-    let wrapper_cfg = if yin_0_2_x {
-        wrapper::YIN_0_2_X
-    } else {
-        wrapper::YIN_0_1_X
-    };
-
-    let archetype_trait_lifetime = !yin_0_2_x;
+    let archetype = concept_to_struct(&target.meta_archetype(), codegen_cfg.yin);
 
     TaoConfig {
         imports,
         this,
         internal_name,
-        internal_name_cfg,
         form,
         parent_name: parent_struct.name,
         parent_import: parent_struct.import,
@@ -165,22 +134,16 @@ fn generic_config(
         introduced_attributes,
         introduced_attribute_imports,
         archetype,
-        wrapper_cfg,
-        archetype_trait_lifetime,
         doc,
         id,
     }
 }
 
-fn into_archetype_fn(yin: &Crate, archetype: &Archetype) -> String {
-    if yin.version_at_least(0, 1, 4) {
-        if !KnowledgeGraphNode::from(archetype.id()).is_root_archetype_analogue() {
-            ".into()".to_owned()
-        } else {
-            String::new()
-        }
+fn into_archetype_fn(archetype: &Archetype) -> String {
+    if !KnowledgeGraphNode::from(archetype.id()).is_root_archetype_analogue() {
+        ".into()".to_owned()
     } else {
-        ".as_archetype()".to_owned()
+        String::new()
     }
 }
 
@@ -232,9 +195,8 @@ fn attribute_config(
     let owner_form = concept_to_struct(&or_form_default(owner_type_concept), codegen_cfg.yin);
     let value_form = concept_to_struct(&or_form_default(value_type_concept), codegen_cfg.yin);
 
-    let yin = Crate::yin();
-    let owner_into_archetype = into_archetype_fn(&yin, &owner_type_concept);
-    let value_into_archetype = into_archetype_fn(&yin, &value_type_concept);
+    let owner_into_archetype = into_archetype_fn(&owner_type_concept);
+    let value_into_archetype = into_archetype_fn(&value_type_concept);
 
     AttributeFormatConfig {
         tao_cfg: base_cfg.clone(),
@@ -277,21 +239,14 @@ fn data_config(base_cfg: &TaoConfig, target: &DataArchetype) -> DataFormatConfig
         rust_primitive_unboxed_name,
         rust_primitive_boxed_name,
         default_value: target.default_value().unwrap(),
-        explicit_rc: Crate::yang().version_at_least(0, 1, 8),
     }
 }
 
-fn flag_config(
-    codegen_cfg: &CodegenConfig,
-    target: &Archetype,
-    flag: &Archetype,
-    wrapper_cfg: &WrapperConfig,
-) -> FlagConfig {
+fn flag_config(codegen_cfg: &CodegenConfig, target: &Archetype, flag: &Archetype) -> FlagConfig {
     let doc = BuildInfo::from(flag.id())
         .dual_purpose_documentation()
         .unwrap();
     FlagConfig {
-        wrapper_cfg: wrapper_cfg.clone(),
         public: true,
         property_name: Rc::from(flag.internal_name().unwrap().to_snake_case()),
         doc,
@@ -305,7 +260,6 @@ fn attr_config(
     codegen_cfg: &CodegenConfig,
     target: &Archetype,
     attr: &AttributeArchetype,
-    wrapper_cfg: &WrapperConfig,
 ) -> AttributePropertyConfig {
     let value_type = or_form_default(attr.value_archetype());
     let value_as_data = DataArchetype::from(value_type.id());
@@ -326,7 +280,6 @@ fn attr_config(
         .unwrap();
 
     AttributePropertyConfig {
-        wrapper_cfg: wrapper_cfg.clone(),
         public: true,
         property_name: Rc::from(attr.internal_name().unwrap().to_snake_case()),
         doc,
@@ -349,32 +302,22 @@ fn primary_parent(target: &Archetype) -> Archetype {
 fn add_struct_flag_fragments(
     target: &Archetype,
     cfg: &CodegenConfig,
-    wrapper_cfg: &WrapperConfig,
     implementation: &mut ImplementationFragment,
     file: &mut FileFragment,
 ) {
     for flag in target.added_flags() {
-        add_flag_to_impl(
-            &flag_config(cfg, &target, &flag, wrapper_cfg),
-            implementation,
-            file,
-        );
+        add_flag_to_impl(&flag_config(cfg, &target, &flag), implementation, file);
     }
 }
 
 fn add_struct_attr_fragments(
     target: &Archetype,
     cfg: &CodegenConfig,
-    wrapper_cfg: &WrapperConfig,
     implementation: &mut ImplementationFragment,
     file: &mut FileFragment,
 ) {
     for attr in target.added_attributes() {
-        add_attr_to_impl(
-            &attr_config(cfg, &target, &attr, wrapper_cfg),
-            implementation,
-            file,
-        );
+        add_attr_to_impl(&attr_config(cfg, &target, &attr), implementation, file);
     }
 }
 
@@ -417,22 +360,10 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
         let mut implementation =
             ImplementationFragment::new_struct_impl(concept_to_struct(&target, codegen_cfg.yin));
         if !target.added_flags().is_empty() {
-            add_struct_flag_fragments(
-                &target,
-                codegen_cfg,
-                &base_cfg.wrapper_cfg,
-                &mut implementation,
-                &mut file,
-            );
+            add_struct_flag_fragments(&target, codegen_cfg, &mut implementation, &mut file);
         }
         if !target.added_attributes().is_empty() {
-            add_struct_attr_fragments(
-                &target,
-                codegen_cfg,
-                &base_cfg.wrapper_cfg,
-                &mut implementation,
-                &mut file,
-            );
+            add_struct_attr_fragments(&target, codegen_cfg, &mut implementation, &mut file);
         }
         if !implementation.content.borrow().appendages.is_empty() {
             file.append(Rc::new(RefCell::new(implementation)));
@@ -565,10 +496,9 @@ mod tests {
 
         assert_eq!(attr_cfg.owner_type.name, "Tao".to_owned());
         assert_eq!(attr_cfg.value_type.name, "Form".to_owned());
-        assert_eq!(
-            attr_cfg.tao_cfg.archetype.name,
-            "AttributeArchetype".to_owned()
-        );
+        // Caller is responsible for designating a custom archetype, if so desired. Simply marking
+        // a node as an attribute analogue does not make its archetype an attribute analogue too.
+        assert_eq!(attr_cfg.tao_cfg.archetype.name, "Archetype".to_owned());
     }
 
     #[test]

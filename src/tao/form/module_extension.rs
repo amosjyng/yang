@@ -47,9 +47,12 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait + SupportsMembership {
             .collect()
     }
 
-    /// Define the submodule for the given trait extension, and mark the trait for re-export.
+    /// If the submodule is locally defined, then defines it. Marks the trait for re-export.
     fn has_extension(&mut self, extension: &str) {
-        self.add_submodule(extension.split("::").next().unwrap());
+        let import_path = extension.split("::").collect::<Vec<&str>>();
+        if import_path.len() == 2 {
+            self.add_submodule(import_path.first().unwrap());
+        }
         self.re_export(extension);
     }
 }
@@ -99,5 +102,21 @@ mod tests {
             vec![Some(Rc::from("submod"))]
         );
         assert_eq!(module.re_exports(), vec![Rc::from("submod::X")]);
+    }
+
+    #[test]
+    fn add_and_retrieve_re_exported_extension() {
+        initialize_kb();
+        let mut module = Module::new();
+        module.has_extension("other_crate::submod::X");
+        assert_eq!(
+            module
+                .submodules()
+                .iter()
+                .map(|s| s.implementation_name())
+                .collect::<Vec<Option<Rc<str>>>>(),
+            vec![]
+        );
+        assert_eq!(module.re_exports(), vec![Rc::from("other_crate::submod::X")]);
     }
 }

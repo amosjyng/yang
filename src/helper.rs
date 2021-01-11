@@ -1,3 +1,4 @@
+use crate::tao::archetype::DataArchetype;
 use crate::tao::callbacks::implements;
 use crate::tao::perspective::KnowledgeGraphNode;
 use std::cell::Cell;
@@ -82,8 +83,9 @@ macro_rules! add_flag {
     };
     ($name:ident <= $parent:expr, $owner:ident, $doc:expr, $dual_doc:expr) => {
         define_child!($name, $parent);
-        zamm_yang::tao::archetype::AttributeArchetype::from($name.id()).set_owner_archetype($owner);
-        $owner.add_flag($name);
+        zamm_yang::tao::archetype::AttributeArchetype::from($name.id())
+            .set_owner_archetype(&$owner);
+        $owner.add_flag(&$name);
         {
             let mut new_impl = $name.implement_with_doc($doc);
             new_impl.dual_document($dual_doc);
@@ -108,12 +110,12 @@ macro_rules! add_attr {
         {
             let mut new_aa = zamm_yang::tao::archetype::AttributeArchetype::from($name.id());
             if $owner != zamm_yang::tao::Tao::archetype() {
-                new_aa.set_owner_archetype($owner);
+                new_aa.set_owner_archetype(&$owner);
             }
             if $value != zamm_yang::tao::Tao::archetype() {
-                new_aa.set_value_archetype($value);
+                new_aa.set_value_archetype(&$value);
             }
-            $owner.add_attribute(new_aa);
+            $owner.add_attribute(&new_aa);
             let mut new_impl = $name.implement_with_doc($doc);
             new_impl.dual_document($dual_doc);
         }
@@ -123,17 +125,25 @@ macro_rules! add_attr {
 /// Convenience function to convert an `Archetype` to an `AttributeArchetype`.
 pub fn aa(archetype: Archetype) -> AttributeArchetype {
     if !(KnowledgeGraphNode::from(archetype.id()).is_attribute_analogue()
-        || archetype.has_parent(Attribute::archetype().into())
-        || archetype
-            .parents()
-            .iter()
-            .any(|a| KnowledgeGraphNode::from(a.id()).is_attribute_analogue()))
+        || archetype.has_parent(Attribute::archetype().into()))
     {
         // currently catches Relation, which is not an attribute but still deserves to have its
         // owner archetype set
         println!("Warning: {:?} is not known to be an attribute.", archetype);
     }
     AttributeArchetype::from(archetype.id())
+}
+
+/// Convenience function to convert an `Archetype` to a `DataArchetype`.
+pub fn da(archetype: Archetype) -> DataArchetype {
+    if !(KnowledgeGraphNode::from(archetype.id()).is_data_analogue()
+        || archetype.has_ancestor(DataArchetype::archetype()))
+    {
+        // currently catches Relation, which is not an attribute but still deserves to have its
+        // owner archetype set
+        println!("Warning: {:?} is not known to be data.", archetype);
+    }
+    DataArchetype::from(archetype.id())
 }
 
 /// Start interpreting new information as imported. New concepts will not be marked as new, but
