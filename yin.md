@@ -463,8 +463,11 @@ aa(alias).mark_multi_valued_attr();
 Unlike with Yin, we don't actually want to implement *everything* we know, because everything we know about Yin is already implemented inside her physical body. We only want to implement the things that we learned about Yang here. This means implementing the Yang-specific modules:
 
 ```rust
-let mut perspective_mod = perspective.impl_mod("Perspectives on the world.");
-perspective_mod.has_extension("build_info_extension::BuildInfoExtension");
+module!(
+    perspective,
+    "Perspectives on the world.",
+    ["build_info_extension::BuildInfoExtension"]
+);
 ```
 
 This also means redefining the modules for concepts that were first introduced in Yin, but which we have since created new children for:
