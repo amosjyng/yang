@@ -51,6 +51,11 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
             .map(|f| Implement::from(f.id()))
             .collect()
     }
+
+    /// Get the implementation for the accessors of this current node.
+    fn accessor_implementation(&self) -> Option<Implement> {
+        self.implementations().into_iter().find(|i| !i.target().unwrap().has_ancestor(Module::archetype().into()))
+    }
 }
 
 impl CreateImplementation for Archetype {}
@@ -67,6 +72,16 @@ mod tests {
     fn retrieve_implementations() {
         initialize_kb();
         let form_subtype = Form::archetype().individuate_as_archetype();
+        let implement = form_subtype.implement();
+        assert_eq!(implement.target(), Some(form_subtype.as_form()));
+        assert_eq!(form_subtype.implementations(), vec![implement]);
+    }
+
+    #[test]
+    fn retrieve_accessor_implementations() {
+        initialize_kb();
+        let form_subtype = Form::archetype().individuate_as_archetype();
+        form_subtype.impl_mod("foosbar");
         let implement = form_subtype.implement();
         assert_eq!(implement.target(), Some(form_subtype.as_form()));
         assert_eq!(form_subtype.implementations(), vec![implement]);

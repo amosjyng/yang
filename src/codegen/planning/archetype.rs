@@ -15,6 +15,7 @@ use crate::codegen::CODE_WIDTH;
 use crate::codegen::{CodegenConfig, StructConfig};
 use crate::tao::action::Implement;
 use crate::tao::archetype::rust_item_archetype::DataArchetype;
+use crate::tao::archetype::CreateImplementation;
 use crate::tao::form::rust_item::data::Data;
 use crate::tao::form::rust_item::{Crate, CrateExtension};
 use crate::tao::perspective::KnowledgeGraphNode;
@@ -261,7 +262,7 @@ fn flag_config(
 
 fn attr_config(
     codegen_cfg: &CodegenConfig,
-    implement: &Implement,
+    attr_implement: &Implement,
     target: &Archetype,
     attr: &AttributeArchetype,
 ) -> AttributePropertyConfig {
@@ -279,7 +280,16 @@ fn attr_config(
         Some(unboxed) => Some(unboxed),
         None => rust_primitive.clone(),
     };
-    let doc = implement.dual_purpose_documentation().unwrap();
+    // this must not be the target's implement, but rather the attribute's implement
+    assert_eq!(attr_implement.target().unwrap(), Form::from(attr.id()));
+    let doc = attr_implement
+        .dual_purpose_documentation()
+        .unwrap_or_else(|| {
+            panic!(
+                "No dual documentation for implement {:?} on attribute {:?}",
+                attr_implement, attr
+            )
+        });
 
     AttributePropertyConfig {
         public: true,
@@ -302,7 +312,6 @@ fn primary_parent(target: &Archetype) -> Archetype {
 }
 
 fn add_struct_flag_fragments(
-    implement: &Implement,
     target: &Archetype,
     cfg: &CodegenConfig,
     implementation: &mut ImplementationFragment,
@@ -310,7 +319,12 @@ fn add_struct_flag_fragments(
 ) {
     for flag in target.added_flags() {
         add_flag_to_impl(
-            &flag_config(cfg, implement, &target, &flag),
+            &flag_config(
+                cfg,
+                &flag.accessor_implementation().unwrap(),
+                &target,
+                &flag,
+            ),
             implementation,
             file,
         );
@@ -318,7 +332,6 @@ fn add_struct_flag_fragments(
 }
 
 fn add_struct_attr_fragments(
-    implement: &Implement,
     target: &Archetype,
     cfg: &CodegenConfig,
     implementation: &mut ImplementationFragment,
@@ -326,7 +339,12 @@ fn add_struct_attr_fragments(
 ) {
     for attr in target.added_attributes() {
         add_attr_to_impl(
-            &attr_config(cfg, implement, &target, &attr),
+            &attr_config(
+                cfg,
+                &attr.accessor_implementation().unwrap(),
+                &target,
+                &attr,
+            ),
             implementation,
             file,
         );
@@ -372,22 +390,10 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
         let mut implementation =
             ImplementationFragment::new_struct_impl(concept_to_struct(&target, codegen_cfg.yin));
         if !target.added_flags().is_empty() {
-            add_struct_flag_fragments(
-                &request,
-                &target,
-                codegen_cfg,
-                &mut implementation,
-                &mut file,
-            );
+            add_struct_flag_fragments(&target, codegen_cfg, &mut implementation, &mut file);
         }
         if !target.added_attributes().is_empty() {
-            add_struct_attr_fragments(
-                &request,
-                &target,
-                codegen_cfg,
-                &mut implementation,
-                &mut file,
-            );
+            add_struct_attr_fragments(&target, codegen_cfg, &mut implementation, &mut file);
         }
         if !implementation.content.borrow().appendages.is_empty() {
             file.append(Rc::new(RefCell::new(implementation)));

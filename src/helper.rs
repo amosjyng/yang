@@ -120,7 +120,10 @@ macro_rules! add_attr {
             }
             $owner.add_attribute(&new_aa);
             let mut new_impl = $name.implement_with_doc($doc);
-            new_impl.dual_document($dual_doc);
+            zamm_yang::tao::action::Implement::set_dual_purpose_documentation(
+                &mut new_impl,
+                $dual_doc,
+            );
         }
     };
 }
