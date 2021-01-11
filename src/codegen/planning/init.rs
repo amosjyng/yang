@@ -8,13 +8,10 @@ use crate::tao::Implement;
 use heck::CamelCase;
 use zamm_yin::node_wrappers::BaseNodeTrait;
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::{
-    Archetype, ArchetypeFormExtensionTrait, ArchetypeFormTrait, ArchetypeTrait,
-};
+use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait, ArchetypeTrait};
 use zamm_yin::tao::form::FormTrait;
 use zamm_yin::tao::relation::attribute::has_property::{HasAttribute, HasFlag};
 use zamm_yin::tao::relation::attribute::{OwnerArchetype, ValueArchetype};
-use zamm_yin::Wrapper;
 
 fn setup_archetype_init(
     implement: &mut Implement,
@@ -61,11 +58,7 @@ fn setup_archetype_init(
             let attr_struct = concept_to_struct(&Archetype::from(attr.id()), codegen_cfg.yin);
             // use base wrapper because we want to see if the flag is set with this node, not
             // with an ancestor
-            for outgoing in target_type
-                .essence()
-                .base_wrapper()
-                .outgoing_nodes(attr.id())
-            {
+            for outgoing in target_type.base_wrapper().outgoing_nodes(attr.id()) {
                 attributes.push(Link {
                     from: target_struct.clone(),
                     link_type: attr_struct.clone(),
@@ -101,10 +94,10 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
                 // then don't bother creating it a second time
                 let mut meta_impl = target_meta.implement();
                 KnowledgeGraphNode::from(target_meta.id()).mark_newly_defined();
-                let target_name = target_type.internal_name_str().unwrap();
+                let target_name = target_type.internal_name().unwrap();
                 let meta_name = format!("{}-archetype", target_name);
-                target_meta.set_internal_name_str(&meta_name);
-                meta_impl.set_documentation(format!(
+                target_meta.set_internal_name(&meta_name);
+                meta_impl.set_documentation(&format!(
                     "Meta-object for {} meta-attributes.",
                     target_name.to_camel_case()
                 ));
@@ -156,7 +149,7 @@ mod tests {
         let mut impls = vec![];
         let mut implement = Implement::new();
         let mut new_concept = Form::archetype().individuate_as_archetype();
-        new_concept.set_internal_name_str("Bobby");
+        new_concept.set_internal_name("Bobby");
         implement.set_target(&new_concept.as_form());
         impls.push(implement);
         let cfg = init_config(&mut impls, &CodegenConfig::default());
@@ -174,14 +167,14 @@ mod tests {
         let mut impls = vec![];
 
         let mut new_attr = Attribute::archetype().individuate_as_archetype();
-        new_attr.set_internal_name_str("Name");
+        new_attr.set_internal_name("Name");
         let mut owner = Form::archetype().individuate_as_archetype();
-        owner.set_internal_name_str("Bobby");
+        owner.set_internal_name("Bobby");
         let mut value = Form::archetype().individuate_as_archetype();
-        value.set_internal_name_str("Word");
-        owner.add_attribute(new_attr);
-        new_attr.set_owner_archetype(owner);
-        new_attr.set_value_archetype(value);
+        value.set_internal_name("Word");
+        owner.add_attribute(&new_attr);
+        new_attr.set_owner_archetype(&owner);
+        new_attr.set_value_archetype(&value);
 
         let mut implement_attr = Implement::new();
         implement_attr.set_target(&new_attr.as_form());
@@ -221,7 +214,7 @@ mod tests {
         let mut impls = vec![];
 
         let mut new_attr = Attribute::archetype().individuate_as_archetype();
-        new_attr.set_internal_name_str("Name");
+        new_attr.set_internal_name("Name");
 
         let mut implement_attr = Implement::new();
         implement_attr.set_target(&new_attr.as_form());

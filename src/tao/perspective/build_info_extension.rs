@@ -1,15 +1,15 @@
 use super::BuildInfo;
+use crate::tao::form::data::StringConcept;
 use crate::tao::form::{Crate, CrateExtension, Module};
 use crate::tao::relation::attribute::{
-    HasMember, ImplementationName, MostProminentMember, SupportsMembership,
+    ImplementationName, Member, MostProminentMember, SupportsMembership,
 };
+use std::ops::DerefMut;
 use std::rc::Rc;
 use zamm_yin::graph::value_wrappers::StrongValue;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::ArchetypeTrait;
-use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::{Form, FormTrait};
-use zamm_yin::Wrapper;
 
 /// Trait to extend BuildInfo functionality that has not been auto-generated.
 pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
@@ -30,10 +30,9 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
     /// of just `crate` because `crate` is a reserved keyword in Rust.
     fn crate_name(&self) -> Option<Rc<str>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
-        self.essence()
-            .inheritance_wrapper()
+        self.inheritance_wrapper()
             .base_wrapper()
-            .incoming_nodes(HasMember::TYPE_ID)
+            .incoming_nodes(Member::TYPE_ID)
             .iter()
             .map(|n| Form::from(n.id()))
             .find(|f| f.has_ancestor(Crate::archetype()))
@@ -45,17 +44,15 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
     fn set_implementation_name(&mut self, name: &str) {
         let mut s = StringConcept::new();
         // todo: set using StringConcept API once that is correctly generated once more
-        s.essence_mut()
+        s.deref_mut()
             .set_value(Rc::new(StrongValue::new(name.to_owned())));
-        self.essence_mut()
-            .add_outgoing(ImplementationName::TYPE_ID, s.essence());
+        self.add_outgoing(ImplementationName::TYPE_ID, &s);
     }
 
     /// Retrieve name the concept took on for its actual implementation.
     fn implementation_name(&self) -> Option<Rc<str>> {
         // todo: retrieve using StringConcept API once that is correctly generated once more
-        self.essence()
-            .inheritance_wrapper()
+        self.inheritance_wrapper()
             .base_wrapper()
             .outgoing_nodes(ImplementationName::TYPE_ID)
             .last()
@@ -69,8 +66,7 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
 
     /// Get the module that represents this archetype as its primary concept.
     fn representative_module(&self) -> Option<Module> {
-        self.essence()
-            .inheritance_wrapper()
+        self.inheritance_wrapper()
             .base_wrapper()
             .incoming_nodes(MostProminentMember::TYPE_ID)
             .first()
@@ -110,13 +106,13 @@ mod tests {
         initialize_kb();
         let mut info = BuildInfo::new();
         info.set_crate_name("zamm_yang");
-        info.set_import_path("zamm_yang::import::path".to_owned());
+        info.set_import_path("zamm_yang::import::path");
         info.set_implementation_name("Yolo");
 
         assert_eq!(info.crate_name(), Some(Rc::from("zamm_yang")));
         assert_eq!(
             info.import_path(),
-            Some(Rc::new("zamm_yang::import::path".to_owned()))
+            Some(Rc::from("zamm_yang::import::path"))
         );
         assert_eq!(info.implementation_name(), Some(Rc::from("Yolo")));
     }
@@ -128,7 +124,7 @@ mod tests {
         let type1 = Tao::archetype().individuate_as_archetype();
         let mut info = BuildInfo::from(type1.id());
         info.set_crate_name("zamm_yang");
-        info.set_import_path("zamm_yang::import::path".to_owned());
+        info.set_import_path("zamm_yang::import::path");
         info.set_implementation_name("Yolo");
 
         let type2 = type1.individuate_as_archetype();

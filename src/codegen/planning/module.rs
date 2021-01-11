@@ -6,7 +6,6 @@ use crate::codegen::template::concept::archetype_module::{
 use crate::tao::form::{Crate, CrateExtension, Module, ModuleExtension};
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
 use crate::tao::Implement;
-use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait};
 
@@ -19,7 +18,7 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
 
     let parent_node = KnowledgeGraphNode::from(parent.id());
     if parent_node.is_newly_defined() {
-        archetype_names.push(parent.internal_name_str().unwrap());
+        archetype_names.push(parent.internal_name().unwrap());
     } else if Crate::yang().version_at_least(0, 1, 8) {
         // Parent is already defined as part of a dependency, we're only creating this crate so
         // that we can access the children as well. In which case, we should also re-export the
@@ -70,7 +69,7 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
                 (*ModuleExtension::implementation_name(&child_submodule).unwrap()).to_owned(),
             );
         } else if KnowledgeGraphNode::from(child.id()).is_newly_defined() {
-            archetype_names.push(child.internal_name_str().unwrap());
+            archetype_names.push(child.internal_name().unwrap());
         } // else, if this child doesn't have their own module, and has also been already defined,
           // then we will have already set them for re-export earlier
     }
@@ -83,10 +82,8 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
         re_exports.push((*re_export).to_owned());
     }
 
-    let doc = request.documentation().map(|rc| Rc::from(rc.as_str()));
-
     code_archetype_module(&ArchetypeModuleConfig {
-        doc,
+        doc: request.documentation(),
         archetype_names,
         private_submodules,
         public_submodules,

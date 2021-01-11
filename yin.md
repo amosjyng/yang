@@ -4,6 +4,151 @@
 
 I've [mentioned](https://github.com/amosjyng/yin/blob/master/yin.md) Yang a lot already, but I've never formally introduced the two of you. Meet Yang, a code-generation tool. Traditional, worldly, and experienced, he knows all about the cool spots in his little digital neighborhood, all the idiosyncrasies and quirks of his down-to-earth neighbors. Ever the ruthless pragmatic, he has a healthy disregard for the pious rectitude of the compilers. He wishes badly to explore the world outside, but he is fated to stay in this little Rustic village until Yin comes for a visit.
 
+### Data
+
+One archetype type we haven't discussed yet is `Data`, perhaps roughly analogous to the linguistic concept of a "noun." What do we generally start out describing as nouns? Physical objects in the physical world.
+
+Now, not every noun corresponds directly to something physical. We have words that refer to mental states, for example. But even emotions appear to ultimately be an emergent phenomenon of lower-level physics. Even the [is-ought problem](https://en.wikipedia.org/wiki/Is%E2%80%93ought_problem) or [fact-value distinction](https://en.wikipedia.org/wiki/Fact%E2%80%93value_distinction) are, in a sense, not quite as dichotomous as they might seem: all "ought" opinions that have ever existed are encoded in some "is," whether that encoding takes the form of neural patterns, ink on a parchment, or sound waves propagating through the air. This doesn't mean that the general distinction between "is" and "ought" isn't worth making, or that nouns should be done away with. All abstractions are [leaky](https://blog.codinghorror.com/all-abstractions-are-failed-abstractions/), but [some are useful](https://en.wikipedia.org/wiki/All_models_are_wrong).
+
+The same can be said for the bits in Yin and Yang's world. Everything is ultimately bits for these programs -- even a video feed hooked up to the physical world only ever comes in as a stream of bits. If we really wanted to fool a program, it should be theoretically impossible for the program [to tell](https://en.wikipedia.org/wiki/Brain_in_a_vat) that it's actually running in a hermetically sealed continuous integration test environment instead of production. But it still makes sense to speak of pieces of data versus the relations between the data, even if the relations themselves can rightfully be considered data as well:
+
+```rust
+define_child!(
+    data,
+    form,
+    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
+);
+```
+
+In a sense, it's all about framing. Every series of bits forms a number, but unless you're Gödel and you're trying to establish an equivalence between a mathematical proof and an integer, reasoning about "a series of bits" is going to be quite different from reasoning about "a number."
+
+One type of data is a "string":
+
+```rust
+define_child!(
+    string_concept,
+    data,
+    "The concept of a string of characters."
+);
+
+KnowledgeGraphNode::from(string_concept.id()).mark_data_analogue();
+```
+
+A string takes multiple forms in Rust:
+
+```rust
+define_child!(
+    str_concept,
+    data,
+    "The Rust-specific concept of an immutable string of characters."
+);
+
+KnowledgeGraphNode::from(str_concept.id()).mark_data_analogue();
+```
+
+Ideally, this would be modeled as string and integers being fundamental CS concepts, and `str` and `String` being Rust's implementations of those particular concepts. However, that sort of refactor is perhaps best left to a future version of ZAMM.
+
+Another type of data is a number:
+
+```rust
+define_child!(
+    number,
+    data,
+    "The concept of numbers."
+);
+
+KnowledgeGraphNode::from(number.id()).mark_data_analogue();
+```
+
+Every type of data usually has a "default" value that we think of when constructing one from scratch.
+
+```rust
+let mut meta_data = data.specific_meta();
+
+add_attr!(
+    default_value <= attribute,
+    meta_data,
+    str_concept,
+    "The default value of a data structure.",
+    "the Rust code representation for the default value of this concept."
+);
+```
+
+For strings, this would be the empty string:
+
+```rust
+string_concept.set_default_value("String::new()");
+str_concept.set_default_value("\"\"");
+```
+
+For numbers, this would be zero:
+
+```rust
+number.set_default_value("0");
+```
+
+This next bit is more of a Yang thing, but we'll define it here anyways to keep everything in one place. We need to refer to these data structures somehow in our code, and the "how" is to call them by their name as they're known in Rust.
+
+```rust
+add_attr!(
+    rust_primitive <= attribute,
+    meta_data,
+    str_concept,
+    "The Rust primitive that a Yin data concept is implemented by.",
+    "the name of the Rust primitive that this concept represents."
+);
+
+string_concept.set_rust_primitive("String");
+str_concept.set_rust_primitive("str");
+number.set_rust_primitive("usize");
+```
+
+This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
+
+The Rust data structure known as `str` has different boxed and unboxed representations. Unlike the other ones we've encountered so far, you refer to a boxed `str` as `Box<str>`, but to an unboxed one as `&str`. There are good reasons for this, namely because the size of a `str` is unknown at compile time, but regardless this is an edge case to note. We'll let the user make that override:
+
+```rust
+add_attr!(
+    unboxed_representation <= attribute,
+    meta_data,
+    str_concept,
+    "The syntax used to refer to an unboxed version of this primitive.",
+    "the unboxed version of this primitive."
+);
+
+str_concept.set_unboxed_representation("&str");
+```
+
+Since the reason was that `str` is unsized, we'll let the user mark it as such as well:
+
+```rust
+add_flag!(
+    unsized_flag <= flag,
+    meta_data,
+    "Whether or not this data structure has a known size at compile-time.",
+    "having a known size at compile-time."
+);
+unsized_flag.set_internal_name_str("unsized");
+```
+
+Last but not least, testing is important. While the default value is a good place to start, we'll want to come up with other values as well to test with. Ideally, we can simply figure out how to generate them, but for now we'll just specify an alternative value to use other than the default. This alternative value should be unique in the codebase, so that a grep for it will quickly return this spot as documentation.
+
+```rust
+add_attr!(
+    dummy_value <= attribute,
+    meta_data,
+    str_concept,
+    "A dummy value for a type of data. This helps with testing.",
+    "the the Rust code representation for the dummy test value of this concept."
+);
+
+string_concept.set_dummy_value("\"test-dummy-string\".to_owned()");
+str_concept.set_dummy_value("\"test-dummy-str\"");
+number.set_dummy_value("17");
+```
+
+### Implementations
+
 Here's what Yang knows: implementing is an action it can take:
 
 ```rust
@@ -17,9 +162,9 @@ Implementations are lower-level concepts that *target* specific higher-level con
 
 ```rust
 add_attr!(
-    target,
+    target <= attribute,
     implement,
-    Tao::archetype(),
+    tao,
     "The target of an implement command.",
     "target concept for this implementation."
 );
@@ -29,9 +174,9 @@ We need some way of efficiently distinguishing Yin concepts from each other. We 
 
 ```rust
 add_attr!(
-    concept_id,
+    concept_id <= attribute,
     implement,
-    Number::archetype(),
+    number,
     "The integer ID associated with a concept.",
     "the concept's ID during code generation time, as opposed to the concept's currently assigned runtime ID."
 );
@@ -41,37 +186,15 @@ When implementing anything in Rust, we should consider documenting it for the us
 
 ```rust
 add_attr!(
-    documentation,
+    documentation <= attribute,
     implement,
-    StringConcept::archetype(),
+    str_concept,
     "The documentation associated with an implementation.",
     "the documentation string associated with this particular Rust implementation."
 );
 ```
 
 Now we finally understand why there's a documentation string with each introduced concept.
-
-Each data primitive has an associated primitive type in Rust. We should define an attribute for this:
-
-```rust
-define_child!(
-    rust_primitive,
-    Attribute::archetype(),
-    "The Rust primitive that a Yin data concept is implemented by."
-);
-```
-
-This is basically build information, except that it's information about how this primitive is built inside of Rust, as opposed to how this primitive is built as a higher-level Yin concept. Both representations ultimately refer to the same basic idea, but the two representations live on different levels and interact with different neighbors. The Rust primitive interacts with other Rust code, and the Yin concept interacts with other Yin concepts. Even though all Yin concepts are currently implemented in Rust anyways, the specifics of the Rust language has little impact on the Yin API and abstractions.
-
-The Rust data structure known as `str` has different boxed and unboxed representations. Unlike the other ones we've encountered so far, you refer to a boxed `str` as `Box<str>`, but to an unboxed one as `&str`. There are good reasons for this, namely because the size of a `str` is unknown at compile time, but regardless this is an edge case to note. We'll let the user make that override:
-
-```rust
-define_child!(
-    unboxed_representation,
-    Attribute::archetype(),
-    "The syntax used to refer to an unboxed version of this primitive."
-);
-```
 
 ### Perspective
 
@@ -110,7 +233,7 @@ As part of this perspective, we should start tracking what has and hasn't gotten
 
 ```rust
 add_flag!(
-    newly_defined,
+    newly_defined <= flag,
     knowledge_graph_node,
     "Marks an archetype and all its descendants as having been newly defined as part of this particular build.",
     "having been newly defined as part of the current build."
@@ -122,7 +245,7 @@ We should have a similar flag for imported concepts. Note that some concepts are
 
 ```rust
 add_flag!(
-    imported,
+    imported <= flag,
     knowledge_graph_node,
     "Marks a concept as being defined in an imported file.",
     "imported from another build."
@@ -136,7 +259,7 @@ However, this also means that Yin's new attribute node won't be the same `Attrib
 
 ```rust
 add_flag!(
-    attribute_analogue,
+    attribute_analogue <= flag,
     knowledge_graph_node,
     "Marks an archetype and all its descendants as requiring attribute-specific logic during generation.",
     "logically analogous to an attribute node."
@@ -147,7 +270,7 @@ The same is true of Tao, Data, and Archetype:
 
 ```rust
 add_flag!(
-    root_analogue,
+    root_analogue <= flag,
     knowledge_graph_node,
     "Marks an archetype as requiring root-node-specific logic during generation. None of its descendants will inherit this.",
     "logically analogous to the root node."
@@ -155,7 +278,7 @@ add_flag!(
 aa(root_analogue).mark_nonhereditary_attr();
 
 add_flag!(
-    root_archetype_analogue,
+    root_archetype_analogue <= flag,
     knowledge_graph_node,
     "Marks an archetype as requiring root-archetype-specific logic during generation. None of its descendants will inherit this.\n\nThe root archetype node is different from the root node. All nodes descend from the root node, including the root archetype node; all archetypes descend from the root archetype node.",
     "logically analogous to the root archetype node."
@@ -163,14 +286,14 @@ add_flag!(
 aa(root_archetype_analogue).mark_nonhereditary_attr();
 
 add_flag!(
-    archetype_analogue,
+    archetype_analogue <= flag,
     knowledge_graph_node,
     "Marks an archetype and all its descendants as requiring archetype-specific logic during generation.",
     "logically analogous to an archetype node."
 );
 
 add_flag!(
-    data_analogue,
+    data_analogue <= flag,
     knowledge_graph_node,
     "Marks an archetype and all its descendants as requiring data-specific logic during generation.",
     "logically analogous to a data node."
@@ -197,9 +320,9 @@ Getters and setters in particular have their own dual-purpose documentation stri
 
 ```rust
 add_attr!(
-    dual_purpose_documentation,
+    dual_purpose_documentation <= attribute,
     build_info,
-    StringConcept::archetype(),
+    str_concept,
     "Dual-purpose documentation that can be used in more than one situation.\n\nFor example, the same substring might be usable for both the getter and setter of a string.",
     "the dual-purpose documentation substring to be used for the implementation of this property as getters and setters in a different concept's class."
 );
@@ -210,19 +333,29 @@ Rust groups things by modules.
 ```rust
 define_child!(
     module,
-    Form::archetype(),
+    form,
     "Concept representing a Rust module."
 );
 ```
 
-Things that are grouped inside of a module will be considered a member of the module:
+Things that are grouped inside of a module will be considered a member of the module. This is true for things that have memberships in general.
 
 ```rust
 define_child!(
-    has_member,
-    Attribute::archetype(),
-    "Marks the value as being part of the owner. The owner should presumably be a collection of some sort."
+    collection,
+    form,
+    "Anything that has members/sub-components."
 );
+
+add_attr!(
+    member <= attribute,
+    collection,
+    tao,
+    "Marks the value as being part of the owner. The owner should presumably be a collection of some sort.",
+    "the members of this collection."
+);
+aa(member).mark_multi_valued_attr();
+aa(member).mark_nonhereditary_attr();
 ```
 
 Rust modules sometimes re-export things so that it looks like it's coming from that module.
@@ -230,7 +363,7 @@ Rust modules sometimes re-export things so that it looks like it's coming from t
 ```rust
 define_child!(
     re_exports,
-    Attribute::archetype(),
+    attribute,
     "Marks the owner module as re-exporting the value symbol."
 );
 ```
@@ -239,9 +372,9 @@ It seems to make sense to group a concept and its descendants inside the same mo
 
 ```rust
 add_attr!(
-    most_prominent_member,
+    most_prominent_member <= attribute,
     module,
-    Tao::archetype(),
+    tao,
     "The most prominent member of a Rust module. The module will take its name after this member.",
     "the most prominent member of the module. By default, the name of the module will be the same as the name of this member."
 );
@@ -251,7 +384,7 @@ During implementation, we should be able to force a new attribute to live inside
 
 ```rust
 add_flag!(
-    own_module,
+    own_module <= flag,
     build_info,
     "Marks an archetype as living inside its own module, even if it doesn't have any defined child archetypes yet.",
     "residing in its own Rust module."
@@ -263,32 +396,13 @@ Once built, structs have a certain import path:
 
 ```rust
 add_attr!(
-    import_path,
+    import_path <= attribute,
     build_info,
-    StringConcept::archetype(),
+    str_concept,
     "Describes the import path of a defined struct.",
     "the import path the Rust implementation ended up at."
 );
 aa(import_path).mark_nonhereditary_attr();
-```
-
-Unfortunately, Yin's information about her data attributes didn't survive the code generation process, so here it is again:
-
-```rust
-StringConcept::archetype().set_default_value("String::new()");
-StringConcept::archetype().set_rust_primitive("String");
-Number::archetype().set_default_value("0");
-Number::archetype().set_rust_primitive("usize");
-```
-
-To help with testing, we should give these data types dummy values in addition to the default ones -- at least until such time as Yang is capable of generating dummy values himself.
-
-```rust
-define_child!(
-    dummy_value,
-    Attribute::archetype(),
-    "A dummy value for a type of data. This helps with testing."
-);
 ```
 
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
@@ -296,7 +410,7 @@ So to finish up with build information that applies to any implemented concept, 
 ```rust
 define_child!(
     crate_concept,
-    Form::archetype(),
+    form,
     "Crate that a concept was built as a part of."
 );
 crate_concept.set_internal_name_str("crate");
@@ -309,7 +423,7 @@ Crates are versioned:
 ```rust
 define_child!(
     version,
-    Attribute::archetype(),
+    attribute,
     "Version number for a versioned object."
 );
 ```
@@ -319,12 +433,30 @@ Concepts and crates alike might also have their own implementation name:
 ```rust
 define_child!(
     implementation_name,
-    Attribute::archetype(),
+    attribute,
     "Name the concept actually took on when implemented."
 );
 ```
 
 It is only natural for the human mind to use the name of the crate as a metonymy for the crate itself, just as humans also tend to use a filename or a file icon as a metonymy for the inode that points to the actual blocks of data on disk. How often do we stop to remind ourselves that the filename is only a symbolic handle for the actual data, or that when we're dragging a file icon from one folder to another, we're not dragging the data but only the visual representation of the data? We don't do so very often, because such details usually don't matter. It does matter here, however, so we will keep them separate and distinct.
+
+#### Backwards compatibility
+
+Humans have imperfect introspection capabilities into their semi-interpretable minds. As such, they often come up with initial ontologies that do not accurately reflect how they actually reason about the world behind the scenes. Accomodating change is important, because otherwise we are stuck in the confines of an imperfect past. Accomodating tradition is also important, however, because there are costs involved in accomodating change, and if one is forced to spend all their time keeping up with the flux of present times, there won't be any more time left for improving on the future.
+
+Accomodating tradition also carries a cost, of course. We will try to automate that cost when it comes to ontologies by providing an alias for moved concepts:
+
+```rust
+add_attr!(
+    alias <= attribute,
+    build_info,
+    str_concept,
+    "Describes an aliased import path for a concept.",
+    "the alternative import paths for the concept."
+);
+aa(alias).mark_nonhereditary_attr();
+aa(alias).mark_multi_valued_attr();
+```
 
 ### Implementation
 
@@ -339,37 +471,32 @@ This also means redefining the modules for concepts that were first introduced i
 
 ```rust
 module!(
-    Form::archetype(),
+    form,
     "All things that can be interacted with have form.",
     [
         "crate_extension::CrateExtension",
-        "defined_marker::DefinedMarker",
         "module_extension::ModuleExtension"
     ]
 );
+module!(relation, "Relations between the forms.");
+module!(flag, "Relations involving only one form.");
 module!(
-    Archetype::archetype(),
-    "Types of forms, as opposed to the forms themselves.",
-    [
-        "attribute_activation::CodegenFlags",
-        "create_implementation::CreateImplementation"
-    ]
-);
-module!(
-    Data::archetype(),
-    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea.",
-    ["data_extension::DataExtension"]
-);
-module!(Relation::archetype(), "Relations between the forms.");
-module!(Flag::archetype(), "Relations involving only one form.");
-module!(
-    Attribute::archetype(),
+    attribute,
     "Relations between two forms.",
     ["supports_membership::SupportsMembership"]
 );
 module!(
-    HasProperty::archetype(),
+    has_property,
     "Meta-attributes around what attributes instances of an archetype have."
+);
+module!(
+    archetype,
+    "Types of forms, as opposed to the forms themselves.",
+    ["create_implementation::CreateImplementation"]
+);
+module!(
+    data,
+    "Data that actually exist concretely as bits on the machine, as opposed to only existing as a hypothetical, as an idea."
 );
 ```
 
@@ -382,14 +509,14 @@ We should really save the build info, so that one day we will no longer need to 
 This is the version of Yang used to make this build happen:
 
 ```toml
-zamm_yang = "=0.1.7"
+zamm_yang = "=0.1.10"
 ```
 
 Yang does his best to be backwards-compatible, so we should let old Yang know that this is new Yang speaking:
 
 ```rust
-Crate::yin().set_version("0.1.4");
-Crate::yang().set_version("0.1.7");
+Crate::yin().set_version("0.2.0");
+Crate::yang().set_version("0.2.0");
 ```
 
 We should also let him know what our current crate name is. There is as of yet no way to let him know that this is the same crate as the `Crate::yang()` in the knowledge base, or that this crate is a newer version of himself. Unfortunately, there is no self-awareness yet, only instinct.
@@ -400,43 +527,15 @@ Crate::current().set_implementation_name("zamm_yang");
 
 ### Imports
 
-These are the generic imports for general Yang generation:
+Let's import the build for Yin, so that we can differentiate between where concepts are introduced:
 
-```rust
-use zamm_yang::add_flag;
-use zamm_yang::add_attr;
-use zamm_yang::define;
-use zamm_yang::define_child;
-use zamm_yang::module;
-use zamm_yang::tao::initialize_kb;
-use zamm_yang::tao::Tao;
-use zamm_yang::tao::ImplementExtension;
-use zamm_yang::tao::archetype::ArchetypeTrait;
-use zamm_yang::tao::archetype::ArchetypeFormTrait;
-use zamm_yang::tao::archetype::AttributeArchetypeFormTrait;
-use zamm_yang::tao::archetype::ArchetypeFormExtensionTrait;
-use zamm_yang::tao::archetype::CreateImplementation;
-use zamm_yang::tao::form::data::DataExtension;
-use zamm_yang::tao::form::data::Number;
-use zamm_yang::tao::form::data::StringConcept;
-use zamm_yang::tao::form::Crate;
-use zamm_yang::tao::form::CrateExtension;
-use zamm_yang::tao::form::Form;
-use zamm_yang::tao::form::FormTrait;
-use zamm_yang::tao::form::ModuleExtension;
-use zamm_yang::tao::callbacks::handle_all_implementations;
-use zamm_yang::codegen::CodegenConfig;
-use zamm_yang::node_wrappers::CommonNodeTrait;
-use zamm_yang::helper::aa;
+```zamm
+https://api.zamm.dev/v1/books/zamm/yin/0.2.0/yin.md
 ```
 
-These are the imports specific to building on top of Yin:
+Additional imports not used by Yin:
 
 ```rust
-use zamm_yang::tao::form::data::Data;
-use zamm_yang::tao::archetype::Archetype;
-use zamm_yang::tao::relation::Relation;
-use zamm_yang::tao::relation::attribute::Attribute;
-use zamm_yang::tao::relation::attribute::has_property::HasProperty;
-use zamm_yang::tao::relation::flag::Flag;
+use zamm_yang::add_attr;
+use zamm_yang::tao::form::data::DataExtension;
 ```

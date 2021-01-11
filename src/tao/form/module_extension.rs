@@ -1,12 +1,11 @@
+use crate::tao::form::data::StringConcept;
 use crate::tao::form::Module;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::{ReExports, SupportsMembership};
 use std::rc::Rc;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::ArchetypeTrait;
-use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::FormTrait;
-use zamm_yin::Wrapper;
 
 /// Trait to extend Module functionality that has not been auto-generated.
 pub trait ModuleExtension: FormTrait + CommonNodeTrait + SupportsMembership {
@@ -36,15 +35,13 @@ pub trait ModuleExtension: FormTrait + CommonNodeTrait + SupportsMembership {
     fn re_export(&mut self, symbol: &str) {
         let mut re_export_symbol = StringConcept::new();
         re_export_symbol.set_value(symbol.to_owned());
-        self.essence_mut()
-            .add_outgoing(ReExports::TYPE_ID, re_export_symbol.essence());
+        self.add_outgoing(ReExports::TYPE_ID, &re_export_symbol);
     }
 
     /// Retrieve all symbols re-exported by this module.
     fn re_exports(&self) -> Vec<Rc<str>> {
         // no need to worry about inheritance because modules don't inherit from each other
-        self.essence()
-            .outgoing_nodes(ReExports::TYPE_ID)
+        self.outgoing_nodes(ReExports::TYPE_ID)
             .iter()
             .map(|f| Rc::from(StringConcept::from(*f).value().unwrap().as_str()))
             .collect()

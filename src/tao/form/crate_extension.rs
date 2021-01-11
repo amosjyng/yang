@@ -1,3 +1,4 @@
+use crate::tao::form::data::StringConcept;
 use crate::tao::form::Crate;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::{SupportsMembership, Version};
@@ -5,9 +6,7 @@ use std::convert::TryFrom;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{ArchetypeFormTrait, ArchetypeTrait};
-use zamm_yin::tao::form::data::StringConcept;
 use zamm_yin::tao::form::FormTrait;
-use zamm_yin::Wrapper;
 
 /// Trait to extend Crate functionality that has not been auto-generated.
 pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
@@ -37,15 +36,13 @@ pub trait CrateExtension: FormTrait + CommonNodeTrait + SupportsMembership {
     fn set_version(&mut self, version: &str) {
         let mut version_string = StringConcept::new();
         version_string.set_value(version.to_owned());
-        self.essence_mut()
-            .add_outgoing(Version::TYPE_ID, version_string.essence());
+        self.add_outgoing(Version::TYPE_ID, &version_string);
     }
 
     /// Get the crate version.
     fn version(&self) -> Option<Rc<str>> {
         // no need to worry about inheritance because crates don't inherit from each other.
-        self.essence()
-            .outgoing_nodes(Version::TYPE_ID)
+        self.outgoing_nodes(Version::TYPE_ID)
             .last()
             .map(|f| Rc::from(StringConcept::from(*f).value().unwrap().as_str()))
     }
