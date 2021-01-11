@@ -161,11 +161,14 @@ number.set_dummy_value("17");
 
 ### Implementations
 
-Here's what Yang knows: implementing is an action it can take:
+Here's what Yang knows: it can perform actions, and implementing is one of those actions.
 
 ```rust
-define!(
+define!(action, "A process that mutates the state of the world.");
+
+define_child!(
     implement,
+    action,
     "The act of implementing something. When created, this effectively serves as a call to action for Yang."
 );
 ```
@@ -496,6 +499,12 @@ module!(
 module!(data, "Rust data elements.");
 module!(relation, "Relations between the forms.");
 module!(flag, "Relations involving only one form.");
+
+module!(
+    action,
+    "Processes that mutate state.",
+    ["implement_extension::ImplementExtension"]
+);
 
 let mut attribute_mod = attribute.impl_mod("Relations between two forms.");
 attribute_mod.has_extension("supports_membership::SupportsMembership");

@@ -1,7 +1,7 @@
 use crate::tao::form::rust_item::Module;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::Target;
-use crate::tao::Implement;
+use crate::tao::action::Implement;
 use heck::SnakeCase;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};

@@ -1,9 +1,9 @@
-use super::Implement;
 use crate::codegen::planning::{
     archetype_file_path, code_archetype, code_module, handle_init, module_file_path,
 };
 use crate::codegen::track_autogen::save_autogen;
 use crate::codegen::{output_code, CodegenConfig};
+use crate::tao::action::Implement;
 use crate::tao::form::rust_item::{Crate, CrateExtension, Module};
 use crate::tao::perspective::KnowledgeGraphNode;
 use colored::*;
