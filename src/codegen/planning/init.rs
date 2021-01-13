@@ -3,6 +3,7 @@ use crate::codegen::template::concept::auto_init_kb::{code_init, KBInitConfig, L
 use crate::codegen::{output_code, CodegenConfig, StructConfig};
 use crate::tao::action::Implement;
 use crate::tao::archetype::CreateImplementation;
+use crate::tao::form::rust_item::Concept;
 use crate::tao::perspective::KnowledgeGraphNode;
 use heck::CamelCase;
 use zamm_yin::node_wrappers::BaseNodeTrait;
@@ -25,8 +26,9 @@ fn setup_archetype_init(
     concepts_to_initialize.push(target_struct);
 
     // only set ID for user if user hasn't already set it
-    if implement.concept_id().is_none() {
-        implement.set_concept_id(grab_new_implementation_id(codegen_cfg.yin));
+    let mut concept = Concept::from(implement.embodiment().unwrap().id());
+    if concept.concept_id().is_none() {
+        concept.set_concept_id(grab_new_implementation_id(codegen_cfg.yin));
     }
 
     let target_struct = concept_to_struct(&target_type, codegen_cfg.yin);
@@ -81,9 +83,10 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
         // more recent versions of Yang
         if target_type.has_specific_meta() {
             let mut target_meta = target_type.specific_meta();
-            if target_meta.implementations().is_empty() {
-                // if the meta is already marked for implementation because it was defined separately,
-                // then don't bother creating it a second time
+            if target_meta.concept_implementation().is_none() {
+                // If the meta is already marked for implementation because it was defined separately,
+                // then don't bother creating it a second time. Otherwise, this will create it for
+                // the first time.
                 let mut meta_impl = target_meta.implement();
                 KnowledgeGraphNode::from(target_meta.id()).mark_newly_defined();
                 let target_name = target_type.internal_name().unwrap();
@@ -128,6 +131,7 @@ pub fn handle_init(archetype_requests: &mut [Implement], codegen_cfg: &CodegenCo
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tao::archetype::CreateImplementation;
     use crate::tao::initialize_kb;
     use zamm_yin::tao::archetype::AttributeArchetypeFormTrait;
     use zamm_yin::tao::form::{Form, FormTrait};
@@ -141,6 +145,7 @@ mod tests {
         let mut new_concept = Form::archetype().individuate_as_archetype();
         new_concept.set_internal_name("Bobby");
         implement.set_target(&new_concept.as_form());
+        implement.set_embodiment(&Concept::new().into());
         impls.push(implement);
         let cfg = init_config(&mut impls, &CodegenConfig::default());
         assert_eq!(
@@ -167,12 +172,15 @@ mod tests {
 
         let mut implement_attr = Implement::new();
         implement_attr.set_target(&new_attr.as_form());
+        implement_attr.set_embodiment(&Concept::new().into());
         impls.push(implement_attr);
         let mut implement_owner = Implement::new();
         implement_owner.set_target(&owner.as_form());
+        implement_owner.set_embodiment(&Concept::new().into());
         impls.push(implement_owner);
         let mut implement_value = Implement::new();
         implement_value.set_target(&value.as_form());
+        implement_value.set_embodiment(&Concept::new().into());
         impls.push(implement_value);
 
         let cfg = init_config(&mut impls, &CodegenConfig::default());
@@ -206,6 +214,7 @@ mod tests {
 
         let mut implement_attr = Implement::new();
         implement_attr.set_target(&new_attr.as_form());
+        implement_attr.set_embodiment(&Concept::new().into());
         impls.push(implement_attr);
 
         let cfg = init_config(&mut impls, &CodegenConfig::default());
@@ -217,5 +226,23 @@ mod tests {
                 .collect::<Vec<(&str, &str, &str)>>(),
             Vec::<(&str, &str, &str)>::new()
         );
+    }
+
+    #[test]
+    fn test_meta() {
+        initialize_kb();
+        let mut new_type = Form::archetype().individuate_as_archetype();
+        new_type.set_internal_name("new-type");
+        let mut new_meta_type = new_type.specific_meta();
+        new_meta_type.set_internal_name("new-meta-type");
+        new_meta_type.impl_mod("Dummy doc");
+        assert!(new_meta_type.concept_implementation().is_none());
+
+        let mut implement = Implement::new();
+        implement.set_target(&new_type.as_form());
+        implement.set_embodiment(&Concept::new().into());
+
+        init_config(&mut [implement], &CodegenConfig::default());
+        assert!(new_meta_type.concept_implementation().is_some());
     }
 }

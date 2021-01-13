@@ -12,7 +12,8 @@ use crate::tao::form::rust_item::{Crate, CrateExtension};
 use auto_init::initialize_types;
 pub use auto_init::YIN_MAX_ID;
 use zamm_yin::node_wrappers::CommonNodeTrait;
-use zamm_yin::tao::archetype::ArchetypeTrait;
+use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait};
+use zamm_yin::tao::form::{Form, FormTrait};
 pub use zamm_yin::tao::Tao;
 
 /// Initialize Yin, including with Yang-specific concepts.
@@ -29,4 +30,6 @@ pub fn initialize_kb() {
     yang.set_implementation_name(Crate::YANG_CRATE_NAME);
     let mut current = Crate::new();
     current.set_internal_name(Crate::CURRENT_CRATE_INTERNAL_NAME);
+
+    Form::archetype().set_meta_archetype(&Archetype::archetype());
 }

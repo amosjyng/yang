@@ -1,6 +1,7 @@
 /target
 /.yang
 /.zamm
+/.project
 *.log
 .autogen.txt
 Cargo.lock

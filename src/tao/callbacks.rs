@@ -4,7 +4,7 @@ use crate::codegen::planning::{
 use crate::codegen::track_autogen::save_autogen;
 use crate::codegen::{output_code, CodegenConfig};
 use crate::tao::action::Implement;
-use crate::tao::form::rust_item::{Crate, CrateExtension, Module};
+use crate::tao::form::rust_item::{Concept, Crate, CrateExtension, Module};
 use crate::tao::perspective::KnowledgeGraphNode;
 use colored::*;
 use zamm_yin::node_wrappers::CommonNodeTrait;
@@ -25,14 +25,22 @@ pub fn implements() -> Box<dyn Iterator<Item = Implement>> {
 /// Retrieve implementation requests that pertain to archetypes.
 fn archetypes_to_implement() -> Vec<Implement> {
     implements()
-        .filter(|i| !i.target().unwrap().has_ancestor(Module::archetype().into()))
+        .filter(|i| {
+            i.embodiment()
+                .unwrap()
+                .has_ancestor(Concept::archetype().into())
+        })
         .collect()
 }
 
 /// Retrieve implementation requests that pertain to modules.
 fn modules_to_implement() -> Vec<Implement> {
     implements()
-        .filter(|i| i.target().unwrap().has_ancestor(Module::archetype().into()))
+        .filter(|i| {
+            i.embodiment()
+                .unwrap()
+                .has_ancestor(Module::archetype().into())
+        })
         .collect()
 }
 
@@ -45,7 +53,7 @@ fn handle_archetype_implementation(request: Implement, codegen_cfg: &CodegenConf
 
 /// Handle the implementation request for a new module.
 fn handle_module_implementation(request: Implement, codegen_cfg: &CodegenConfig) {
-    let target_module = Module::from(request.target().unwrap().id());
+    let target_module = Module::from(request.embodiment().unwrap().id());
     let primary_archetype = Archetype::from(target_module.most_prominent_member().unwrap().id());
     let code = code_module(request, target_module, primary_archetype);
     output_code(&code, &module_file_path(&primary_archetype), codegen_cfg);
