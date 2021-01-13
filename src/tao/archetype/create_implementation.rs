@@ -1,5 +1,5 @@
 use crate::tao::action::Implement;
-use crate::tao::form::rust_item::{Module, Concept};
+use crate::tao::form::rust_item::{Concept, Module};
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::Target;
 use heck::SnakeCase;
@@ -34,7 +34,8 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
         if let Some(name) = self.internal_name() {
             BuildInfo::from(new_module.id()).set_implementation_name(&name.to_snake_case());
         }
-        implementation.set_target(&new_module.as_form());
+        implementation.set_target(&self.as_form());
+        implementation.set_embodiment(&new_module.into());
         implementation.set_documentation(doc);
         new_module
     }
@@ -53,11 +54,22 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
             .collect()
     }
 
+    /// Get the implementation for this node as a Concept node.
+    fn concept_implementation(&self) -> Option<Implement> {
+        self.implementations().into_iter().find(|i| {
+            i.embodiment()
+                .unwrap()
+                .has_ancestor(Concept::archetype().into())
+        })
+    }
+
     /// Get the implementation for the accessors of this current node.
     fn accessor_implementation(&self) -> Option<Implement> {
-        self.implementations()
-            .into_iter()
-            .find(|i| !i.target().unwrap().has_ancestor(Module::archetype().into()))
+        self.implementations().into_iter().find(|i| {
+            i.embodiment()
+                .unwrap()
+                .has_ancestor(Concept::archetype().into())
+        })
     }
 }
 
@@ -75,19 +87,17 @@ mod tests {
     fn retrieve_implementations() {
         initialize_kb();
         let form_subtype = Form::archetype().individuate_as_archetype();
-        let implement = form_subtype.implement();
-        assert_eq!(implement.target(), Some(form_subtype.as_form()));
-        assert!(implement.embodiment().unwrap().has_ancestor(Concept::archetype().into()));
-        assert_eq!(form_subtype.implementations(), vec![implement]);
-    }
-
-    #[test]
-    fn retrieve_accessor_implementations() {
-        initialize_kb();
-        let form_subtype = Form::archetype().individuate_as_archetype();
         form_subtype.impl_mod("foosbar");
-        let implement = form_subtype.implement();
-        assert_eq!(implement.target(), Some(form_subtype.as_form()));
-        assert_eq!(form_subtype.implementations(), vec![implement]);
+        let implement_concept = form_subtype.implement();
+        assert_eq!(implement_concept.target(), Some(form_subtype.as_form()));
+        assert_eq!(form_subtype.implementations().len(), 2);
+        assert_eq!(
+            form_subtype.concept_implementation(),
+            Some(implement_concept)
+        );
+        assert_eq!(
+            form_subtype.accessor_implementation(),
+            Some(implement_concept)
+        );
     }
 }
