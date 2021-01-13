@@ -17,7 +17,7 @@ use crate::tao::action::Implement;
 use crate::tao::archetype::rust_item_archetype::DataArchetype;
 use crate::tao::archetype::CreateImplementation;
 use crate::tao::form::rust_item::data::Data;
-use crate::tao::form::rust_item::{Crate, CrateExtension};
+use crate::tao::form::rust_item::{Concept, Crate, CrateExtension};
 use crate::tao::perspective::KnowledgeGraphNode;
 use heck::{KebabCase, SnakeCase};
 use std::cell::RefCell;
@@ -79,7 +79,8 @@ fn generic_config(
     };
 
     // allow a default, especially for tests
-    let initial_id = request.concept_id().unwrap_or_else(|| Rc::new(0));
+    let concept = Concept::from(request.embodiment().unwrap().id());
+    let initial_id = concept.concept_id().unwrap_or_else(|| Rc::new(0));
     let id = if codegen_cfg.yin {
         format!("{}", initial_id)
     } else {
@@ -420,6 +421,7 @@ mod tests {
         let mut target_kgn = KnowledgeGraphNode::from(target.id());
         target_kgn.mark_newly_defined();
         let mut implement = Implement::new();
+        implement.set_embodiment(&Concept::new().into());
         implement.set_target(&target.as_form());
         let cfg = generic_config(
             &implement,
@@ -443,6 +445,7 @@ mod tests {
         KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(&target.as_form());
+        implement.set_embodiment(&Concept::new().into());
         let cfg = generic_config(
             &implement,
             &target,
@@ -464,6 +467,7 @@ mod tests {
         KnowledgeGraphNode::from(target.id()).mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(&target.as_form());
+        implement.set_embodiment(&Concept::new().into());
         implement.set_documentation("One.\n\nTwo.");
         let cfg = generic_config(
             &implement,
@@ -511,6 +515,7 @@ mod tests {
         AttributeArchetypeFormTrait::set_value_archetype(&mut target, &Form::archetype());
         let mut implement = Implement::new();
         implement.set_target(&target.as_form());
+        implement.set_embodiment(&Concept::new().into());
         let parent = primary_parent(&target.into());
         let codegen_cfg = CodegenConfig::default();
 
@@ -540,6 +545,7 @@ mod tests {
         kgn.mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(&target.as_form());
+        implement.set_embodiment(&Concept::new().into());
         let parent = primary_parent(&target);
         let codegen_cfg = CodegenConfig::default();
         // todo: this line is only needed because Yin doesn't set a default meta archetype
@@ -559,6 +565,7 @@ mod tests {
         kgn.mark_newly_defined();
         let mut implement = Implement::new();
         implement.set_target(&target.as_form());
+        implement.set_embodiment(&Concept::new().into());
         let parent = primary_parent(&target);
         let codegen_cfg = CodegenConfig::default();
         // todo: this line is only needed because Yin doesn't set a default meta archetype
@@ -597,6 +604,7 @@ mod tests {
         my_root.set_internal_name("my-root");
         let mut i = Implement::new();
         i.set_target(&my_root.as_form());
+        i.set_embodiment(&Concept::new().into());
         let code = code_archetype(i, &CodegenConfig::default());
         assert!(!code.contains("impl FormTrait"));
     }

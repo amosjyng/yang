@@ -1,5 +1,5 @@
 use crate::tao::action::Implement;
-use crate::tao::form::rust_item::Module;
+use crate::tao::form::rust_item::{Module, Concept};
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
 use crate::tao::relation::attribute::Target;
 use heck::SnakeCase;
@@ -13,6 +13,7 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
     fn implement(&self) -> Implement {
         let mut implementation = Implement::new();
         implementation.set_target(&self.as_form());
+        implementation.set_embodiment(&Concept::new().into());
         implementation
     }
 
@@ -76,6 +77,7 @@ mod tests {
         let form_subtype = Form::archetype().individuate_as_archetype();
         let implement = form_subtype.implement();
         assert_eq!(implement.target(), Some(form_subtype.as_form()));
+        assert!(implement.embodiment().unwrap().has_ancestor(Concept::archetype().into()));
         assert_eq!(form_subtype.implementations(), vec![implement]);
     }
 

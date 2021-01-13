@@ -185,12 +185,34 @@ add_attr!(
 );
 ```
 
-We need some way of efficiently distinguishing Yin concepts from each other. We can't just compare the memory addresses of a Yin struct, since different ephemeral structs may in fact be referring to the same concept. An easy way to do this is by assigning a different integer ID to each one, so that each Yin concept effectively becomes a wrapper around an integer, and we are just defining the relations between different integers:
+The same entity can sometimes be implemented in multiple ways. For example, an (x, y) coordinate can be implemented as a class, a tuple, or even a string. Each implementation has its own particular methods of interaction. We will describe this sense of embodiment.
+
+```rust
+add_attr!(
+    embodiment <= attribute,
+    implement,
+    form,
+    "What the abstraction will be embodied as in this particular implementation.",
+    "the embodiment for the target abstraction."
+);
+```
+
+Yin concepts in particular are embodied as a Rust struct that implements `ArchetypeTrait`. This may be completely obvious to the astute observer who has looked at the code and understood how it works, but ZAMM itself does not know this yet. This is hardly surprising. It wasn't until recent centuries that humans understood their own anatomy, including how humans are conceived and [where babies come from](https://en.wikipedia.org/wiki/Preformationism). ZAMM understands nothing about itself that isn't mentioned in this document, and so I am now mentioning the existence of such concept structs. This is not cheating; most modern humans would not understand the basics of their own internal anatomy if they were not explicitly told so back in school.
+
+```rust
+define_child!(
+    concept,
+    rust_item,
+    "A Yin concept. Represented in Rust as a struct implementing `ArchetypeTrait`."
+);
+```
+
+We need some way of efficiently distinguishing these Yin concepts from each other. We can't just compare the memory addresses of a Yin struct, since different ephemeral structs may in fact be referring to the same concept. An easy way to do this is by assigning a different integer ID to each one, so that each Yin concept effectively becomes a wrapper around an integer, and we are just defining the relations between different integers:
 
 ```rust
 add_attr!(
     concept_id <= attribute,
-    implement,
+    concept,
     number,
     "The integer ID associated with a concept.",
     "the concept's ID during code generation time, as opposed to the concept's currently assigned runtime ID."
