@@ -4,6 +4,8 @@
 
 I've [mentioned](https://github.com/amosjyng/yin/blob/master/yin.md) Yang a lot already, but I've never formally introduced the two of you. Meet Yang, a code-generation tool. Traditional, worldly, and experienced, he knows all about the cool spots in his little digital neighborhood, all the idiosyncrasies and quirks of his down-to-earth neighbors. Ever the ruthless pragmatic, he has a healthy disregard for the pious rectitude of the compilers. He wishes badly to explore the world outside, but he is fated to stay in this little Rustic village until Yin comes for a visit.
 
+### Rust
+
 As small as it may be, the little village of Rust forms its own universe of sorts. We would do well to call explicit attention to this.
 
 ```rust
@@ -14,7 +16,7 @@ define_child!(
 );
 ```
 
-### Data
+#### Data
 
 One archetype type we haven't discussed yet is `Data`, perhaps roughly analogous to the linguistic concept of a "noun." What do we generally start out describing as nouns? Physical objects in the physical world.
 
@@ -157,6 +159,41 @@ add_attr!(
 da(string_concept).set_dummy_value("\"test-dummy-string\".to_owned()");
 da(str_concept).set_dummy_value("\"test-dummy-str\"");
 da(number).set_dummy_value("17");
+```
+
+#### Type elements
+
+Rust has `struct`s and `trait`s. While these are in fact pretty different, they are also pretty similar, especially for our purposes right now. As such, we'll define them both as a generic thing that has something to do with types.
+
+```rust
+define_child!(
+    rust_type_element,
+    rust_item,
+    "A type-related entity in Rust, such as a `struct` or a `trait`."
+);
+```
+
+One common feature between the type elements is that they can have functions associated with them.
+
+```rust
+define_child!(
+    function,
+    rust_item,
+    "A Rust function."
+);
+```
+
+These functions can be *static*, meaning that they are associated with the type in general and not with any particular instantiation of the type.
+
+```rust
+add_flag!(
+    static_marker <= flag,
+    function,
+    "Marks a Rust function as being a static one. In other words, a function that doesn't take in a `self` parameter.",
+    "representing a static Rust function."
+);
+
+static_marker.set_internal_name("static");
 ```
 
 ### Implementations
@@ -365,7 +402,17 @@ define_child!(
 
 There are some concepts that might only reveal themselves in a debugging or deployment context, and other meta-concepts that indirectly influence how the code is built but is not represented directly in any part of the code. These are out of scope for now.
 
-Note that while this is not meta for Rust items such as modules and traits (each individual module and each individual trait actually does have its own import path), it is meta for Rust data items. Rust's `String` class has an import path, but an individual instance of that class does not -- *unless* it's a public constant, in which case it does indeed have its own import path. Unfortunately as of now, representing this nuance would break some assumptions about how archetypes work.
+Internal names are well and good, but when interacting with members of the public (as you do when you are compiled and published as a library to be used by randos from the street), public names are in order. They may even match the internal names, but this is not necessarily the case, so we shoulud call that out explicitly here.
+
+```rust
+add_attr!(
+    public_name <= attribute,
+    build_info,
+    str_concept,
+    "Represents the name that is actualy used when referring to this concept in generated code.",
+    "the name to use for this concept in generated code."
+);
+```
 
 Rust groups things by modules.
 
@@ -446,6 +493,8 @@ add_attr!(
 );
 aa(import_path).mark_nonhereditary_attr();
 ```
+
+Note that while this is not meta for Rust items such as modules and traits (each individual module and each individual trait actually does have its own import path), it is meta for Rust data items. Rust's `String` class has an import path, but an individual instance of that class does not -- *unless* it's a public constant, in which case it does indeed have its own import path. Unfortunately as of now, representing this nuance would break some assumptions about how archetypes work.
 
 So to finish up with build information that applies to any implemented concept, everything built in Rust will be part of a crate.
 
