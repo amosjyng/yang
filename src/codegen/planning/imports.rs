@@ -1,3 +1,5 @@
+//! Manage the generation of import paths, both within Rust and the filesystem.
+
 use crate::codegen::StructConfig;
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
 use heck::{CamelCase, SnakeCase};
@@ -92,6 +94,27 @@ pub fn module_file_path(target: &Archetype) -> String {
         target
     );
     format!("src/{}/mod.rs", ancestor_path(target, "/"))
+}
+
+/// Given the logical Rust import path, generates a filesystem path.
+pub fn import_to_file_path(import_path: &str) -> String {
+    if import_path.is_empty() {
+        return String::new();
+    }
+
+    let mods = import_path.split("::").collect::<Vec<&str>>();
+    let folders = mods
+        .iter()
+        .skip(1)
+        .take(mods.len() - 2)
+        .format("/")
+        .to_string();
+    let filename = mods.last().unwrap().to_snake_case();
+    if folders.is_empty() {
+        format!("src/{}.rs", filename)
+    } else {
+        format!("src/{}/{}.rs", folders, filename)
+    }
 }
 
 /// Returns the full import path, including the crate itself.
@@ -265,6 +288,40 @@ mod tests {
         assert_eq!(
             module_file_path(&owner.into()),
             "src/tao/relation/attribute/owner/mod.rs"
+        );
+    }
+
+    #[test]
+    fn import_to_file_path_empty() {
+        assert_eq!(import_to_file_path(""), "");
+    }
+
+    #[test]
+    fn import_to_file_path_top_level() {
+        assert_eq!(import_to_file_path("crate::Something"), "src/something.rs");
+    }
+
+    #[test]
+    fn import_to_file_path_nested() {
+        assert_eq!(
+            import_to_file_path("crate::nested::Something"),
+            "src/nested/something.rs"
+        );
+    }
+
+    #[test]
+    fn import_to_file_path_deeply_nested() {
+        assert_eq!(
+            import_to_file_path("crate::deeply::nested::Something"),
+            "src/deeply/nested/something.rs"
+        );
+    }
+
+    #[test]
+    fn import_to_file_path_camel_cased() {
+        assert_eq!(
+            import_to_file_path("crate::deeply::nested::SomeThing"),
+            "src/deeply/nested/some_thing.rs"
         );
     }
 
