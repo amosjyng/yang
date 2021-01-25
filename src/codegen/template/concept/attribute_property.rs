@@ -115,7 +115,6 @@ fn setter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     f.add_import(cfg.attr.import.clone());
     f.add_import(cfg.value_type.import.clone());
     f.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
-    f.add_import("zamm_yin::tao::form::FormTrait".to_owned());
     f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
     f.add_import("zamm_yin::node_wrappers::CommonNodeTrait".to_owned());
 
@@ -166,7 +165,6 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
 
     f.add_import(cfg.attr.import.clone());
     f.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
-    f.add_import("zamm_yin::tao::form::FormTrait".to_owned());
     f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
 
     if cfg.public {

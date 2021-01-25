@@ -53,7 +53,6 @@ fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.set_self_reference(SelfReference::Mutable);
     f.add_import(cfg.flag.import.clone());
     f.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
-    f.add_import("zamm_yin::tao::form::FormTrait".to_owned());
     f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
     f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
         "self.deref_mut().add_flag({flag_name}::TYPE_ID);",
@@ -73,7 +72,6 @@ fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.set_return("bool".to_owned());
     f.add_import(cfg.flag.import.clone());
     f.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
-    f.add_import("zamm_yin::tao::form::FormTrait".to_owned());
     f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
     if cfg.hereditary {
         f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
