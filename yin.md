@@ -502,7 +502,7 @@ define_child!(
 );
 ```
 
-This is not part of `build_info` because `build_info` refers to implementation details about Rust items, whereas this refers to implementation details about ZAMM concepts.
+This is not part of `build_info` because `build_info` refers to implementation details about Rust items, whereas this refers to implementation details about ZAMM concepts. It also doesn't belong to the `implement` concept because it's not about a single implementation of a concept, but insteads says something about the implementation of a concept and all its descendants.
 
 Once built, structs have a certain import path:
 
