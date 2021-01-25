@@ -4,8 +4,10 @@ use crate::codegen::template::concept::archetype_module::{
     code_archetype_module, ArchetypeModuleConfig,
 };
 use crate::tao::action::Implement;
+use crate::tao::archetype::CreateImplementation;
 use crate::tao::form::rust_item::{Module, ModuleExtension};
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension, KnowledgeGraphNode};
+use heck::SnakeCase;
 use zamm_yin::node_wrappers::CommonNodeTrait;
 use zamm_yin::tao::archetype::{Archetype, ArchetypeFormTrait};
 
@@ -67,6 +69,15 @@ pub fn code_module(request: Implement, module: Module, parent: Archetype) -> Str
             archetype_names.push(child.internal_name().unwrap());
         } // else, if this child doesn't have their own module, and has also been already defined,
           // then we will have already set them for re-export earlier
+    }
+
+    for added_trait_impl in parent.added_trait_implementations() {
+        let trait_name = BuildInfo::from(added_trait_impl.id())
+            .implementation_name()
+            .unwrap();
+        let trait_filename = trait_name.to_snake_case();
+        re_exports.push(format!("{}::{}", trait_filename, trait_name));
+        private_submodules.push(trait_filename);
     }
 
     for submodule in module.submodules() {

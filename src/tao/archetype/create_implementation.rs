@@ -125,6 +125,17 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
             .add_outgoing(ImplementsTrait::TYPE_ID, new_trait.deref());
     }
 
+    /// Retrieve all trait implementations added by this concept, excluding any traits inherited 
+    /// from ancestors.
+    fn added_trait_implementations(&self) -> Vec<Trait> {
+        self.deref()
+            .base_wrapper()
+            .outgoing_nodes(ImplementsTrait::TYPE_ID)
+            .into_iter()
+            .map(|f| Trait::from(f.id()))
+            .collect()
+    }
+
     /// Retrieve all traits implemented by this concept. Some may have been introduced by an
     /// ancestor.
     fn trait_implementations(&self) -> Vec<Trait> {
@@ -183,6 +194,7 @@ mod tests {
         new_type.add_trait_implementation(&trait1);
         new_subtype.add_trait_implementation(&trait2);
         assert_eq!(new_subtype.trait_implementations(), vec![trait1, trait2]);
+        assert_eq!(new_subtype.added_trait_implementations(), vec![trait2]);
     }
 
     #[test]

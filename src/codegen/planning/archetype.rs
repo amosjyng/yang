@@ -2,7 +2,7 @@ use super::concept_to_struct;
 use super::imports::{in_own_submodule, root_node_or_equivalent};
 use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::{
-    Appendable, FileFragment, ImplementationFragment, TraitFragment,
+    Appendable, FileFragment, ImplementationFragment, ItemDeclarationAPI, TraitFragment,
 };
 use crate::codegen::template::concept::archetype::{add_archetype_fragment, ArchetypeFormatConfig};
 use crate::codegen::template::concept::attribute::{add_attr_fragments, AttributeFormatConfig};
@@ -385,6 +385,7 @@ fn configure_archetype_trait_file(
     let target_build = BuildInfo::from(target_trait.id());
     let mut new_trait_code =
         TraitFragment::new(target_build.implementation_name().unwrap().to_string());
+    new_trait_code.mark_as_public();
     let mut file = FileFragment::default();
     file.set_self_import(target_build.import_path().unwrap().to_string());
     add_property_fragments(&target, false, codegen_cfg, &mut new_trait_code, &mut file);
@@ -694,7 +695,7 @@ mod tests {
             code_archetype_trait(&mut form_subtype, &subtype_trait, &CodegenConfig::default());
         println!("{}", code);
         assert!(code.contains(indoc! {r#"
-            trait MyFormTrait {
+            pub trait MyFormTrait {
                 /// Whether this is marked as stuff.
                 fn is_my_flag(&self) -> bool {"#}));
         assert!(code.contains("use crate::tao::relation::flag::MyFlag;"));
