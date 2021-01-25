@@ -1,11 +1,12 @@
 use crate::tao::action::Implement;
-use crate::tao::form::rust_item::{Concept, Module};
+use crate::tao::form::rust_item::{Concept, Module, Trait};
 use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
-use crate::tao::relation::attribute::Target;
+use crate::tao::relation::attribute::{Target, ImplementsTrait};
 use heck::SnakeCase;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::FormTrait;
+use std::ops::Deref;
 
 /// Convenience trait for creating a new implementation of a concept.
 pub trait CreateImplementation: FormTrait + CommonNodeTrait {
@@ -71,6 +72,21 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
                 .has_ancestor(Concept::archetype().into())
         })
     }
+
+    /// Add a trait to be implemented by this concept and all its descendants.
+    fn add_trait_implementation(&mut self, new_trait: &Trait) {
+        self.deref_mut().add_outgoing(ImplementsTrait::TYPE_ID, new_trait.deref());
+    }
+
+    /// Retrieve all traits implemented by this concept. Some may have been introduced by an 
+    /// ancestor.
+    fn trait_implementations(&self) -> Vec<Trait> {
+        self.deref()
+            .outgoing_nodes(ImplementsTrait::TYPE_ID)
+            .into_iter()
+            .map(|f| Trait::from(f.id()))
+            .collect()
+    }
 }
 
 impl CreateImplementation for Archetype {}
@@ -99,5 +115,19 @@ mod tests {
             form_subtype.accessor_implementation(),
             Some(implement_concept)
         );
+    }
+
+    #[test]
+    fn test_trait_implementation_inheritance() {
+        initialize_kb();
+        let mut new_type = Form::archetype().individuate_as_archetype();
+        let mut new_subtype = new_type.individuate_as_archetype();
+        assert_eq!(new_subtype.trait_implementations(), vec![]);
+
+        let trait1 = Trait::new();
+        let trait2 = Trait::new();
+        new_type.add_trait_implementation(&trait1);
+        new_subtype.add_trait_implementation(&trait2);
+        assert_eq!(new_subtype.trait_implementations(), vec![trait1, trait2]);
     }
 }

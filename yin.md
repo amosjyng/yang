@@ -481,6 +481,29 @@ add_flag!(
 aa(own_module).mark_nonhereditary_attr();
 ```
 
+Rust also has traits.
+
+```rust
+define_child!(
+    rust_trait,
+    rust_item,
+    "Concept representing a Rust trait."
+);
+rust_trait.set_internal_name("trait");
+```
+
+If an archetype with attributes contains sub-archetypes, then we should make sure all implementations of that archetype and its subtypes contain those attributes. Because Rust has no sense of inheritance between structs, we will instead put these attributes of the ancestor archetype inside a trait. Then, all descendant archetypes will implement that trait and thereby gain the functionality of the ancestor archetype.
+
+```rust
+define_child!(
+    implements_trait,
+    attribute,
+    "All concept structs implementing this archetype and its descendants should also implement this trait."
+);
+```
+
+This is not part of `build_info` because `build_info` refers to implementation details about Rust items, whereas this refers to implementation details about ZAMM concepts.
+
 Once built, structs have a certain import path:
 
 ```rust
