@@ -32,14 +32,21 @@ impl AppendedFragment {
 
 /// Marks this type of fragment as accepting additional appended fragments. If this is a nested
 /// fragment, then the appended fragments may show up as nested within the body of the fragment,
-pub trait Appendable {
+pub trait Appendable: CodeFragment {
     /// Append other code fragment into this one.
     fn append(&mut self, other: Rc<RefCell<dyn CodeFragment>>);
+
+    /// Returns true if no fragments have been appended into this one.
+    fn is_empty(&self) -> bool;
 }
 
 impl Appendable for AppendedFragment {
     fn append(&mut self, other: Rc<RefCell<dyn CodeFragment>>) {
         self.appendages.push(other);
+    }
+
+    fn is_empty(&self) -> bool {
+        self.appendages.is_empty()
     }
 }
 

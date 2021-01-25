@@ -1,6 +1,5 @@
 use crate::codegen::template::basic::{
-    Appendable, AtomicFragment, FileFragment, FunctionFragment, ImplementationFragment,
-    ItemDeclarationAPI, SelfReference,
+    Appendable, AtomicFragment, FileFragment, FunctionFragment, ItemDeclarationAPI, SelfReference,
 };
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
@@ -142,14 +141,14 @@ fn test_inheritance_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f
 }
 
-/// Add these flags to an implementation and its corresponding test module.
-pub fn add_flag_to_impl(
+/// Add these flags to a struct/trait and the corresponding test module.
+pub fn add_flag_to_appendable(
     cfg: &FlagConfig,
-    implementation: &mut ImplementationFragment,
+    appendable: &mut dyn Appendable,
     file: &mut FileFragment,
 ) {
-    implementation.append(Rc::new(RefCell::new(getter_fragment(cfg))));
-    implementation.append(Rc::new(RefCell::new(setter_fragment(cfg))));
+    appendable.append(Rc::new(RefCell::new(getter_fragment(cfg))));
+    appendable.append(Rc::new(RefCell::new(setter_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(test_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(test_inheritance_fragment(cfg))));
 }

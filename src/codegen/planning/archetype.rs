@@ -5,10 +5,10 @@ use crate::codegen::template::basic::{Appendable, FileFragment, ImplementationFr
 use crate::codegen::template::concept::archetype::{add_archetype_fragment, ArchetypeFormatConfig};
 use crate::codegen::template::concept::attribute::{add_attr_fragments, AttributeFormatConfig};
 use crate::codegen::template::concept::attribute_property::{
-    add_attr_to_impl, AttributePropertyConfig,
+    add_attr_to_appendable, AttributePropertyConfig,
 };
 use crate::codegen::template::concept::data::{add_data_fragments, DataFormatConfig};
-use crate::codegen::template::concept::flag::{add_flag_to_impl, FlagConfig};
+use crate::codegen::template::concept::flag::{add_flag_to_appendable, FlagConfig};
 use crate::codegen::template::concept::form::{add_form_fragment, FormFormatConfig};
 use crate::codegen::template::concept::tao::{tao_file_fragment, TaoConfig};
 use crate::codegen::CODE_WIDTH;
@@ -312,14 +312,14 @@ fn primary_parent(target: &Archetype) -> Archetype {
     *target.parents().first().unwrap()
 }
 
-fn add_struct_flag_fragments(
+fn add_flag_accessors(
     target: &Archetype,
     cfg: &CodegenConfig,
-    implementation: &mut ImplementationFragment,
+    implementation: &mut dyn Appendable,
     file: &mut FileFragment,
 ) {
     for flag in target.added_flags() {
-        add_flag_to_impl(
+        add_flag_to_appendable(
             &flag_config(
                 cfg,
                 &flag.accessor_implementation().unwrap(),
@@ -335,11 +335,11 @@ fn add_struct_flag_fragments(
 fn add_struct_attr_fragments(
     target: &Archetype,
     cfg: &CodegenConfig,
-    implementation: &mut ImplementationFragment,
+    implementation: &mut dyn Appendable,
     file: &mut FileFragment,
 ) {
     for attr in target.added_attributes() {
-        add_attr_to_impl(
+        add_attr_to_appendable(
             &attr_config(
                 cfg,
                 &attr.accessor_implementation().unwrap(),
@@ -350,6 +350,22 @@ fn add_struct_attr_fragments(
             file,
         );
     }
+}
+
+fn add_property_fragments(
+    target: &Archetype,
+    cfg: &CodegenConfig,
+    implementation: &mut dyn Appendable,
+    file: &mut FileFragment,
+) {
+    if !target.added_flags().is_empty() {
+        add_flag_accessors(&target, cfg, implementation, file);
+    }
+    if !target.added_attributes().is_empty() {
+        add_struct_attr_fragments(&target, cfg, implementation, file);
+    }
+    // no support for trait upcasting in rust, so won't do final append to file here:
+    // https://stackoverflow.com/q/28632968/257583
 }
 
 /// Generate code for a given concept. Post-processing still needed.
@@ -390,13 +406,8 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
     if !in_own_submodule(&target) {
         let mut implementation =
             ImplementationFragment::new_struct_impl(concept_to_struct(&target, codegen_cfg.yin));
-        if !target.added_flags().is_empty() {
-            add_struct_flag_fragments(&target, codegen_cfg, &mut implementation, &mut file);
-        }
-        if !target.added_attributes().is_empty() {
-            add_struct_attr_fragments(&target, codegen_cfg, &mut implementation, &mut file);
-        }
-        if !implementation.content.borrow().appendages.is_empty() {
+        add_property_fragments(&target, codegen_cfg, &mut implementation, &mut file);
+        if !implementation.is_empty() {
             file.append(Rc::new(RefCell::new(implementation)));
         }
     }

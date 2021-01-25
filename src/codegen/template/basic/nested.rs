@@ -54,6 +54,10 @@ impl Appendable for NestedFragment {
     fn append(&mut self, nesting: Rc<RefCell<dyn CodeFragment>>) {
         self.nesting.push(nesting);
     }
+
+    fn is_empty(&self) -> bool {
+        self.nesting.is_empty()
+    }
 }
 
 impl CodeFragment for NestedFragment {

@@ -44,6 +44,26 @@ impl FileFragment {
 
     /// Get the code for this fragment.
     pub fn generate_code(&self) -> String {
+        self.body(CODE_WIDTH)
+    }
+}
+
+impl Appendable for FileFragment {
+    fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
+        self.contents.borrow_mut().append(fragment);
+    }
+
+    fn is_empty(&self) -> bool {
+        self.contents.borrow().is_empty()
+    }
+}
+
+impl CodeFragment for FileFragment {
+    fn imports(&self) -> Vec<String> {
+        Vec::new()
+    }
+
+    fn body(&self, line_width: usize) -> String {
         let mut combined = AppendedFragment::default();
         combined.append(self.contents.clone());
         if !self.tests.is_empty() {
@@ -71,11 +91,11 @@ impl FileFragment {
             &exluded_imports,
         );
 
-        let body = combined.body(CODE_WIDTH);
+        let body = combined.body(line_width);
 
         let mut final_file = String::new();
         if let Some(preamble) = &self.preamble {
-            final_file += &format!("{}\n\n", preamble.body(CODE_WIDTH));
+            final_file += &format!("{}\n\n", preamble.body(line_width));
         }
         if !imports.is_empty() {
             final_file += &format!("{}\n\n", imports);
@@ -85,12 +105,6 @@ impl FileFragment {
         }
 
         final_file
-    }
-}
-
-impl Appendable for FileFragment {
-    fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
-        self.contents.borrow_mut().append(fragment);
     }
 }
 

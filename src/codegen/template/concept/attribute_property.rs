@@ -1,7 +1,7 @@
 use super::util::kb_test_function;
 use crate::codegen::template::basic::{
     Appendable, AtomicFragment, FileFragment, FunctionCallFragment, FunctionFragment,
-    ImplementationFragment, ItemDeclarationAPI, SelfReference,
+    ItemDeclarationAPI, SelfReference,
 };
 use crate::codegen::StructConfig;
 use indoc::formatdoc;
@@ -404,14 +404,14 @@ fn test_multi_set_fragment(cfg: &AttributePropertyConfig) -> Option<FunctionFrag
     Some(f)
 }
 
-/// Add these flags to an implementation and its corresponding test module.
-pub fn add_attr_to_impl(
+/// Add these flags to an appendable and its corresponding test module.
+pub fn add_attr_to_appendable(
     cfg: &AttributePropertyConfig,
-    implementation: &mut ImplementationFragment,
+    appendable: &mut dyn Appendable,
     file: &mut FileFragment,
 ) {
-    implementation.append(Rc::new(RefCell::new(getter_fragment(cfg))));
-    implementation.append(Rc::new(RefCell::new(setter_fragment(cfg))));
+    appendable.append(Rc::new(RefCell::new(getter_fragment(cfg))));
+    appendable.append(Rc::new(RefCell::new(setter_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(test_fragment(cfg))));
     file.append_test(Rc::new(RefCell::new(test_inheritance_fragment(cfg))));
     if let Some(f) = test_multi_set_fragment(cfg) {
