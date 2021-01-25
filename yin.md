@@ -592,6 +592,7 @@ module!(
     [
         "crate_extension::CrateExtension",
         "module_extension::ModuleExtension",
+        "trait_extension::TraitExtension",
         "zamm_yin::tao::form::FormTrait"
     ]
 );

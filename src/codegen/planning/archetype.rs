@@ -1,7 +1,9 @@
 use super::concept_to_struct;
 use super::imports::{in_own_submodule, root_node_or_equivalent};
 use crate::codegen::docstring::into_docstring;
-use crate::codegen::template::basic::{Appendable, FileFragment, ImplementationFragment};
+use crate::codegen::template::basic::{
+    Appendable, FileFragment, ImplementationFragment, TraitFragment,
+};
 use crate::codegen::template::concept::archetype::{add_archetype_fragment, ArchetypeFormatConfig};
 use crate::codegen::template::concept::attribute::{add_attr_fragments, AttributeFormatConfig};
 use crate::codegen::template::concept::attribute_property::{
@@ -17,8 +19,8 @@ use crate::tao::action::Implement;
 use crate::tao::archetype::rust_item_archetype::DataArchetype;
 use crate::tao::archetype::CreateImplementation;
 use crate::tao::form::rust_item::data::Data;
-use crate::tao::form::rust_item::{Concept, Crate, CrateExtension};
-use crate::tao::perspective::KnowledgeGraphNode;
+use crate::tao::form::rust_item::{Concept, Crate, CrateExtension, Trait};
+use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
 use heck::{KebabCase, SnakeCase};
 use std::cell::RefCell;
 use std::convert::TryFrom;
@@ -245,6 +247,7 @@ fn data_config(base_cfg: &TaoConfig, target: &DataArchetype) -> DataFormatConfig
 }
 
 fn flag_config(
+    inside_struct: bool,
     codegen_cfg: &CodegenConfig,
     implement: &Implement,
     target: &Archetype,
@@ -252,7 +255,7 @@ fn flag_config(
 ) -> FlagConfig {
     let doc = implement.dual_purpose_documentation().unwrap();
     FlagConfig {
-        public: true,
+        public: inside_struct,
         property_name: Rc::from(flag.internal_name().unwrap().to_snake_case()),
         doc,
         flag: concept_to_struct(flag, codegen_cfg.yin),
@@ -262,6 +265,7 @@ fn flag_config(
 }
 
 fn attr_config(
+    inside_struct: bool,
     codegen_cfg: &CodegenConfig,
     attr_implement: &Implement,
     target: &Archetype,
@@ -293,7 +297,7 @@ fn attr_config(
         });
 
     AttributePropertyConfig {
-        public: true,
+        public: inside_struct,
         property_name: Rc::from(attr.internal_name().unwrap().to_snake_case()),
         doc,
         attr: concept_to_struct(&(*attr).into(), codegen_cfg.yin),
@@ -314,6 +318,7 @@ fn primary_parent(target: &Archetype) -> Archetype {
 
 fn add_flag_accessors(
     target: &Archetype,
+    inside_struct: bool,
     cfg: &CodegenConfig,
     implementation: &mut dyn Appendable,
     file: &mut FileFragment,
@@ -321,6 +326,7 @@ fn add_flag_accessors(
     for flag in target.added_flags() {
         add_flag_to_appendable(
             &flag_config(
+                inside_struct,
                 cfg,
                 &flag.accessor_implementation().unwrap(),
                 &target,
@@ -334,6 +340,7 @@ fn add_flag_accessors(
 
 fn add_struct_attr_fragments(
     target: &Archetype,
+    inside_struct: bool,
     cfg: &CodegenConfig,
     implementation: &mut dyn Appendable,
     file: &mut FileFragment,
@@ -341,6 +348,7 @@ fn add_struct_attr_fragments(
     for attr in target.added_attributes() {
         add_attr_to_appendable(
             &attr_config(
+                inside_struct,
                 cfg,
                 &attr.accessor_implementation().unwrap(),
                 &target,
@@ -354,18 +362,49 @@ fn add_struct_attr_fragments(
 
 fn add_property_fragments(
     target: &Archetype,
+    inside_struct: bool,
     cfg: &CodegenConfig,
     implementation: &mut dyn Appendable,
     file: &mut FileFragment,
 ) {
     if !target.added_flags().is_empty() {
-        add_flag_accessors(&target, cfg, implementation, file);
+        add_flag_accessors(&target, inside_struct, cfg, implementation, file);
     }
     if !target.added_attributes().is_empty() {
-        add_struct_attr_fragments(&target, cfg, implementation, file);
+        add_struct_attr_fragments(&target, inside_struct, cfg, implementation, file);
     }
     // no support for trait upcasting in rust, so won't do final append to file here:
     // https://stackoverflow.com/q/28632968/257583
+}
+
+fn configure_archetype_trait_file(
+    target: &mut Archetype,
+    target_trait: &Trait,
+    codegen_cfg: &CodegenConfig,
+) -> FileFragment {
+    let target_build = BuildInfo::from(target_trait.id());
+    let mut new_trait_code =
+        TraitFragment::new(target_build.implementation_name().unwrap().to_string());
+    let mut file = FileFragment::default();
+    file.set_self_import(target_build.import_path().unwrap().to_string());
+    add_property_fragments(&target, false, codegen_cfg, &mut new_trait_code, &mut file);
+    assert!(
+        !new_trait_code.is_empty(),
+        format!("Implemented empty properties trait for {:?}", target)
+    );
+    file.append(Rc::new(RefCell::new(new_trait_code)));
+    file.set_current_crate(Crate::current().implementation_name().unwrap());
+    file
+}
+
+/// Generate a trait for a given concept's properties, when the concept has descendants of its own
+/// that also need a simple way to implement those properties.
+pub fn code_archetype_trait(
+    target: &mut Archetype,
+    target_trait: &Trait,
+    codegen_cfg: &CodegenConfig,
+) -> String {
+    configure_archetype_trait_file(target, target_trait, codegen_cfg).generate_code()
 }
 
 /// Generate code for a given concept. Post-processing still needed.
@@ -406,10 +445,23 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
     if !in_own_submodule(&target) {
         let mut implementation =
             ImplementationFragment::new_struct_impl(concept_to_struct(&target, codegen_cfg.yin));
-        add_property_fragments(&target, codegen_cfg, &mut implementation, &mut file);
+        add_property_fragments(&target, true, codegen_cfg, &mut implementation, &mut file);
         if !implementation.is_empty() {
             file.append(Rc::new(RefCell::new(implementation)));
         }
+    }
+
+    for self_trait in target.trait_implementations() {
+        let implementation = ImplementationFragment::new_trait_impl(
+            StructConfig::new(
+                BuildInfo::from(self_trait.id())
+                    .import_path()
+                    .unwrap()
+                    .to_string(),
+            ),
+            concept_to_struct(&target, codegen_cfg.yin),
+        );
+        file.append(Rc::new(RefCell::new(implementation)));
     }
 
     file.set_current_crate(Crate::current().implementation_name().unwrap());
@@ -422,6 +474,7 @@ mod tests {
     use crate::tao::initialize_kb;
     use crate::tao::perspective::KnowledgeGraphNode;
     use indoc::indoc;
+    use zamm_yin::tao::relation::flag::Flag;
     use zamm_yin::tao::Tao;
 
     #[test]
@@ -618,5 +671,32 @@ mod tests {
         i.set_embodiment(&Concept::new().into());
         let code = code_archetype(i, &CodegenConfig::default());
         assert!(!code.contains("impl FormTrait"));
+    }
+
+    #[test]
+    fn obtain_file_fragment() {
+        initialize_kb();
+        let mut form_subtype = Form::archetype().individuate_as_archetype();
+        form_subtype.set_internal_name("my-form");
+        form_subtype.individuate_as_archetype();
+        KnowledgeGraphNode::from(form_subtype.id()).mark_newly_defined();
+
+        let mut flag_subtype = Flag::archetype().individuate_as_archetype();
+        flag_subtype.set_internal_name("my-flag");
+        KnowledgeGraphNode::from(flag_subtype.id()).mark_newly_defined();
+        let mut flag_impl = flag_subtype.implement_with_doc("Marks stuff up.");
+        flag_impl.set_dual_purpose_documentation("stuff.");
+        form_subtype.add_flag(&flag_subtype);
+
+        Crate::current().set_implementation_name("testing");
+        let subtype_trait = form_subtype.impl_trait();
+        let code =
+            code_archetype_trait(&mut form_subtype, &subtype_trait, &CodegenConfig::default());
+        println!("{}", code);
+        assert!(code.contains(indoc! {r#"
+            trait MyFormTrait {
+                /// Whether this is marked as stuff.
+                fn is_my_flag(&self) -> bool {"#}));
+        assert!(code.contains("use crate::tao::relation::flag::MyFlag;"));
     }
 }

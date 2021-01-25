@@ -79,14 +79,12 @@ fn init_config(archetype_requests: &mut [Implement], codegen_cfg: &CodegenConfig
             codegen_cfg,
         );
 
-        // no need to gate this behind a version since specific metas should only be defined in
-        // more recent versions of Yang
         if target_type.has_specific_meta() {
             let mut target_meta = target_type.specific_meta();
             if target_meta.concept_implementation().is_none() {
-                // If the meta is already marked for implementation because it was defined separately,
-                // then don't bother creating it a second time. Otherwise, this will create it for
-                // the first time.
+                // If the meta is already marked for implementation because it was defined
+                // separately, then don't bother creating it a second time. Otherwise, this will
+                // create it for the first time.
                 let mut meta_impl = target_meta.implement();
                 KnowledgeGraphNode::from(target_meta.id()).mark_newly_defined();
                 let target_name = target_type.internal_name().unwrap();

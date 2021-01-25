@@ -162,7 +162,7 @@ pub fn start_imports() {
 /// not be acted on.
 pub fn end_imports() {
     mark_import(false);
-    for i in implements() {
+    for i in implements(true) {
         KnowledgeGraphNode::from(i.id()).mark_imported();
     }
 }
