@@ -46,7 +46,7 @@ impl Appendable for TraitFragment {
 impl Default for TraitFragment {
     fn default() -> Self {
         let mut declaration = ItemDeclaration::default();
-        let content = Rc::new(RefCell::new(AppendedFragment::new_with_separator("\n")));
+        let content = Rc::new(RefCell::new(AppendedFragment::default()));
         declaration.set_body(content.clone());
         Self {
             name: String::default(),
