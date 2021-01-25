@@ -1,5 +1,5 @@
 use crate::tao::form::rust_item::Crate;
-use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
+use crate::tao::perspective::BuildInfo;
 use crate::tao::relation::attribute::SupportsMembership;
 use std::convert::TryFrom;
 use std::rc::Rc;

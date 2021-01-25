@@ -1,12 +1,7 @@
 use super::BuildInfo;
-use crate::tao::form::rust_item::data::StrConcept;
 use crate::tao::form::rust_item::{Crate, CrateExtension, Module};
-use crate::tao::relation::attribute::{
-    ImplementationName, Member, MostProminentMember, SupportsMembership,
-};
-use std::ops::DerefMut;
+use crate::tao::relation::attribute::{Member, MostProminentMember, SupportsMembership};
 use std::rc::Rc;
-use zamm_yin::graph::value_wrappers::StrongValue;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::ArchetypeTrait;
 use zamm_yin::tao::form::{Form, FormTrait};
@@ -36,25 +31,6 @@ pub trait BuildInfoExtension: FormTrait + CommonNodeTrait {
             .map(|n| Form::from(n.id()))
             .find(|f| f.has_ancestor(Crate::archetype().into()))
             .map(|c| Crate::from(c.id()).implementation_name())
-            .flatten()
-    }
-
-    /// Set name the concept took on for its actual implementation.
-    fn set_implementation_name(&mut self, name: &str) {
-        let mut s = StrConcept::new();
-        s.deref_mut()
-            .set_value(Rc::new(StrongValue::<str>::new_rc(Rc::from(name))));
-        self.add_outgoing(ImplementationName::TYPE_ID, &s);
-    }
-
-    /// Retrieve name the concept took on for its actual implementation.
-    fn implementation_name(&self) -> Option<Rc<str>> {
-        // todo: retrieve using StringConcept API once that is correctly generated once more
-        self.inheritance_wrapper()
-            .base_wrapper()
-            .outgoing_nodes(ImplementationName::TYPE_ID)
-            .last()
-            .map(|s| StrConcept::from(s.id()).value())
             .flatten()
     }
 

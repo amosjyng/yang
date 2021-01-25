@@ -1,5 +1,5 @@
 use crate::tao::form::rust_item::Module;
-use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
+use crate::tao::perspective::BuildInfo;
 use crate::tao::relation::attribute::SupportsMembership;
 use std::rc::Rc;
 use zamm_yin::node_wrappers::CommonNodeTrait;

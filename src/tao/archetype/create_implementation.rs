@@ -1,12 +1,12 @@
 use crate::tao::action::Implement;
 use crate::tao::form::rust_item::{Concept, Module, Trait};
-use crate::tao::perspective::{BuildInfo, BuildInfoExtension};
-use crate::tao::relation::attribute::{Target, ImplementsTrait};
+use crate::tao::perspective::BuildInfo;
+use crate::tao::relation::attribute::{ImplementsTrait, Target};
 use heck::SnakeCase;
+use std::ops::Deref;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
 use zamm_yin::tao::archetype::{Archetype, ArchetypeTrait, AttributeArchetype};
 use zamm_yin::tao::form::FormTrait;
-use std::ops::Deref;
 
 /// Convenience trait for creating a new implementation of a concept.
 pub trait CreateImplementation: FormTrait + CommonNodeTrait {
@@ -75,10 +75,11 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
 
     /// Add a trait to be implemented by this concept and all its descendants.
     fn add_trait_implementation(&mut self, new_trait: &Trait) {
-        self.deref_mut().add_outgoing(ImplementsTrait::TYPE_ID, new_trait.deref());
+        self.deref_mut()
+            .add_outgoing(ImplementsTrait::TYPE_ID, new_trait.deref());
     }
 
-    /// Retrieve all traits implemented by this concept. Some may have been introduced by an 
+    /// Retrieve all traits implemented by this concept. Some may have been introduced by an
     /// ancestor.
     fn trait_implementations(&self) -> Vec<Trait> {
         self.deref()

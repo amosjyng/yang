@@ -406,12 +406,13 @@ Internal names are well and good, but when interacting with members of the publi
 
 ```rust
 add_attr!(
-    public_name <= attribute,
+    implementation_name <= attribute,
     build_info,
     str_concept,
     "Represents the name that is actualy used when referring to this concept in generated code.",
     "the name to use for this concept in generated code."
 );
+aa(implementation_name).mark_nonhereditary_attr();
 ```
 
 Rust groups things by modules.
@@ -541,16 +542,6 @@ add_attr!(
     str_concept,
     "Version number for a versioned object.",
     "the version number for the crate."
-);
-```
-
-Concepts and crates alike might also have their own implementation name:
-
-```rust
-define_child!(
-    implementation_name,
-    attribute,
-    "Name the concept actually took on when implemented."
 );
 ```
 
