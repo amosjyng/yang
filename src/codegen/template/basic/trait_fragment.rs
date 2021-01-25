@@ -1,4 +1,6 @@
-use super::{AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI};
+use super::{
+    Appendable, AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI,
+};
 use crate::codegen::StructConfig;
 use itertools::Itertools;
 use std::cell::RefCell;
@@ -29,9 +31,10 @@ impl TraitFragment {
     pub fn add_required_trait(&mut self, required_trait: StructConfig) {
         self.required_traits.push(required_trait);
     }
+}
 
-    /// Add a fragment to the internals of this trait.
-    pub fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
+impl Appendable for TraitFragment {
+    fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
         self.content.borrow_mut().append(fragment);
     }
 }

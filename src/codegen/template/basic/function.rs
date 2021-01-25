@@ -1,4 +1,6 @@
-use super::{AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI};
+use super::{
+    Appendable, AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI,
+};
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -86,9 +88,10 @@ impl FunctionFragment {
     pub fn add_import(&mut self, import: String) {
         self.imports.push(import);
     }
+}
 
-    /// Add a fragment to the internals of this function.
-    pub fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
+impl Appendable for FunctionFragment {
+    fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
         self.content.borrow_mut().append(fragment);
     }
 }

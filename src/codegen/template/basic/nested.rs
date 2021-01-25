@@ -1,4 +1,4 @@
-use super::{AppendedFragment, AtomicFragment, CodeFragment, RUST_INDENTATION};
+use super::{Appendable, AppendedFragment, AtomicFragment, CodeFragment, RUST_INDENTATION};
 use crate::codegen::{add_indent, INDENT_SIZE};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -39,11 +39,6 @@ impl NestedFragment {
         }
     }
 
-    /// Add another fragment inside of this one.
-    pub fn append(&mut self, nesting: Rc<RefCell<dyn CodeFragment>>) {
-        self.nesting.push(nesting);
-    }
-
     /// Set the body fragment separator.
     pub fn set_separator(&mut self, separator: &str) {
         self.separator = separator.to_owned();
@@ -52,6 +47,12 @@ impl NestedFragment {
     /// Set the postfix for the indented nesting.
     pub fn set_nesting_postfix(&mut self, postfix: &str) {
         self.nesting_postfix = Some(postfix.to_owned());
+    }
+}
+
+impl Appendable for NestedFragment {
+    fn append(&mut self, nesting: Rc<RefCell<dyn CodeFragment>>) {
+        self.nesting.push(nesting);
     }
 }
 

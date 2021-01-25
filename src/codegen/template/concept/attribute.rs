@@ -1,7 +1,7 @@
 use super::tao::TaoConfig;
 use super::util::{add_assert, new_kb_test};
 use crate::codegen::template::basic::{
-    AppendedFragment, AtomicFragment, FileFragment, ItemDeclarationAPI,
+    Appendable, AppendedFragment, AtomicFragment, FileFragment, ItemDeclarationAPI,
 };
 use crate::codegen::StructConfig;
 use indoc::formatdoc;

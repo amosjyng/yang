@@ -1,5 +1,5 @@
 use super::{
-    AppendedFragment, AtomicFragment, CodeFragment, FileFragment, ItemDeclaration,
+    Appendable, AppendedFragment, AtomicFragment, CodeFragment, FileFragment, ItemDeclaration,
     ItemDeclarationAPI,
 };
 use crate::codegen::docstring::into_parent_docstring;
@@ -76,11 +76,6 @@ impl ModuleFragment {
         self.re_exports.push(export);
     }
 
-    /// Add a fragment to the internals of this module.
-    pub fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
-        self.content.borrow_mut().append(fragment);
-    }
-
     fn submodules_by_publicity(&self, publicity: bool) -> AppendedFragment {
         let mut submodules_subset = self
             .submodules
@@ -100,6 +95,12 @@ impl ModuleFragment {
     /// Set the current crate for file imports.
     pub fn set_current_crate(&mut self, current_crate: Rc<str>) {
         self.current_crate = Some(current_crate);
+    }
+}
+
+impl Appendable for ModuleFragment {
+    fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
+        self.content.borrow_mut().append(fragment);
     }
 }
 

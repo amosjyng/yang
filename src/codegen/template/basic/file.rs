@@ -1,4 +1,4 @@
-use super::{AppendedFragment, AtomicFragment, CodeFragment, ModuleFragment};
+use super::{Appendable, AppendedFragment, AtomicFragment, CodeFragment, ModuleFragment};
 use crate::codegen::template::imports::imports_as_str;
 use crate::codegen::CODE_WIDTH;
 use std::cell::RefCell;
@@ -24,11 +24,6 @@ impl FileFragment {
     /// Set a preamble for this file. Preambles are like hashbangs or module tags.
     pub fn set_preamble(&mut self, preamble: AtomicFragment) {
         self.preamble = Some(preamble)
-    }
-
-    /// Add another fragment to this top-level file fragment.
-    pub fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
-        self.contents.borrow_mut().append(fragment);
     }
 
     /// Add test code to the test module for this file.
@@ -90,6 +85,12 @@ impl FileFragment {
         }
 
         final_file
+    }
+}
+
+impl Appendable for FileFragment {
+    fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
+        self.contents.borrow_mut().append(fragment);
     }
 }
 

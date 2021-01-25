@@ -1,5 +1,5 @@
 use super::tao::TaoConfig;
-use crate::codegen::template::basic::{AtomicFragment, FileFragment};
+use crate::codegen::template::basic::{Appendable, AtomicFragment, FileFragment};
 use indoc::formatdoc;
 use std::cell::RefCell;
 use std::rc::Rc;

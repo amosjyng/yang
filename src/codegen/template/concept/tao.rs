@@ -1,6 +1,6 @@
 use super::util::{add_assert, add_assert_frags, new_kb_test};
 use crate::codegen::template::basic::{
-    AppendedFragment, AtomicFragment, FileFragment, ImplementationFragment, VecFragment,
+    Appendable, AppendedFragment, AtomicFragment, FileFragment, ImplementationFragment, VecFragment,
 };
 use crate::codegen::StructConfig;
 use indoc::{formatdoc, indoc};

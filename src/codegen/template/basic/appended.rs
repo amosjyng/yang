@@ -28,9 +28,17 @@ impl AppendedFragment {
     pub fn set_separator(&mut self, separator: &str) {
         self.block_separator = separator.to_owned();
     }
+}
 
+/// Marks this type of fragment as accepting additional appended fragments. If this is a nested
+/// fragment, then the appended fragments may show up as nested within the body of the fragment,
+pub trait Appendable {
     /// Append other code fragment into this one.
-    pub fn append(&mut self, other: Rc<RefCell<dyn CodeFragment>>) {
+    fn append(&mut self, other: Rc<RefCell<dyn CodeFragment>>);
+}
+
+impl Appendable for AppendedFragment {
+    fn append(&mut self, other: Rc<RefCell<dyn CodeFragment>>) {
         self.appendages.push(other);
     }
 }

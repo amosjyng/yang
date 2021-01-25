@@ -1,7 +1,7 @@
 use super::concept_to_struct;
 use super::imports::{in_own_submodule, root_node_or_equivalent};
 use crate::codegen::docstring::into_docstring;
-use crate::codegen::template::basic::{FileFragment, ImplementationFragment};
+use crate::codegen::template::basic::{Appendable, FileFragment, ImplementationFragment};
 use crate::codegen::template::concept::archetype::{add_archetype_fragment, ArchetypeFormatConfig};
 use crate::codegen::template::concept::attribute::{add_attr_fragments, AttributeFormatConfig};
 use crate::codegen::template::concept::attribute_property::{

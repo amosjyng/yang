@@ -1,4 +1,4 @@
-use super::basic::{AtomicFragment, FileFragment, FunctionFragment};
+use super::basic::{Appendable, AtomicFragment, FileFragment, FunctionFragment};
 use std::cell::RefCell;
 use std::rc::Rc;
 

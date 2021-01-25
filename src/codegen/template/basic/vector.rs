@@ -1,4 +1,4 @@
-use super::{AtomicFragment, CodeFragment, NestedFragment};
+use super::{Appendable, AtomicFragment, CodeFragment, NestedFragment};
 use std::cell::RefCell;
 use std::rc::Rc;
 

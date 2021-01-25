@@ -16,7 +16,7 @@ mod nested;
 mod trait_fragment;
 mod vector;
 
-pub use appended::AppendedFragment;
+pub use appended::{Appendable, AppendedFragment};
 pub use assert::AssertFragment;
 pub use atomic::AtomicFragment;
 pub use file::FileFragment;

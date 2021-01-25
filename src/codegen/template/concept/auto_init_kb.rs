@@ -1,7 +1,8 @@
 use super::util::kb_test_function;
 use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::{
-    AtomicFragment, FileFragment, FunctionCallFragment, FunctionFragment, ItemDeclarationAPI,
+    Appendable, AtomicFragment, FileFragment, FunctionCallFragment, FunctionFragment,
+    ItemDeclarationAPI,
 };
 use crate::codegen::{StructConfig, CODE_WIDTH};
 use crate::tao::form::rust_item::{Crate, CrateExtension};

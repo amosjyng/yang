@@ -1,4 +1,4 @@
-use super::{AtomicFragment, CodeFragment, NestedFragment};
+use super::{Appendable, AtomicFragment, CodeFragment, NestedFragment};
 use crate::codegen::docstring::into_docstring;
 use itertools::Itertools;
 use std::cell::RefCell;

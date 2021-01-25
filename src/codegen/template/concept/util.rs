@@ -1,6 +1,6 @@
 use crate::codegen::template::basic::{
-    AppendedFragment, AssertFragment, AtomicFragment, CodeFragment, FunctionCallFragment,
-    FunctionFragment,
+    Appendable, AppendedFragment, AssertFragment, AtomicFragment, CodeFragment,
+    FunctionCallFragment, FunctionFragment,
 };
 use std::cell::RefCell;
 use std::rc::Rc;

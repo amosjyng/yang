@@ -1,6 +1,6 @@
 use crate::codegen::template::basic::{
-    AtomicFragment, FileFragment, FunctionFragment, ImplementationFragment, ItemDeclarationAPI,
-    SelfReference,
+    Appendable, AtomicFragment, FileFragment, FunctionFragment, ImplementationFragment,
+    ItemDeclarationAPI, SelfReference,
 };
 use crate::codegen::StructConfig;
 use indoc::formatdoc;

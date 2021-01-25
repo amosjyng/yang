@@ -1,7 +1,7 @@
 use super::util::kb_test_function;
 use crate::codegen::template::basic::{
-    AtomicFragment, FileFragment, FunctionCallFragment, FunctionFragment, ImplementationFragment,
-    ItemDeclarationAPI, SelfReference,
+    Appendable, AtomicFragment, FileFragment, FunctionCallFragment, FunctionFragment,
+    ImplementationFragment, ItemDeclarationAPI, SelfReference,
 };
 use crate::codegen::StructConfig;
 use indoc::formatdoc;

@@ -1,4 +1,6 @@
-use super::{AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI};
+use super::{
+    Appendable, AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI,
+};
 use crate::codegen::StructConfig;
 use itertools::Itertools;
 use std::cell::RefCell;
@@ -58,9 +60,10 @@ impl ImplementationFragment {
     pub fn add_lifetime(&mut self, lifetime: char) {
         self.lifetime_variables.push(lifetime);
     }
+}
 
-    /// Add a fragment to the internals of this implementation.
-    pub fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
+impl Appendable for ImplementationFragment {
+    fn append(&mut self, fragment: Rc<RefCell<dyn CodeFragment>>) {
         self.content.borrow_mut().append(fragment);
     }
 }
