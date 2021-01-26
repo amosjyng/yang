@@ -54,10 +54,6 @@ pub trait CreateImplementation: FormTrait + CommonNodeTrait {
         let struct_name = self.internal_name().unwrap().to_camel_case();
         let trait_name = format!("{}Trait", struct_name);
         self_trait_build.set_implementation_name(&trait_name);
-        let self_import_path = import_path(&KnowledgeGraphNode::from(self.id()), false);
-        let self_import_modules = self_import_path.split("::").collect::<Vec<&str>>();
-        let self_module_path = self_import_modules.iter().take(self_import_modules.len() - 1).format("::").to_string();
-        self_trait_build.set_import_path(&format!("{}::{}", self_module_path, trait_name));
 
         // implement this concept's introduced properties as a trait
         let mut trait_impl = Implement::new();

@@ -1,5 +1,5 @@
 use super::concept_to_struct;
-use super::imports::{in_own_submodule, root_node_or_equivalent};
+use super::imports::{import_path, in_own_submodule, root_node_or_equivalent};
 use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::{
     Appendable, FileFragment, ImplementationFragment, ItemDeclarationAPI, TraitFragment,
@@ -22,6 +22,7 @@ use crate::tao::form::rust_item::data::Data;
 use crate::tao::form::rust_item::{Concept, Crate, CrateExtension, Trait};
 use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
 use heck::{KebabCase, SnakeCase};
+use itertools::Itertools;
 use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::rc::Rc;
@@ -452,14 +453,24 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
         }
     }
 
+    let self_import_modules = base_cfg.this.import.split("::").collect::<Vec<&str>>();
+    let self_module_path = self_import_modules
+        .iter()
+        .take(self_import_modules.len() - 1)
+        .format("::")
+        .to_string();
     for self_trait in target.trait_implementations() {
+        let mut self_trait_build = BuildInfo::from(self_trait.id());
+        if self_trait_build.import_path().is_none() {
+            self_trait_build.set_import_path(&format!(
+                "{}::{}",
+                self_module_path,
+                self_trait_build.implementation_name().unwrap()
+            ));
+        }
+
         let implementation = ImplementationFragment::new_trait_impl(
-            StructConfig::new(
-                BuildInfo::from(self_trait.id())
-                    .import_path()
-                    .unwrap()
-                    .to_string(),
-            ),
+            StructConfig::new(self_trait_build.import_path().unwrap().to_string()),
             concept_to_struct(&target, codegen_cfg.yin),
         );
         file.append(Rc::new(RefCell::new(implementation)));
