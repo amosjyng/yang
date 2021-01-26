@@ -1,5 +1,5 @@
 use super::concept_to_struct;
-use super::imports::{import_path, in_own_submodule, root_node_or_equivalent};
+use super::imports::{in_own_submodule, root_node_or_equivalent};
 use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::{
     Appendable, FileFragment, ImplementationFragment, ItemDeclarationAPI, TraitFragment,
@@ -409,6 +409,23 @@ pub fn code_archetype_trait(
     configure_archetype_trait_file(target, target_trait, codegen_cfg).generate_code()
 }
 
+fn ensure_trait_import(target_import: &str, self_trait: &Trait) {
+    let self_import_modules = target_import.split("::").collect::<Vec<&str>>();
+    let self_module_path = self_import_modules
+        .iter()
+        .take(self_import_modules.len() - 1)
+        .format("::")
+        .to_string();
+    let mut self_trait_build = BuildInfo::from(self_trait.id());
+    if self_trait_build.import_path().is_none() {
+        self_trait_build.set_import_path(&format!(
+            "{}::{}",
+            self_module_path,
+            self_trait_build.implementation_name().unwrap()
+        ));
+    }
+}
+
 /// Generate code for a given concept. Post-processing still needed.
 pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String {
     let mut target = Archetype::from(request.target().unwrap().id());
@@ -453,24 +470,16 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
         }
     }
 
-    let self_import_modules = base_cfg.this.import.split("::").collect::<Vec<&str>>();
-    let self_module_path = self_import_modules
-        .iter()
-        .take(self_import_modules.len() - 1)
-        .format("::")
-        .to_string();
     for self_trait in target.trait_implementations() {
-        let mut self_trait_build = BuildInfo::from(self_trait.id());
-        if self_trait_build.import_path().is_none() {
-            self_trait_build.set_import_path(&format!(
-                "{}::{}",
-                self_module_path,
-                self_trait_build.implementation_name().unwrap()
-            ));
-        }
+        ensure_trait_import(&base_cfg.this.import, &self_trait);
 
         let implementation = ImplementationFragment::new_trait_impl(
-            StructConfig::new(self_trait_build.import_path().unwrap().to_string()),
+            StructConfig::new(
+                BuildInfo::from(self_trait.id())
+                    .import_path()
+                    .unwrap()
+                    .to_string(),
+            ),
             concept_to_struct(&target, codegen_cfg.yin),
         );
         file.append(Rc::new(RefCell::new(implementation)));
@@ -702,6 +711,7 @@ mod tests {
 
         Crate::current().set_implementation_name("testing");
         let subtype_trait = form_subtype.impl_trait();
+        ensure_trait_import("crate::tao::relation::flag::MyForm", &subtype_trait);
         let code =
             code_archetype_trait(&mut form_subtype, &subtype_trait, &CodegenConfig::default());
         assert!(code.contains(indoc! {r#"

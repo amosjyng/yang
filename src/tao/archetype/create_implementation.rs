@@ -1,9 +1,7 @@
 use crate::tao::action::Implement;
 use crate::tao::form::rust_item::{Concept, Module, Trait};
-use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
+use crate::tao::perspective::BuildInfo;
 use crate::tao::relation::attribute::{ImplementsTrait, Target};
-use crate::codegen::planning::imports::import_path;
-use itertools::Itertools;
 use heck::{CamelCase, SnakeCase};
 use std::ops::Deref;
 use zamm_yin::node_wrappers::{BaseNodeTrait, CommonNodeTrait};
@@ -149,7 +147,9 @@ impl CreateImplementation for AttributeArchetype {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::codegen::planning::imports::import_path;
     use crate::tao::initialize_kb;
+    use crate::tao::perspective::KnowledgeGraphNode;
     use zamm_yin::tao::archetype::ArchetypeFormTrait;
     use zamm_yin::tao::form::Form;
     use std::rc::Rc;
@@ -204,6 +204,8 @@ mod tests {
         assert_eq!(new_trait_build.implementation_name(), Some(Rc::from("MyTypeTrait")));
         // sanity check that we're getting the expected module path right at least
         assert_eq!(import_path(&kgn, false), "crate::tao::form::MyType");
-        assert_eq!(new_trait_build.import_path(), Some(Rc::from("crate::tao::form::MyTypeTrait")));
+        // import path will not be generated until needed, in case the implementation name is 
+        // changed
+        assert_eq!(new_trait_build.import_path(), None);
     }
 }
