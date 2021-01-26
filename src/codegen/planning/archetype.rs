@@ -693,7 +693,6 @@ mod tests {
         let subtype_trait = form_subtype.impl_trait();
         let code =
             code_archetype_trait(&mut form_subtype, &subtype_trait, &CodegenConfig::default());
-        println!("{}", code);
         assert!(code.contains(indoc! {r#"
             pub trait MyFormTrait {
                 /// Whether this is marked as stuff.
