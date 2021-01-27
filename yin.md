@@ -493,6 +493,17 @@ define_child!(
 rust_trait.set_internal_name("trait");
 ```
 
+To describe what you're dealing with, Rust uses the idea of a "[type](https://doc.rust-lang.org/reference/types.html)."
+
+```rust
+define_child!(
+    rust_type,
+    rust_item,
+    "Concept representing a Rust type."
+);
+rust_type.set_internal_name("type");
+```
+
 If an archetype with attributes contains sub-archetypes, then we should make sure all implementations of that archetype and its subtypes contain those attributes. Because Rust has no sense of inheritance between structs, we will instead put these attributes of the ancestor archetype inside a trait. Then, all descendant archetypes will implement that trait and thereby gain the functionality of the ancestor archetype.
 
 ```rust
@@ -504,6 +515,25 @@ define_child!(
 ```
 
 This is not part of `build_info` because `build_info` refers to implementation details about Rust items, whereas this refers to implementation details about ZAMM concepts. It also doesn't belong to the `implement` concept because it's not about a single implementation of a concept, but insteads says something about the implementation of a concept and all its descendants.
+
+When implementing traits, we sometimes want trait functions and function signatures to use generic types, so that it can be customized as needed when implemented by descendants. We can do this in Rust using [associated types](https://doc.rust-lang.org/book/ch19-03-advanced-traits.html).
+
+```rust
+add_flag!(
+    using_associated_types <= flag,
+    rust_trait,
+    "When a `Trait` is marked with this flag, it means that the trait functions will use associated types that implementing structs can customize.",
+    "using associated types for its function signatures, so that implementing structs can customize their concrete input and output types."
+);
+
+add_attr!(
+    associated_type <= attribute,
+    rust_trait,
+    rust_type,
+    "Describes the associated type.",
+    "the associated type that this `Trait` will use in its function signatures."
+);
+```
 
 Once built, structs have a certain import path:
 
