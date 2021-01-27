@@ -1,18 +1,16 @@
 use super::{
-    Appendable, AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI,
+    Appendable, AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration,
+    ItemDeclarationAPI, TypeFragment,
 };
-use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Fragment for a trait.
 pub struct TraitFragment {
-    /// Name of the trait.
-    name: String,
+    ///  New type that this trait defines.
+    trait_type: TypeFragment,
     /// Declaration fragment for this trait.
     declaration: ItemDeclaration,
-    /// Any traits that are required to be implemented before this one.
-    required_traits: Vec<Box<dyn CodeFragment>>,
     /// Actual internal code fragments for the trait.
     content: Rc<RefCell<AppendedFragment>>,
 }
@@ -21,14 +19,14 @@ impl TraitFragment {
     /// Create a new trait with the given name.
     pub fn new(name: String) -> Self {
         Self {
-            name,
+            trait_type: TypeFragment::new(name),
             ..Self::default()
         }
     }
 
     /// Add a trait requirement
     pub fn add_required_trait(&mut self, required_trait: Box<dyn CodeFragment>) {
-        self.required_traits.push(required_trait);
+        self.trait_type.add_required_trait(required_trait);
     }
 }
 
@@ -48,9 +46,8 @@ impl Default for TraitFragment {
         let content = Rc::new(RefCell::new(AppendedFragment::default()));
         declaration.set_body(content.clone());
         Self {
-            name: String::default(),
+            trait_type: TypeFragment::default(),
             declaration,
-            required_traits: vec![],
             content,
         }
     }
@@ -88,33 +85,17 @@ impl ItemDeclarationAPI for TraitFragment {
 
 impl CodeFragment for TraitFragment {
     fn body(&self, line_width: usize) -> String {
-        // todo: subtract appropriate line width
-        let required_traits = self
-            .required_traits
-            .iter()
-            .map(|r| r.body(line_width))
-            .format(" + ");
-        let requirements = if self.required_traits.is_empty() {
-            String::default()
-        } else {
-            format!(": {}", required_traits)
-        };
         let mut declaration = self.declaration.clone();
         declaration.mark_for_full_implementation();
         declaration.set_definition(Rc::new(RefCell::new(AtomicFragment::new(format!(
-            "trait {name}{requirements}",
-            name = self.name,
-            requirements = requirements
+            "trait {}",
+            self.trait_type.body(line_width) // todo: subtract line width
         )))));
         declaration.body(line_width) // declaration will take care of indent size
     }
 
     fn imports(&self) -> Vec<String> {
-        let mut imports = self
-            .required_traits
-            .iter()
-            .flat_map(|r| r.imports())
-            .collect::<Vec<String>>();
+        let mut imports = self.trait_type.imports();
         imports.append(&mut self.content.borrow().imports());
         imports
     }
