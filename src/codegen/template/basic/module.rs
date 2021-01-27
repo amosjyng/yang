@@ -103,6 +103,10 @@ impl Appendable for ModuleFragment {
         self.content.borrow_mut().append(fragment);
     }
 
+    fn prepend(&mut self, other: Rc<RefCell<dyn CodeFragment>>) {
+        self.content.borrow_mut().prepend(other);
+    }
+
     fn is_empty(&self) -> bool {
         self.content.borrow().is_empty()
     }

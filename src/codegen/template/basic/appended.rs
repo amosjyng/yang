@@ -36,6 +36,9 @@ pub trait Appendable: CodeFragment {
     /// Append other code fragment into this one.
     fn append(&mut self, other: Rc<RefCell<dyn CodeFragment>>);
 
+    /// Prepend other code fragment at the beginning of this one.
+    fn prepend(&mut self, other: Rc<RefCell<dyn CodeFragment>>);
+
     /// Returns true if no fragments have been appended into this one.
     fn is_empty(&self) -> bool;
 }
@@ -43,6 +46,10 @@ pub trait Appendable: CodeFragment {
 impl Appendable for AppendedFragment {
     fn append(&mut self, other: Rc<RefCell<dyn CodeFragment>>) {
         self.appendages.push(other);
+    }
+
+    fn prepend(&mut self, other: Rc<RefCell<dyn CodeFragment>>) {
+        self.appendages.insert(0, other);
     }
 
     fn is_empty(&self) -> bool {
@@ -123,6 +130,36 @@ mod tests {
         let mut appended = AppendedFragment::new_with_separator("\n");
         appended.append(Rc::new(RefCell::new(line1)));
         appended.append(Rc::new(RefCell::new(line2)));
+        assert_eq!(
+            appended.imports(),
+            vec![
+                "foreign_crate::sub::ForeignStruct".to_owned(),
+                "foreign_crate::FooBarTrait".to_owned()
+            ]
+        );
+        assert_eq!(
+            appended.body(80),
+            indoc! {"
+                let mut f = ForeignStruct {};
+                f.foo_bar()
+            "}
+            .trim()
+        );
+    }
+
+    #[test]
+    fn test_prepend() {
+        let line1 = AtomicFragment {
+            imports: vec!["foreign_crate::sub::ForeignStruct".to_owned()],
+            atom: "let mut f = ForeignStruct {};".to_owned(),
+        };
+        let line2 = AtomicFragment {
+            imports: vec!["foreign_crate::FooBarTrait".to_owned()],
+            atom: "f.foo_bar()".to_owned(),
+        };
+        let mut appended = AppendedFragment::new_with_separator("\n");
+        appended.prepend(Rc::new(RefCell::new(line2)));
+        appended.prepend(Rc::new(RefCell::new(line1)));
         assert_eq!(
             appended.imports(),
             vec![
