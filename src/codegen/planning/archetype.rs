@@ -3,7 +3,7 @@ use super::imports::{in_own_submodule, root_node_or_equivalent};
 use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::{
     Appendable, AtomicFragment, FileFragment, ImplementationFragment, ItemDeclarationAPI,
-    TraitFragment,
+    TraitFragment, TypeDeclaration, TypeFragment,
 };
 use crate::codegen::template::concept::archetype::{add_archetype_fragment, ArchetypeFormatConfig};
 use crate::codegen::template::concept::attribute::{add_attr_fragments, AttributeFormatConfig};
@@ -22,7 +22,7 @@ use crate::tao::archetype::CreateImplementation;
 use crate::tao::form::rust_item::data::Data;
 use crate::tao::form::rust_item::{Concept, Crate, CrateExtension, Trait};
 use crate::tao::perspective::{BuildInfo, KnowledgeGraphNode};
-use heck::{KebabCase, SnakeCase};
+use heck::{CamelCase, KebabCase, SnakeCase};
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::convert::TryFrom;
@@ -266,8 +266,13 @@ fn flag_config(
     }
 }
 
+fn associated_type_name(attr: &AttributeArchetype) -> String {
+    format!("{}Form", attr.internal_name().unwrap().to_camel_case())
+}
+
 fn attr_config(
     inside_struct: bool,
+    use_associated_types: bool,
     codegen_cfg: &CodegenConfig,
     attr_implement: &Implement,
     target: &Archetype,
@@ -298,13 +303,23 @@ fn attr_config(
             )
         });
 
+    let owner_form = concept_to_struct(target, codegen_cfg.yin);
+    let value_form = if use_associated_types {
+        StructConfig {
+            name: format!("Self::{}", associated_type_name(attr)),
+            import: owner_form.import.clone(),
+        }
+    } else {
+        concept_to_struct(&value_type, codegen_cfg.yin)
+    };
+
     AttributePropertyConfig {
         public: inside_struct,
         property_name: Rc::from(attr.internal_name().unwrap().to_snake_case()),
         doc,
         attr: concept_to_struct(&(*attr).into(), codegen_cfg.yin),
-        owner_type: concept_to_struct(target, codegen_cfg.yin),
-        value_type: concept_to_struct(&value_type, codegen_cfg.yin),
+        owner_type: owner_form,
+        value_type: value_form,
         rust_primitive,
         rust_primitive_unboxed,
         primitive_test_value: value_as_data.default_value(),
@@ -343,6 +358,7 @@ fn add_flag_accessors(
 fn add_struct_attr_fragments(
     target: &Archetype,
     inside_struct: bool,
+    use_associated_types: bool,
     cfg: &CodegenConfig,
     implementation: &mut dyn Appendable,
     file: &mut FileFragment,
@@ -351,6 +367,7 @@ fn add_struct_attr_fragments(
         add_attr_to_appendable(
             &attr_config(
                 inside_struct,
+                use_associated_types,
                 cfg,
                 &attr.accessor_implementation().unwrap(),
                 &target,
@@ -359,12 +376,20 @@ fn add_struct_attr_fragments(
             implementation,
             file,
         );
+        if use_associated_types {
+            let mut associated_type = TypeDeclaration::new(associated_type_name(&attr));
+            let mut form_trait = TypeFragment::new("FormTrait".to_owned());
+            form_trait.set_import("zamm_yin::tao::form::FormTrait".to_owned());
+            associated_type.add_required_trait(Box::new(form_trait));
+            implementation.prepend(Rc::new(RefCell::new(associated_type)));
+        }
     }
 }
 
 fn add_property_fragments(
     target: &Archetype,
     inside_struct: bool,
+    use_associated_types: bool,
     cfg: &CodegenConfig,
     implementation: &mut dyn Appendable,
     file: &mut FileFragment,
@@ -373,7 +398,14 @@ fn add_property_fragments(
         add_flag_accessors(&target, inside_struct, cfg, implementation, file);
     }
     if !target.added_attributes().is_empty() {
-        add_struct_attr_fragments(&target, inside_struct, cfg, implementation, file);
+        add_struct_attr_fragments(
+            &target,
+            inside_struct,
+            use_associated_types,
+            cfg,
+            implementation,
+            file,
+        );
     }
     // no support for trait upcasting in rust, so won't do final append to file here:
     // https://stackoverflow.com/q/28632968/257583
@@ -397,7 +429,14 @@ fn configure_archetype_trait_file(
     }));
     let mut file = FileFragment::default();
     file.set_self_import(target_build.import_path().unwrap().to_string());
-    add_property_fragments(&target, false, codegen_cfg, &mut new_trait_code, &mut file);
+    add_property_fragments(
+        &target,
+        false,
+        target_trait.is_using_associated_types(),
+        codegen_cfg,
+        &mut new_trait_code,
+        &mut file,
+    );
     assert!(
         !new_trait_code.is_empty(),
         format!("Implemented empty properties trait for {:?}", target)
@@ -472,7 +511,14 @@ pub fn code_archetype(request: Implement, codegen_cfg: &CodegenConfig) -> String
     if !in_own_submodule(&target) {
         let mut implementation =
             ImplementationFragment::new_struct_impl(concept_to_struct(&target, codegen_cfg.yin));
-        add_property_fragments(&target, true, codegen_cfg, &mut implementation, &mut file);
+        add_property_fragments(
+            &target,
+            true,
+            false,
+            codegen_cfg,
+            &mut implementation,
+            &mut file,
+        );
         if !implementation.is_empty() {
             file.append(Rc::new(RefCell::new(implementation)));
         }

@@ -6,6 +6,9 @@ use itertools::Itertools;
 pub struct TypeFragment {
     /// Name of the type.
     name: String,
+    /// Import path for the type, if applicable. Won't be applicable in cases where the type is
+    /// currently being defined.
+    import: Option<String>,
     /// Any traits that are required to be implemented for this type.
     required_traits: Vec<Box<dyn CodeFragment>>,
 }
@@ -22,6 +25,11 @@ impl TypeFragment {
     /// Add a trait requirement
     pub fn add_required_trait(&mut self, required_trait: Box<dyn CodeFragment>) {
         self.required_traits.push(required_trait);
+    }
+
+    /// Set the import path for this type.
+    pub fn set_import(&mut self, import: String) {
+        self.import = Some(import);
     }
 }
 
@@ -41,10 +49,15 @@ impl CodeFragment for TypeFragment {
     }
 
     fn imports(&self) -> Vec<String> {
-        self.required_traits
+        let mut imports = self
+            .required_traits
             .iter()
             .flat_map(|r| r.imports())
-            .collect::<Vec<String>>()
+            .collect::<Vec<String>>();
+        if let Some(import) = &self.import {
+            imports.push(import.clone());
+        }
+        imports
     }
 }
 

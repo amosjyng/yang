@@ -1,6 +1,6 @@
 use super::{
     Appendable, AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration,
-    ItemDeclarationAPI, TypeFragment, TypeDeclaration,
+    ItemDeclarationAPI, TypeDeclaration, TypeFragment,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -31,7 +31,9 @@ impl TraitFragment {
 
     /// Add an associated type to this `Trait`.
     pub fn add_associated_type(&mut self, associated_type: TypeDeclaration) {
-        self.content.borrow_mut().prepend(Rc::new(RefCell::new(associated_type)));
+        self.content
+            .borrow_mut()
+            .prepend(Rc::new(RefCell::new(associated_type)));
     }
 }
 
