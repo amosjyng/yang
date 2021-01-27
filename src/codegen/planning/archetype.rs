@@ -2,7 +2,8 @@ use super::concept_to_struct;
 use super::imports::{in_own_submodule, root_node_or_equivalent};
 use crate::codegen::docstring::into_docstring;
 use crate::codegen::template::basic::{
-    Appendable, FileFragment, ImplementationFragment, ItemDeclarationAPI, TraitFragment,
+    Appendable, AtomicFragment, FileFragment, ImplementationFragment, ItemDeclarationAPI,
+    TraitFragment,
 };
 use crate::codegen::template::concept::archetype::{add_archetype_fragment, ArchetypeFormatConfig};
 use crate::codegen::template::concept::attribute::{add_attr_fragments, AttributeFormatConfig};
@@ -387,6 +388,13 @@ fn configure_archetype_trait_file(
     let mut new_trait_code =
         TraitFragment::new(target_build.implementation_name().unwrap().to_string());
     new_trait_code.mark_as_public();
+    new_trait_code.add_required_trait(Box::new(AtomicFragment {
+        atom: "Deref<Target = FinalNode>".to_owned(),
+        imports: vec![
+            "zamm_yin::node_wrappers::FinalNode".to_owned(),
+            "std::ops::Deref".to_owned(),
+        ],
+    }));
     let mut file = FileFragment::default();
     file.set_self_import(target_build.import_path().unwrap().to_string());
     add_property_fragments(&target, false, codegen_cfg, &mut new_trait_code, &mut file);
@@ -715,7 +723,7 @@ mod tests {
         let code =
             code_archetype_trait(&mut form_subtype, &subtype_trait, &CodegenConfig::default());
         assert!(code.contains(indoc! {r#"
-            pub trait MyFormTrait {
+            pub trait MyFormTrait: Deref<Target = FinalNode> {
                 /// Whether this is marked as stuff.
                 fn is_my_flag(&self) -> bool {"#}));
         assert!(code.contains("use crate::tao::relation::flag::MyFlag;"));

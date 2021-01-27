@@ -54,6 +54,7 @@ fn setter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.add_import(cfg.flag.import.clone());
     f.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
     f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
+    f.add_import("std::ops::DerefMut".to_owned());
     f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
         "self.deref_mut().add_flag({flag_name}::TYPE_ID);",
         flag_name = cfg.flag.name
@@ -73,6 +74,7 @@ fn getter_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.add_import(cfg.flag.import.clone());
     f.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
     f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
+    f.add_import("std::ops::Deref".to_owned());
     if cfg.hereditary {
         f.append(Rc::new(RefCell::new(AtomicFragment::new(format!(
             "self.deref().has_flag({flag_name}::TYPE_ID)",
@@ -122,20 +124,26 @@ fn test_inheritance_fragment(cfg: &FlagConfig) -> FunctionFragment {
     f.mark_as_test();
     f.add_import("crate::tao::initialize_kb".to_owned());
     f.add_import(cfg.owner_type.import.clone());
-    f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
-        initialize_kb();
-        let new_type = {owner}::archetype().individuate_as_archetype();
-        let new_instance = {owner}::from(new_type.individuate_as_form().id());
-        assert!(!new_instance.{getter}{property}());
+    f.append(Rc::new(RefCell::new(AtomicFragment {
+        atom: formatdoc! {"
+            initialize_kb();
+            let new_type = {owner}::archetype().individuate_as_archetype();
+            let new_instance = {owner}::from(new_type.individuate_as_form().id());
+            assert!(!new_instance.{getter}{property}());
 
-        {owner}::from(new_type.id()).{setter}{property}();
-        assert!({inheritance}new_instance.{getter}{property}());
+            {owner}::from(new_type.id()).{setter}{property}();
+            assert!({inheritance}new_instance.{getter}{property}());
     ", owner = cfg.owner_type.name,
-        getter = GETTER_PREFIX,
-        setter = SETTER_PREFIX,
-        property = cfg.property_name,
-        inheritance = inheritance_check,
-    }))));
+            getter = GETTER_PREFIX,
+            setter = SETTER_PREFIX,
+            property = cfg.property_name,
+            inheritance = inheritance_check,
+        },
+        imports: vec![
+            "zamm_yin::tao::archetype::ArchetypeFormTrait".to_owned(),
+            "zamm_yin::node_wrappers::CommonNodeTrait".to_owned(),
+        ],
+    })));
     f
 }
 

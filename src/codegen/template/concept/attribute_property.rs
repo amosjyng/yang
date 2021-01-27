@@ -154,7 +154,10 @@ fn setter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
         "{}::TYPE_ID",
         cfg.attr.name
     )))));
-    add_outgoing.add_argument(Rc::new(RefCell::new(AtomicFragment::new(final_value))));
+    add_outgoing.add_argument(Rc::new(RefCell::new(AtomicFragment {
+        atom: final_value,
+        imports: vec!["std::ops::Deref".to_owned()],
+    })));
     f.append(Rc::new(RefCell::new(add_outgoing)));
     f
 }
@@ -214,18 +217,21 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
         ""
     };
 
-    f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
+    f.append(Rc::new(RefCell::new(AtomicFragment {
+        atom: formatdoc! {"
         self.deref(){inheritance}
             .outgoing_nodes({attr}::TYPE_ID)
             {collection}
             .map(|f| {value_type}::from(f.id()){primitive_map}){post_collection}",
-        inheritance = nonhereditary_access,
-        attr = cfg.attr.name,
-        value_type = cfg.value_type.name,
-        primitive_map = primitive_map,
-        collection = collection,
-        post_collection = post_collection
-    }))));
+            inheritance = nonhereditary_access,
+            attr = cfg.attr.name,
+            value_type = cfg.value_type.name,
+            primitive_map = primitive_map,
+            collection = collection,
+            post_collection = post_collection
+        },
+        imports: vec!["std::ops::DerefMut".to_owned()],
+    })));
 
     f
 }
@@ -311,24 +317,30 @@ fn test_inheritance_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment 
     f.add_import(cfg.owner_type.import.clone());
     // todo: only clone when it's not a Copy type, to avoid the clone_on_copy warning. The thing
     // is, this is specific to Rust, so it should be Yang-only knowledge.
-    f.append(Rc::new(RefCell::new(AtomicFragment::new(formatdoc! {"
-        initialize_kb();
-        let new_type = {owner}::archetype().individuate_as_archetype();
-        let new_instance = {owner}::from(new_type.individuate_as_form().id());
-        assert_eq!(new_instance.{getter}(), {empty});
+    f.append(Rc::new(RefCell::new(AtomicFragment {
+        atom: formatdoc! {"
+            initialize_kb();
+            let new_type = {owner}::archetype().individuate_as_archetype();
+            let new_instance = {owner}::from(new_type.individuate_as_form().id());
+            assert_eq!(new_instance.{getter}(), {empty});
 
-        let value = {value};
-        #[allow(clippy::clone_on_copy)]
-        {owner}::from(new_type.id()).{setter}({value_set});
-        assert_eq!(new_instance.{getter}(), {inheritance});
+            let value = {value};
+            #[allow(clippy::clone_on_copy)]
+            {owner}::from(new_type.id()).{setter}({value_set});
+            assert_eq!(new_instance.{getter}(), {inheritance});
     ", owner = cfg.owner_type.name,
-        getter = getter,
-        setter = setter,
-        empty = empty_value,
-        inheritance = inheritance_check,
-        value = value_cfg.value,
-        value_set = value_set,
-    }))));
+            getter = getter,
+            setter = setter,
+            empty = empty_value,
+            inheritance = inheritance_check,
+            value = value_cfg.value,
+            value_set = value_set,
+        },
+        imports: vec![
+            "zamm_yin::tao::archetype::ArchetypeFormTrait".to_owned(),
+            "zamm_yin::node_wrappers::CommonNodeTrait".to_owned(),
+        ],
+    })));
     f
 }
 

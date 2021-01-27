@@ -1,7 +1,6 @@
 use super::{
     Appendable, AppendedFragment, AtomicFragment, CodeFragment, ItemDeclaration, ItemDeclarationAPI,
 };
-use crate::codegen::StructConfig;
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -13,7 +12,7 @@ pub struct TraitFragment {
     /// Declaration fragment for this trait.
     declaration: ItemDeclaration,
     /// Any traits that are required to be implemented before this one.
-    required_traits: Vec<StructConfig>,
+    required_traits: Vec<Box<dyn CodeFragment>>,
     /// Actual internal code fragments for the trait.
     content: Rc<RefCell<AppendedFragment>>,
 }
@@ -28,7 +27,7 @@ impl TraitFragment {
     }
 
     /// Add a trait requirement
-    pub fn add_required_trait(&mut self, required_trait: StructConfig) {
+    pub fn add_required_trait(&mut self, required_trait: Box<dyn CodeFragment>) {
         self.required_traits.push(required_trait);
     }
 }
@@ -89,7 +88,12 @@ impl ItemDeclarationAPI for TraitFragment {
 
 impl CodeFragment for TraitFragment {
     fn body(&self, line_width: usize) -> String {
-        let required_traits = self.required_traits.iter().map(|r| &r.name).format(" + ");
+        // todo: subtract appropriate line width
+        let required_traits = self
+            .required_traits
+            .iter()
+            .map(|r| r.body(line_width))
+            .format(" + ");
         let requirements = if self.required_traits.is_empty() {
             String::default()
         } else {
@@ -109,7 +113,7 @@ impl CodeFragment for TraitFragment {
         let mut imports = self
             .required_traits
             .iter()
-            .map(|r| r.import.clone())
+            .flat_map(|r| r.imports())
             .collect::<Vec<String>>();
         imports.append(&mut self.content.borrow().imports());
         imports
@@ -156,14 +160,14 @@ mod tests {
     #[test]
     fn test_trait_requirements() {
         let mut f = TraitFragment::new("Foo".to_owned());
-        f.add_required_trait(StructConfig {
-            name: "Bar".to_owned(),
-            import: "crate::Bar".to_owned(),
-        });
-        f.add_required_trait(StructConfig {
-            name: "Baz".to_owned(),
-            import: "crate::Baz".to_owned(),
-        });
+        f.add_required_trait(Box::new(AtomicFragment {
+            atom: "Bar".to_owned(),
+            imports: vec!["crate::Bar".to_owned()],
+        }));
+        f.add_required_trait(Box::new(AtomicFragment {
+            atom: "Baz".to_owned(),
+            imports: vec!["crate::Baz".to_owned()],
+        }));
         f.append(Rc::new(RefCell::new(AtomicFragment {
             imports: vec![],
             atom: indoc! {"
@@ -189,14 +193,14 @@ mod tests {
     #[test]
     fn test_trait_imports() {
         let mut f = TraitFragment::new("Foo".to_owned());
-        f.add_required_trait(StructConfig {
-            name: "Bar".to_owned(),
-            import: "crate::Bar".to_owned(),
-        });
-        f.add_required_trait(StructConfig {
-            name: "Baz".to_owned(),
-            import: "crate::Baz".to_owned(),
-        });
+        f.add_required_trait(Box::new(AtomicFragment {
+            atom: "Bar".to_owned(),
+            imports: vec!["crate::Bar".to_owned()],
+        }));
+        f.add_required_trait(Box::new(AtomicFragment {
+            atom: "Baz".to_owned(),
+            imports: vec!["crate::Baz".to_owned()],
+        }));
         f.append(Rc::new(RefCell::new(AtomicFragment {
             imports: vec!["crate::operators::plus".to_owned()],
             atom: "".to_owned(),
