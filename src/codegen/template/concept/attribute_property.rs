@@ -52,6 +52,9 @@ pub struct AttributePropertyConfig {
     pub owner_type: StructConfig,
     /// Concept representing the value of the attribute.
     pub value_type: StructConfig,
+    /// If the value is specified for this, it means that the return type of the accessor should be
+    /// an associated type. However, generated tests will still use the regular value type.
+    pub associated_value_type: Option<String>,
     /// The Rust primitive that this represents.
     pub rust_primitive: Option<Rc<str>>,
     /// Code for the Rust primitive when in an unboxed representation.
@@ -76,6 +79,7 @@ impl Default for AttributePropertyConfig {
             attr: StructConfig::default(),
             owner_type: StructConfig::default(),
             value_type: StructConfig::default(),
+            associated_value_type: None,
             rust_primitive: None,
             rust_primitive_unboxed: None,
             primitive_test_value: None,
@@ -170,6 +174,12 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
     f.add_import("zamm_yin::tao::archetype::ArchetypeTrait".to_owned());
     f.add_import("zamm_yin::node_wrappers::BaseNodeTrait".to_owned());
 
+    let value_type = if let Some(associated) = &cfg.associated_value_type {
+        format!("Self::{}", associated)
+    } else {
+        cfg.value_type.name.clone()
+    };
+
     if cfg.public {
         f.mark_as_public();
     }
@@ -178,12 +188,11 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
         f.add_attribute("allow(clippy::rc_buffer)".to_owned());
     }
     f.set_self_reference(SelfReference::Immutable);
-    let base_return_type = match &cfg.rust_primitive {
-        Some(primitive) => {
-            f.add_import("std::rc::Rc".to_owned());
-            format!("Rc<{}>", primitive)
-        }
-        None => cfg.value_type.name.clone(),
+    let base_return_type = if let Some(primitive) = &cfg.rust_primitive {
+        f.add_import("std::rc::Rc".to_owned());
+        format!("Rc<{}>", primitive)
+    } else {
+        value_type.clone()
     };
     if cfg.multi_valued {
         f.set_return(format!("Vec<{}>", base_return_type));
@@ -225,7 +234,7 @@ fn getter_fragment(cfg: &AttributePropertyConfig) -> FunctionFragment {
             .map(|f| {value_type}::from(f.id()){primitive_map}){post_collection}",
             inheritance = nonhereditary_access,
             attr = cfg.attr.name,
-            value_type = cfg.value_type.name,
+            value_type = value_type,
             primitive_map = primitive_map,
             collection = collection,
             post_collection = post_collection
@@ -584,6 +593,26 @@ mod tests {
                         .outgoing_nodes(AssociatedCrate::TYPE_ID)
                         .into_iter()
                         .map(|f| Crate::from(f.id()))
+                        .collect()
+                }"}
+        );
+    }
+
+    #[test]
+    fn test_associated_type_getter_fragment_body() {
+        assert_eq!(
+            getter_fragment(&AttributePropertyConfig {
+                associated_value_type: Some("CrateForm".to_owned()),
+                ..multi_valued_config()
+            })
+            .body(80),
+            indoc! {"
+                /// Get the crates associated with the struct.
+                fn associated_crates(&self) -> Vec<Self::CrateForm> {
+                    self.deref()
+                        .outgoing_nodes(AssociatedCrate::TYPE_ID)
+                        .into_iter()
+                        .map(|f| Self::CrateForm::from(f.id()))
                         .collect()
                 }"}
         );

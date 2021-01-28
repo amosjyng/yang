@@ -303,14 +303,10 @@ fn attr_config(
             )
         });
 
-    let owner_form = concept_to_struct(target, codegen_cfg.yin);
-    let value_form = if use_associated_types {
-        StructConfig {
-            name: format!("Self::{}", associated_type_name(attr)),
-            import: owner_form.import.clone(),
-        }
+    let associated_value_type = if use_associated_types {
+        Some(associated_type_name(attr))
     } else {
-        concept_to_struct(&value_type, codegen_cfg.yin)
+        None
     };
 
     AttributePropertyConfig {
@@ -318,8 +314,9 @@ fn attr_config(
         property_name: Rc::from(attr.internal_name().unwrap().to_snake_case()),
         doc,
         attr: concept_to_struct(&(*attr).into(), codegen_cfg.yin),
-        owner_type: owner_form,
-        value_type: value_form,
+        owner_type: concept_to_struct(target, codegen_cfg.yin),
+        value_type: concept_to_struct(&value_type, codegen_cfg.yin),
+        associated_value_type,
         rust_primitive,
         rust_primitive_unboxed,
         primitive_test_value: value_as_data.default_value(),
